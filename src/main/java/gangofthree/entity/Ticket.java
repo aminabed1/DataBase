@@ -29,12 +29,14 @@ public class Ticket {
     @Column(columnDefinition = "TEXT")
     private String qrPayload;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reservation_item_id", nullable = false)
+    @OneToOne(mappedBy = "Ticket")
     private ReservationItem reservationItem;
-
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "match_seat_id", nullable = false)
     private MatchSeat matchSeat;
+
+    @OneToOne(optional = true)
+    @JoinColumn(name = "cancellation_id", nullable = true, unique = true)
+    private Cancellation cancellation;
 }

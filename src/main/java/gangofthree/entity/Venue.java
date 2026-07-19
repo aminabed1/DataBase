@@ -18,4 +18,8 @@ public class Venue {
 
     @Column(nullable = false)
     private Integer capacity;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id", nullable = false)
+    private City city;
 }

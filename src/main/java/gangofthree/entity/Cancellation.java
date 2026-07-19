@@ -25,4 +25,8 @@ public class Cancellation {
 
     @Column(name = "processed_at")
     private LocalDateTime processedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id",  nullable = false)
+    private User user;
 }

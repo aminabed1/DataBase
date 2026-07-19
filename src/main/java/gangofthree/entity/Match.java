@@ -21,4 +21,20 @@ public class Match {
 
     @Column(nullable = false)
     private LocalDateTime datetime;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sport_id", nullable = false)
+    private Sport sport;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "host_team_id", nullable = false)
+    private Team hostTeam;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "guest_team_id", nullable = false)
+    private Team guestTeam;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "venue_id", nullable = false)
+    private Venue venue;
 }

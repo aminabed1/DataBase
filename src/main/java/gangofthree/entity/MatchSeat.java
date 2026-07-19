@@ -19,4 +19,16 @@ public class MatchSeat {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MatchSeatStatus status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "match_id", nullable = false)
+    private Match match;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "seat_id", nullable = false)
+    private Seat seat;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "ticket_category_id", nullable = false)
+    private TicketCategory ticketCategory;
 }
