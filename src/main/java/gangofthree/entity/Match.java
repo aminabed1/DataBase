@@ -12,9 +12,6 @@ public class Match {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "tournament_name", nullable = false)
-    private String tournamentName;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MatchStatus status;

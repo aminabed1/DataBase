@@ -3,8 +3,8 @@ package gangofthree.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "cities")
-public class City {
+@Table(name = "province")
+public class Province {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -12,5 +12,4 @@ public class City {
 
     @Column(nullable = false)
     private String name;
-
 }
