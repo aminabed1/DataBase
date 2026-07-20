@@ -1,22 +1,22 @@
 package gangofthree.entity;
 
-import gangofthree.entity.enums.LogHistoryAction;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+
+import java.math.BigDecimal;
 
 @Entity
-@Table(name = "log_histories")
-public class LogHistory {
+@Table(name = "logs")
+public class LogHistory{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
-    @Column(nullable = false)
-    private LocalDateTime DateTime;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private LogHistoryAction action;
+    @Column(name = "action_date", nullable = false)
+    private LocalDateTime actionDate;
+
+    @Column(name = "action", nullable = false)
+    private String action;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

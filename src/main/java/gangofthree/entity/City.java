@@ -13,4 +13,9 @@ public class City {
     @Column(nullable = false)
     private String name;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "province_id", nullable = false)
+    private Province province;
+
+    
 }

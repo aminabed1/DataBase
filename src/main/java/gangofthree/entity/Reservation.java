@@ -5,8 +5,6 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "reservations")
@@ -29,10 +27,7 @@ public class Reservation {
     @Transient
     private BigDecimal totalAmount;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
-
-    @ManyToMany(mappedBy = "reviewedReservations", fetch = FetchType.LAZY)
-    private Set<User> reviewers = new HashSet<>();
 }

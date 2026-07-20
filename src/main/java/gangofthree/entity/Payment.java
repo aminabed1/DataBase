@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "payments")
@@ -22,6 +21,7 @@ public class Payment {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
+
     @Column(name = "payment_date", nullable = false)
     private LocalDateTime paymentDate;
 
@@ -33,9 +33,6 @@ public class Payment {
     private PaymentMethod paymentMethod;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reservation_id")
+    @JoinColumn(name = "reservation_id", nullable = false)
     private Reservation reservation;
-
-    @OneToMany(mappedBy = "Payment")
-    private List<IssueReport> issueReports;
 }

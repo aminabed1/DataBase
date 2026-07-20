@@ -3,7 +3,7 @@ package gangofthree.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "province")
+@Table(name = "provinces")
 public class Province {
 
     @Id
@@ -12,4 +12,6 @@ public class Province {
 
     @Column(nullable = false)
     private String name;
+
+    
 }

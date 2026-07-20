@@ -15,7 +15,7 @@ public class Wallet {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal credit;
 
-    @OneToOne(optional = false)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 }

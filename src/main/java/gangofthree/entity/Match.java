@@ -12,6 +12,10 @@ public class Match {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tournament_id", nullable = false)
+    private Tournament tournament;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private MatchStatus status;
@@ -23,15 +27,15 @@ public class Match {
     @JoinColumn(name = "sport_id", nullable = false)
     private Sport sport;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "venue_id", nullable = false)
+    private Venue venue;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "host_team_id", nullable = false)
     private Team hostTeam;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "guest_team_id", nullable = false)
     private Team guestTeam;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "venue_id", nullable = false)
-    private Venue venue;
 }

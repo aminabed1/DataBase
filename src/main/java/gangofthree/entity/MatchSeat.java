@@ -24,11 +24,11 @@ public class MatchSeat {
     @JoinColumn(name = "match_id", nullable = false)
     private Match match;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seat_id", nullable = false)
     private Seat seat;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ticket_category_id", nullable = false)
     private TicketCategory ticketCategory;
 }

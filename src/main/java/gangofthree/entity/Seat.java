@@ -14,6 +14,8 @@ public class Seat {
     private SeatPosition position;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "venue_id",  nullable = false)
+    @JoinColumn(name = "venue_id", nullable = false)
     private Venue venue;
+    
+    
 }
