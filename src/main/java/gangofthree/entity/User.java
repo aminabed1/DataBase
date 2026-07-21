@@ -1,5 +1,5 @@
 package gangofthree.entity;
-
+import gangofthree.entity.enums.Role;
 import jakarta.persistence.*;
 
 @Entity
@@ -27,8 +27,8 @@ public class User {
     @Column(nullable = false)
     private String passwordHash;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_id", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
 
     @ManyToOne(fetch = FetchType.LAZY)

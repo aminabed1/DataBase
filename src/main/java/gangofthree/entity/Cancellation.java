@@ -31,7 +31,7 @@ public class Cancellation {
     private User user;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ticket_id", nullable = false)
-    private Ticket ticket;
+    @JoinColumn(name = "reservation_id", nullable = false)
+    private Reservation reservation;
 
 }
