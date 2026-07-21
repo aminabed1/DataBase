@@ -2,11 +2,12 @@ package gangofthree.entity;
 
 import gangofthree.entity.enums.IssueReportStatus;
 import jakarta.persistence.*;
-
+import org.hibernate.annotations.Check;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "issue_reports")
+@Check(name = "chk_issue_dates", constraints = "(resolved_at IS NULL OR created_at <= resolved_at) AND (updated_at IS NULL OR created_at <= updated_at)")
 public class IssueReport {
 
     @Id

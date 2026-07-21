@@ -2,11 +2,12 @@ package gangofthree.entity;
 
 import gangofthree.entity.enums.CancellationStatus;
 import jakarta.persistence.*;
-
+import org.hibernate.annotations.Check;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "cancellations")
+@Check(name = "chk_cancellation_dates", constraints = "processed_at IS NULL OR requested_at <= processed_at")
 public class Cancellation {
 
     @Id

@@ -2,11 +2,12 @@ package gangofthree.entity;
 
 import gangofthree.entity.enums.MatchSeatStatus;
 import jakarta.persistence.*;
-
+import org.hibernate.annotations.Check;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "match_seats")
+@Check(name = "chk_seat_price", constraints = "price >= 0")
 public class MatchSeat {
 
     @Id

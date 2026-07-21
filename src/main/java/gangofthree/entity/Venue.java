@@ -1,9 +1,10 @@
 package gangofthree.entity;
-
+import org.hibernate.annotations.Check;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "venues")
+@Check(name = "chk_venue_capacity", constraints = "capacity > 0")
 public class Venue {
 
     @Id

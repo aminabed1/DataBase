@@ -1,9 +1,12 @@
 package gangofthree.entity;
+
 import gangofthree.entity.enums.Role;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Check;
 
 @Entity
 @Table(name = "users")
+@Check(name = "chk_user_phone", constraints = "phone ~ '^(09|9)[0-9]{9}$'")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
