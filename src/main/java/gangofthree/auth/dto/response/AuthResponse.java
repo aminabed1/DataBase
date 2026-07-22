@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class ApiResponse {
+public class AuthResponse {
     private String message;
     private String token;
 }

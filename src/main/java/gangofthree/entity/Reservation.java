@@ -1,6 +1,7 @@
 package gangofthree.entity;
 
 import gangofthree.entity.enums.ReservationStatus;
+import gangofthree.user.entity.User;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Check;
 import java.math.BigDecimal;

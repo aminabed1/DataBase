@@ -1,12 +1,19 @@
-package gangofthree.entity;
+package gangofthree.user.entity;
 
-import gangofthree.entity.enums.Role;
+import gangofthree.entity.City;
+import gangofthree.user.entity.enums.Role;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Check;
 
+@Builder
 @Entity
 @Table(name = "users")
 @Check(name = "chk_user_phone", constraints = "phone ~ '^(09|9)[0-9]{9}$'")
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,7 +26,7 @@ public class User {
     private String lastName;
 
     @Column(nullable = false)
-    private String phone;
+    private String phoneNumber;
 
     @Column(nullable = false)
     private String email;

@@ -1,4 +1,4 @@
-package gangofthree.entity;
+package gangofthree.user.entity;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.Check;

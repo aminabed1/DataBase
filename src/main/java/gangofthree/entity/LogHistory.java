@@ -1,5 +1,6 @@
 package gangofthree.entity;
 
+import gangofthree.user.entity.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 

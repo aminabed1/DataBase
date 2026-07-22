@@ -1,4 +1,4 @@
-package gangofthree.entity.enums;
+package gangofthree.user.entity.enums;
 
 public enum Role {
     BUYER,
