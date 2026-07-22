@@ -11,7 +11,7 @@ import org.hibernate.annotations.Check;
 @Builder
 @Entity
 @Table(name = "users")
-@Check(name = "chk_user_phone", constraints = "phone ~ '^(09|9)[0-9]{9}$'")
+@Check(name = "chk_user_phone", constraints = "phone_number ~ '^(09|9)[0-9]{9}$'")
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {

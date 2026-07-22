@@ -3,9 +3,9 @@ spring:
     name: GangOfThree
   
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/football_ticket_db
     username: postgres
-    password: Saeedmaz!05
+    password: aminamin
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -18,6 +18,11 @@ spring:
 
   flyway:
     enabled: false
+
+management:
+  health:
+    redis:
+      enabled: false
 
 server:
   port: 8081

@@ -11,7 +11,6 @@ import gangofthree.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImplementation implements AuthService {
@@ -23,7 +22,7 @@ public class AuthServiceImplementation implements AuthService {
                 .orElseThrow(() -> new InvalidCredentialException(
                         "Phone number or password is incorrect"
                 ));
-
+        //TODO: complete what will method do after success login
         return AuthResponse.builder()
                 .message("login successful.")
                 .build();
@@ -60,4 +59,3 @@ public class AuthServiceImplementation implements AuthService {
         return null;
     }
 }
-
