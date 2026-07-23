@@ -34,10 +34,9 @@ public class AuthServiceImplementation implements AuthService {
             throw new DuplicatePhoneNumberException("Phone number already exists.");
         }
 
-        User user = new User();
         //TODO: hash password and fix city null value in builder pattern.
         // check equal method for password and confirmed password
-        User.builder()
+        User user = User.builder()
                 .firstName(registerRequest.getFirstName())
                 .lastName(registerRequest.getLastName())
                 .phoneNumber(registerRequest.getPhoneNumber())
@@ -45,6 +44,7 @@ public class AuthServiceImplementation implements AuthService {
                 .isActive(true)
                 .passwordHash(registerRequest.getPassword())
                 .role(registerRequest.getRole())
+                .city(registerRequest.getCity())
                 .build();
 
         userRepository.save(user);

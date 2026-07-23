@@ -1,8 +1,10 @@
 package gangofthree.auth.dto.request;
 
+import gangofthree.entity.City;
 import gangofthree.user.entity.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,6 +32,9 @@ public class RegisterRequest {
     @NotBlank(message = "password confirm is required.")
     private String confirmPassword;
 
-    @NotBlank(message = "role is required.")
+    @NotNull(message = "role is required.")
     private Role role;
+
+    @NotNull(message = "city is required")
+    private City city;
 }

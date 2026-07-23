@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/auth")
 public class AuthController {
 
@@ -20,19 +19,19 @@ public class AuthController {
 
     @PostMapping("/register")
     public ApiResponse<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        authService.register(registerRequest);
-        return ApiResponse.success("something");
+        AuthResponse response = authService.register(registerRequest);
+        return ApiResponse.success("register successful", response);
     }
 
     @PostMapping("/login")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        authService.login(loginRequest);
-        return ApiResponse.success("something", null);
+        AuthResponse response = authService.login(loginRequest);
+        return ApiResponse.success("login successful", response);
     }
 
     @PostMapping("/forget-password")
     public ApiResponse<AuthResponse> forgetPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
-        authService.forgotPassword(forgotPasswordRequest);
-        return ApiResponse.success("something", null);
+        AuthResponse response = authService.forgotPassword(forgotPasswordRequest);
+        return ApiResponse.success("reset password successful", response);
     }
 }
