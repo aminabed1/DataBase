@@ -35,6 +35,6 @@ public class RegisterRequest {
     @NotNull(message = "role is required.")
     private Role role;
 
-    @NotNull(message = "city is required")
-    private City city;
+    @NotNull(message = "city id is required")
+    private Long cityId;
 }

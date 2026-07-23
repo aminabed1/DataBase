@@ -5,11 +5,13 @@ import gangofthree.user.entity.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Check;
 
 @Builder
 @Entity
+@Getter
 @Table(name = "users")
 @Check(name = "chk_user_phone", constraints = "phone_number ~ '^(09|9)[0-9]{9}$'")
 @NoArgsConstructor
@@ -42,6 +44,6 @@ public class User {
     private Role role;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "city_id" , nullable = false)
+    @JoinColumn(name = "city_id" , nullable = true)
     private City city;
 }
