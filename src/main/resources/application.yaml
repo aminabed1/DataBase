@@ -19,10 +19,15 @@ spring:
   flyway:
     enabled: false
 
-management:
-  health:
+  data:
     redis:
-      enabled: false
+      host: localhost
+      port: 6379
+
+#management:
+#  health:
+#    redis:
+#      enabled: false
 
 server:
   port: 8081

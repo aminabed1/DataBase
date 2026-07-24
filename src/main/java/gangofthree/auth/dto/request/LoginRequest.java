@@ -7,8 +7,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class LoginRequest {
-    @NotBlank(message = "phone number is required.")
-    private String phoneNumber;
+    @NotBlank(message = "credential is required.")
+    private String credential;
 
     @NotBlank(message = "password is required.")
     private String password;
