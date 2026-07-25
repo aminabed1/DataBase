@@ -55,9 +55,9 @@ public class AuthServiceImplementation implements AuthService {
         otpService.saveOtp(credential, otp, OtpPurpose.LOGIN);
 
         if (credentialType.equals(CredentialType.EMAIL)) {
-            emailService.sendOtp(credential, otp);
+            emailService.sendOtp(credential, otp, 120);
         } else {
-            smsService.sendOtp(credential, otp);
+            smsService.sendOtp(credential, otp, 120);
         }
 
         return AuthResponse.builder()

@@ -2,6 +2,7 @@ package gangofthree.auth.controller;
 
 import gangofthree.auth.dto.request.ForgotPasswordRequest;
 import gangofthree.auth.dto.request.LoginRequest;
+import gangofthree.auth.dto.request.OtpRequest;
 import gangofthree.auth.dto.request.RegisterRequest;
 import gangofthree.auth.dto.response.AuthResponse;
 import gangofthree.auth.service.AuthService;
@@ -29,7 +30,13 @@ public class AuthController {
         return ApiResponse.success("login successful", response);
     }
 
-    @PostMapping("/forget-password")
+    @PostMapping("/verify-otp")
+    public ApiResponse<AuthResponse> verifyOtp(@Valid @RequestBody OtpRequest otpRequest) {
+        AuthResponse response = authService.verifyOtp(otpRequest);
+        return ApiResponse.success("verify opt successful", response);
+    }
+
+    @PostMapping("/forgot-password")
     public ApiResponse<AuthResponse> forgetPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
         AuthResponse response = authService.forgotPassword(forgotPasswordRequest);
         return ApiResponse.success("reset password successful", response);
