@@ -31,6 +31,7 @@ public class AuthServiceImplementation implements AuthService {
     private final OtpService otpService;
     private final SmsService smsService;
     private final EmailService emailService;
+    private final JwtService jwtService;
 
     @Override
     public AuthResponse login(LoginRequest loginRequest) {
@@ -83,8 +84,7 @@ public class AuthServiceImplementation implements AuthService {
         User user = optionalUser.orElseThrow(() -> new InvalidCredentialException(
                 "Invalid credential."));
 
-        //TODO: replace with functional jwt service
-        String jwtToken = "some-khozaabal-token" + user.getId();
+        String jwtToken = jwtService.generateToken(user);
 
         return AuthResponse.builder()
                 .message("login successful")
@@ -120,10 +120,11 @@ public class AuthServiceImplementation implements AuthService {
 
         userRepository.save(user);
 
+        String jwtToken = jwtService.generateToken(user);
         return AuthResponse.builder()
                 .message("register successful.")
+                .token(jwtToken)
                 .build();
-        //TODO: create token for enter to profile after register
     }
 
     @Override

@@ -1,4 +1,4 @@
-package gangofthree.entity;
+package gangofthree.ticket.entity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;

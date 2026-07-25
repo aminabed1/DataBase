@@ -37,5 +37,9 @@ spring:
             enable: true
           debug: true
 
+jwt:
+  secret: LFWCaUBxcUh6QhMktoYfJdCymfsiLaze4Gbcqpj4j4EIjpSCISoHfQ/iG+rF43qEfT731G4roqFWc6kEPmKOOg==
+  expiration: 3600000
+
 server:
   port: 8081
