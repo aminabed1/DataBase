@@ -9,7 +9,7 @@ public class CredentialDetector {
     private static final Pattern PHONE_PATTERN =
             Pattern.compile("^09\\d{9}$");
 
-    public static CredentialType getCredentialType(String credential) {
+    public static CredentialType detect(String credential) {
         return isEmail(credential) ? CredentialType.EMAIL
                     : isPhoneNumber(credential) ? CredentialType.PHONE
                     : CredentialType.INVALID;

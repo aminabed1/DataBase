@@ -43,4 +43,9 @@ public class EmailService implements OtpSendService {
 
         log.info("OTP email successfully sent to: {}", credential);
     }
+
+    @Override
+    public void sendOtp(String credential, String otp) {
+        sendOtp(credential, otp, null);
+    }
 }

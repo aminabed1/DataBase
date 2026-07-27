@@ -1,13 +1,16 @@
 package gangofthree.auth.service;
 
-import gangofthree.auth.dto.request.ForgotPasswordRequest;
+import gangofthree.auth.dto.request.forgotpassword.ForgotPasswordOtpRequest;
+import gangofthree.auth.dto.request.forgotpassword.ForgotPasswordRequest;
 import gangofthree.auth.dto.request.LoginRequest;
 import gangofthree.auth.dto.request.OtpRequest;
 import gangofthree.auth.dto.request.RegisterRequest;
+import gangofthree.auth.dto.request.forgotpassword.ResetPasswordRequest;
 import gangofthree.auth.dto.response.AuthResponse;
 import gangofthree.auth.exception.custom.DuplicatePhoneNumberException;
 import gangofthree.auth.exception.custom.InvalidCredentialException;
 import gangofthree.auth.exception.custom.PasswordMismatchException;
+import gangofthree.auth.service.jwt.JwtService;
 import gangofthree.auth.service.otp.EmailService;
 import gangofthree.auth.service.otp.OtpPurpose;
 import gangofthree.auth.service.otp.OtpService;
@@ -36,7 +39,7 @@ public class AuthServiceImplementation implements AuthService {
     @Override
     public AuthResponse login(LoginRequest loginRequest) {
 
-        CredentialType credentialType = CredentialDetector.getCredentialType(loginRequest.getCredential());
+        CredentialType credentialType = CredentialDetector.detect(loginRequest.getCredential());
         Optional<User> optionalUser = switch (credentialType) {
             case EMAIL -> userRepository.findUserByEmail(loginRequest.getCredential());
             case PHONE -> userRepository.findUserByPhoneNumber(loginRequest.getCredential());
@@ -73,7 +76,7 @@ public class AuthServiceImplementation implements AuthService {
             throw new InvalidCredentialException("Invalid otp code.");
         }
 
-        CredentialType credentialType = CredentialDetector.getCredentialType(otpRequest.getCredential());
+        CredentialType credentialType = CredentialDetector.detect(otpRequest.getCredential());
 
         Optional<User> optionalUser = switch (credentialType) {
             case EMAIL -> userRepository.findUserByEmail(otpRequest.getCredential());
@@ -84,7 +87,7 @@ public class AuthServiceImplementation implements AuthService {
         User user = optionalUser.orElseThrow(() -> new InvalidCredentialException(
                 "Invalid credential."));
 
-        String jwtToken = jwtService.generateToken(user);
+        String jwtToken = jwtService.generateAccessToken(user);
 
         return AuthResponse.builder()
                 .message("login successful")
@@ -120,7 +123,7 @@ public class AuthServiceImplementation implements AuthService {
 
         userRepository.save(user);
 
-        String jwtToken = jwtService.generateToken(user);
+        String jwtToken = jwtService.generateRegisterToken(user);
         return AuthResponse.builder()
                 .message("register successful.")
                 .token(jwtToken)
@@ -128,7 +131,80 @@ public class AuthServiceImplementation implements AuthService {
     }
 
     @Override
-    public AuthResponse forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
-        return null;
+    public AuthResponse forgotPassword(ForgotPasswordRequest request) {
+        String credential = request.getCredential();
+        CredentialType credentialType = CredentialDetector.detect(credential);
+
+        Optional<User> optionalUser = switch (credentialType) {
+            case EMAIL -> userRepository.findUserByEmail(credential);
+            case PHONE -> userRepository.findUserByPhoneNumber(credential);
+            case INVALID -> throw new InvalidCredentialException("Invalid credential.");
+        };
+
+        User user = optionalUser.orElseThrow(() ->
+                new InvalidCredentialException("User not found."));
+
+        String otp = otpService.generateOtp();
+        otpService.saveOtp(credential, otp,  OtpPurpose.RESET_PASSWORD);
+
+        if (credentialType == CredentialType.EMAIL) {
+            emailService.sendOtp(user.getEmail(), otp, 120);
+        } else {
+            smsService.sendOtp(user.getPhoneNumber(), otp, 120);
+        }
+
+        return AuthResponse.builder()
+                .message("OTP sent successfully.")
+                .build();
+    }
+
+    @Override
+    public AuthResponse verifyForgotPasswordOtp(ForgotPasswordOtpRequest request) {
+        String credential = request.getCredential();
+        CredentialType credentialType = CredentialDetector.detect(credential);
+
+        Optional<User> optionalUser = switch (credentialType) {
+            case EMAIL -> userRepository.findUserByEmail(credential);
+            case PHONE -> userRepository.findUserByPhoneNumber(credential);
+            case INVALID -> throw new InvalidCredentialException("Invalid credential.");
+        };
+
+        User user = optionalUser.orElseThrow(() -> new InvalidCredentialException("User not found."));
+
+        boolean isOtpValid = otpService.verifyOtp(credential, request.getOtp(), OtpPurpose.RESET_PASSWORD);
+
+        if (!isOtpValid) {
+            throw new InvalidCredentialException("Invalid OTP.");
+        }
+
+        String resetToken = jwtService.generateResetToken(user);
+
+        return AuthResponse.builder()
+                .message("OTP verified successfully.")
+                .token(resetToken)
+                .build();
+    }
+
+    @Override
+    public AuthResponse resetPassword(ResetPasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new InvalidCredentialException("Password and confirm password do not match.");
+        }
+
+        Long userId = Long.valueOf(jwtService.extractUserId(request.getResetToken()));
+
+        User user = userRepository.findById(userId).orElseThrow(() -> new InvalidCredentialException("Invalid reset token."));
+
+        if (!jwtService.isPasswordResetTokenValid(request.getResetToken(), user)) {
+            throw new InvalidCredentialException("Invalid or expired reset token.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+
+        userRepository.save(user);
+
+        return AuthResponse.builder()
+                .message("Password reset successfully.")
+                .build();
     }
 }

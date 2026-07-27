@@ -1,6 +1,6 @@
 package gangofthree.security;
 
-import gangofthree.auth.service.JwtService;
+import gangofthree.auth.service.jwt.JwtService;
 import gangofthree.user.entity.User;
 import gangofthree.user.repository.UserRepository;
 import io.jsonwebtoken.JwtException;

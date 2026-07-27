@@ -1,9 +1,11 @@
 package gangofthree.auth.controller;
 
-import gangofthree.auth.dto.request.ForgotPasswordRequest;
+import gangofthree.auth.dto.request.forgotpassword.ForgotPasswordOtpRequest;
+import gangofthree.auth.dto.request.forgotpassword.ForgotPasswordRequest;
 import gangofthree.auth.dto.request.LoginRequest;
 import gangofthree.auth.dto.request.OtpRequest;
 import gangofthree.auth.dto.request.RegisterRequest;
+import gangofthree.auth.dto.request.forgotpassword.ResetPasswordRequest;
 import gangofthree.auth.dto.response.AuthResponse;
 import gangofthree.auth.service.AuthService;
 import gangofthree.common.response.ApiResponse;
@@ -19,26 +21,38 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ApiResponse<AuthResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        AuthResponse response = authService.register(registerRequest);
-        return ApiResponse.success("register successful", response);
+    public ApiResponse<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+        AuthResponse response = authService.register(request);
+        return ApiResponse.success("register successful.", response);
     }
 
     @PostMapping("/login")
-    public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        AuthResponse response = authService.login(loginRequest);
-        return ApiResponse.success("login successful", response);
+    public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        AuthResponse response = authService.login(request);
+        return ApiResponse.success("login successful.", response);
     }
 
     @PostMapping("/verify-otp")
-    public ApiResponse<AuthResponse> verifyOtp(@Valid @RequestBody OtpRequest otpRequest) {
-        AuthResponse response = authService.verifyOtp(otpRequest);
-        return ApiResponse.success("verify opt successful", response);
+    public ApiResponse<AuthResponse> verifyOtp(@Valid @RequestBody OtpRequest request) {
+        AuthResponse response = authService.verifyOtp(request);
+        return ApiResponse.success("verify opt successful.", response);
     }
 
     @PostMapping("/forgot-password")
-    public ApiResponse<AuthResponse> forgetPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
-        AuthResponse response = authService.forgotPassword(forgotPasswordRequest);
-        return ApiResponse.success("reset password successful", response);
+    public ApiResponse<AuthResponse> forgetPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        AuthResponse response = authService.forgotPassword(request);
+        return ApiResponse.success("reset password successful.", response);
+    }
+
+    @PostMapping("/forgot-password/verify-otp")
+    public ApiResponse<AuthResponse> verifyForgotPasswordOtp(@Valid @RequestBody ForgotPasswordOtpRequest request) {
+        AuthResponse response = authService.verifyForgotPasswordOtp(request);
+        return ApiResponse.success("verify otp successful.", response);
+    }
+
+    @PostMapping("forgot-password/reset")
+    public ApiResponse<AuthResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        AuthResponse response = authService.resetPassword(request);
+        return ApiResponse.success("reset password successful.", response);
     }
 }

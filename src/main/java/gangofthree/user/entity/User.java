@@ -3,15 +3,13 @@ package gangofthree.user.entity;
 import gangofthree.entity.City;
 import gangofthree.user.entity.enums.Role;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.Check;
 
 @Builder
 @Entity
 @Getter
+@Setter//TODO: check setter nesesity for change user information
 @Table(name = "users")
 @Check(name = "chk_user_phone", constraints = "phone_number ~ '^(09|9)[0-9]{9}$'")
 @NoArgsConstructor
