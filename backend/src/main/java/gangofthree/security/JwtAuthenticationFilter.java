@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 User user = userRepository.findById(Long.valueOf(userId))
                         .orElse(null);
 
-                if (user != null && jwtService.isTokenValid(token, user)) {
+                if (user != null && jwtService.isAccessTokenValid(token, user)) {
                     UsernamePasswordAuthenticationToken authenticationToken =
                             new UsernamePasswordAuthenticationToken(
                                     user,
