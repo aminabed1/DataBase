@@ -1,6 +1,6 @@
-package gangofthree.security;
+package gangofthree.security.filter;
 
-import gangofthree.auth.service.jwt.JwtService;
+import gangofthree.security.jwt.JwtService;
 import gangofthree.user.entity.User;
 import gangofthree.user.repository.UserRepository;
 import io.jsonwebtoken.JwtException;
@@ -44,12 +44,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authorizationHeader.substring(7);
 
         try {
+            if (SecurityContextHolder.getContext().getAuthentication() != null) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             String userId = jwtService.extractUserId(token);
 
-            if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                User user = userRepository.findById(Long.valueOf(userId))
-                        .orElse(null);
+            if (userId == null) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
+<<<<<<<< HEAD:backend/src/main/java/gangofthree/security/JwtAuthenticationFilter.java
                 if (user != null && jwtService.isAccessTokenValid(token, user)) {
                     UsernamePasswordAuthenticationToken authenticationToken =
                             new UsernamePasswordAuthenticationToken(
@@ -57,13 +64,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     null,
                                     List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
                             );
+========
+            User user = userRepository.findById(Long.valueOf(userId))
+                    .orElse(null);
+>>>>>>>> 8f6390d (feat: complete user repository, controller and service):src/main/java/gangofthree/security/filter/JwtAuthenticationFilter.java
 
-                    authenticationToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
+            if (user != null && jwtService.isAccessTokenValid(token, user)) {
+                UsernamePasswordAuthenticationToken authenticationToken =
+                        new UsernamePasswordAuthenticationToken(
+                                user.getId(),
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                        );
 
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                }
+                authenticationToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             }
 
             filterChain.doFilter(request, response);
@@ -73,9 +91,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
             response.getWriter().write("""
                     {
-                      "message": "Invalid or expired token."
+                      "message": "Invalid or expired access token."
                     }
                     """);
         }

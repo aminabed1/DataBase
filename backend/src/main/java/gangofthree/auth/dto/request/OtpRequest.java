@@ -1,7 +1,8 @@
 package gangofthree.auth.dto.request;
 
-import gangofthree.auth.service.otp.OtpPurpose;
+import gangofthree.security.otp.OtpPurpose;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,6 +16,6 @@ public class OtpRequest {
     @NotBlank(message = "otp is required.")
     private String otp;
 
-    @NotBlank(message = "purpose is required")
+    @NotNull(message = "purpose is required")
     private OtpPurpose purpose;
 }

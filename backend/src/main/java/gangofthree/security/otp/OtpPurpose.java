@@ -1,4 +1,4 @@
-package gangofthree.auth.service.otp;
+package gangofthree.security.otp;
 
 import lombok.Getter;
 
