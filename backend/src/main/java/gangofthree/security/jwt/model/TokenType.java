@@ -1,4 +1,4 @@
-package gangofthree.auth.service.jwt.model;
+package gangofthree.security.jwt.model;
 
 public enum TokenType {
     ACCESS,

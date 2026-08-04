@@ -35,11 +35,11 @@ public class AuthController {
     @PostMapping("/verify-otp")
     public ApiResponse<AuthResponse> verifyOtp(@Valid @RequestBody OtpRequest request) {
         AuthResponse response = authService.verifyOtp(request);
-        return ApiResponse.success("verify opt successful.", response);
+        return ApiResponse.success("verify otp successful.", response);
     }
 
     @PostMapping("/forgot-password")
-    public ApiResponse<AuthResponse> forgetPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+    public ApiResponse<AuthResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         AuthResponse response = authService.forgotPassword(request);
         return ApiResponse.success("reset password successful.", response);
     }
@@ -50,7 +50,7 @@ public class AuthController {
         return ApiResponse.success("verify otp successful.", response);
     }
 
-    @PostMapping("forgot-password/reset")
+    @PostMapping("/forgot-password/reset")
     public ApiResponse<AuthResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         AuthResponse response = authService.resetPassword(request);
         return ApiResponse.success("reset password successful.", response);

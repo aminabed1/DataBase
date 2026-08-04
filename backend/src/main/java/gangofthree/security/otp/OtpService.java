@@ -1,4 +1,4 @@
-package gangofthree.auth.service.otp;
+package gangofthree.security.otp;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -33,6 +33,22 @@ public class OtpService {
         redisTemplate.opsForValue().set(otpKey, hashedOtp, OTP_EXPIRE);
         redisTemplate.delete(attemptKey);
     }
+
+    public void saveRawData(String credential, String value, Duration duration) {
+        String normalizedKey = normalizeCredential(credential);
+        redisTemplate.opsForValue().set(normalizedKey, value, duration);
+    }
+
+    public String getSavedOtp(String credential) {
+        String normalizedKey = normalizeCredential(credential);
+        return redisTemplate.opsForValue().get(normalizedKey);
+    }
+
+    public void deleteRawData(String credential) {
+        String normalizedKey = normalizeCredential(credential);
+        redisTemplate.delete(normalizedKey);
+    }
+
 
     public boolean verifyOtp(String credential, String otp, OtpPurpose purpose) {
         String otpKey = buildOtpKey(credential,  purpose);
