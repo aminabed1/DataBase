@@ -56,7 +56,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-<<<<<<<< HEAD:backend/src/main/java/gangofthree/security/JwtAuthenticationFilter.java
                 if (user != null && jwtService.isAccessTokenValid(token, user)) {
                     UsernamePasswordAuthenticationToken authenticationToken =
                             new UsernamePasswordAuthenticationToken(
@@ -64,10 +63,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     null,
                                     List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
                             );
-========
             User user = userRepository.findById(Long.valueOf(userId))
                     .orElse(null);
->>>>>>>> 8f6390d (feat: complete user repository, controller and service):src/main/java/gangofthree/security/filter/JwtAuthenticationFilter.java
 
             if (user != null && jwtService.isAccessTokenValid(token, user)) {
                 UsernamePasswordAuthenticationToken authenticationToken =
