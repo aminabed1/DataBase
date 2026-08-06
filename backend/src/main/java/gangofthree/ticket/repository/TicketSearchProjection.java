@@ -1,9 +1,9 @@
-package gangofthree.match.repository;
+package gangofthree.ticket.repository;
 
 import java.time.LocalDateTime;
 
-public interface MatchSummaryProjection {
-    Long getId();
+public interface TicketSearchProjection {
+    Long getMatchId();
     String getSport();
     String getHostTeam();
     String getGuestTeam();

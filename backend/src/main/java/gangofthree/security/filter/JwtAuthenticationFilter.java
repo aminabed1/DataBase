@@ -56,16 +56,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-                if (user != null && jwtService.isAccessTokenValid(token, user)) {
-                    UsernamePasswordAuthenticationToken authenticationToken =
-                            new UsernamePasswordAuthenticationToken(
-                                    user,
-                                    null,
-                                    List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-                            );
+            // دریافت کاربر از پایگاه داده
             User user = userRepository.findById(Long.valueOf(userId))
                     .orElse(null);
 
+            // بررسی معتبر بودن توکن و ست کردن Authentication
             if (user != null && jwtService.isAccessTokenValid(token, user)) {
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(

@@ -30,7 +30,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
-                                "/api/auth/verify-otp"
+                                "/api/auth/verify-otp",
+                                "/api/tickets/search"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

@@ -1,5 +1,6 @@
-package gangofthree.match.dto.response;
+package gangofthree.ticket.dto.response;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -8,7 +9,7 @@ import java.math.BigDecimal;
 @Builder
 public class TicketCategoryInfo {
     private String categoryName;
-    private String amenities;
+    private JsonNode amenities;
     private BigDecimal price;
     private Integer remainingCapacity;
 }
