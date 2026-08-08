@@ -24,3 +24,14 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Hide default cursor on desktop devices */
+@media (pointer: fine) {
+  body {
+    cursor: none;
+  }
+
+  a, button, input, textarea, select {
+    cursor: none;
+  }
+}
