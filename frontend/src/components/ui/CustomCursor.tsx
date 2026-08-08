@@ -58,6 +58,7 @@ export default function CustomCursor() {
                 x: cursorXSpring,
                 y: cursorYSpring,
                 opacity: isVisible ? 1 : 0,
+                backgroundColor: "rgba(157, 157, 157, 0.65)",
             }}
         />
     );

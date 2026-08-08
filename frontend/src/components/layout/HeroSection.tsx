@@ -32,7 +32,7 @@ export default function HeroSection() {
 
     const scale = useTransform(scrollY, [0, 400], [1, 0.92]);
     const borderRadius = useTransform(scrollY, [0, 400], ["0px", "40px"]);
-    const opacity = useTransform(scrollY, [0, 600], [1, 0.3]);
+    const contentOpacity = useTransform(scrollY, [0, 600], [1, 0]);
 
     // پرفورمنس: هنگام اسکرول عمیق ویدیو پاز می‌شود تا GPU فقط درگیر انیمیشن باشد
     useMotionValueEvent(scrollY, "change", (latest) => {
@@ -52,17 +52,16 @@ export default function HeroSection() {
     return (
         <section
             ref={containerRef}
-            className="relative h-svh w-full bg-[#0a0a0a] overflow-hidden"
+            className="relative h-svh w-full overflow-hidden bg-[var(--page-bg)]"
         >
             <motion.div
                 style={{
                     scale,
                     borderRadius,
-                    opacity,
                     transformOrigin: "top center",
-                    willChange: "transform, border-radius, opacity",
+                    willChange: "transform, border-radius",
                 }}
-                className="relative h-full w-full overflow-hidden transform-gpu"
+                className="relative h-full w-full overflow-hidden bg-black transform-gpu"
             >
                 {/* Layer 1: video */}
                 <video
@@ -82,7 +81,10 @@ export default function HeroSection() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-transparent pointer-events-none" />
 
                 {/* Layer 3: content */}
-                <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 text-center">
+                <motion.div
+                    style={{ opacity: contentOpacity }}
+                    className="relative z-10 flex h-full flex-col items-center justify-center px-4 text-center"
+                >
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -152,7 +154,7 @@ export default function HeroSection() {
                             </a>
                         </MagneticEffect>
                     </motion.div>
-                </div>
+                </motion.div>
 
                 <div className="absolute inset-x-0 bottom-0 z-10 h-32 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
             </motion.div>

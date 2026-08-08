@@ -31,7 +31,7 @@ export default function RootLayout({
 }) {
   return (
       <html lang="en" className={`${sans.variable} ${serif.variable}`}>
-      <body className="font-[family-name:var(--font-sans)] bg-black">
+      <body className="font-[family-name:var(--font-sans)]">
   <Navbar />
   <SmoothScrolling>
     {children}
