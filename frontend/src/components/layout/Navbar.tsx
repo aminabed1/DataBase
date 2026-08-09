@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+const MotionLink = motion.create(Link);
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const container = {
@@ -20,9 +21,58 @@ const itemVariants = {
     }),
 };
 
+function NavItem({
+                     href,
+                     label,
+                     hovered,
+                     setHovered,
+                 }: {
+    href: string;
+    label: string;
+    hovered: string | null;
+    setHovered: (v: string | null) => void;
+}) {
+    const active = hovered === label;
+    return (
+        <Link
+            href={href}
+            onMouseEnter={() => setHovered(label)}
+            onFocus={() => setHovered(label)}
+            className="relative rounded-full px-4 py-1.5 text-sm outline-none"
+        >
+            <AnimatePresence>
+                {active && (
+                    <motion.span
+                        layoutId="nav-hover-pill"
+                        className="absolute inset-0 -z-10 rounded-full border border-white/15 bg-white/10"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                            layout: { type: "spring", stiffness: 420, damping: 34 },
+                            opacity: { duration: 0.18 },
+                        }}
+                    />
+                )}
+            </AnimatePresence>
+
+            <motion.span
+                animate={{ y: active ? -1 : 0 }}
+                transition={{ duration: 0.25, ease }}
+                className={`relative block transition-colors duration-200 ${
+                    active ? "text-white" : "text-white/60"
+                }`}
+            >
+                {label}
+            </motion.span>
+        </Link>
+    );
+}
+
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [signup, setSignup] = useState(false);
+    const [hovered, setHovered] = useState<string | null>(null);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 24);
@@ -73,19 +123,20 @@ export default function Navbar() {
                     <motion.div
                         variants={itemVariants}
                         custom={0.5}
-                        className={`${groupPill} flex items-center justify-center gap-2 px-4 py-1.5`}
+                        onMouseLeave={() => setHovered(null)}
+                        className={`${groupPill} flex items-center justify-center gap-1 px-3 py-1.5`}
                     >
-                        <Link href="/matches" className="rounded-full px-4 py-1.5 text-sm text-white/70 transition-colors hover:bg-white/10 hover:text-white">
-                            Matches
+                        <NavItem href="/matches" label="Matches" hovered={hovered} setHovered={setHovered} />
+
+                        <Link href="/" className="group relative px-4 text-lg font-black tracking-tight text-white">
+                            <span className="relative z-10">PitchSide</span>
+                            <span className="pointer-events-none absolute -inset-2 -z-0 rounded-full bg-white/10 opacity-0 blur-lg transition-opacity duration-300 group-hover:opacity-100" />
                         </Link>
-                        <Link href="/" className="px-4 text-lg font-black tracking-tight text-white">
-                            Tickora
-                        </Link>
-                        <Link href="/#support" className="rounded-full px-4 py-1.5 text-sm text-white/70 transition-colors hover:bg-white/10 hover:text-white">
-                            Support
-                        </Link>
+
+                        <NavItem href="/#support" label="Support" hovered={hovered} setHovered={setHovered} />
                     </motion.div>
                 </div>
+
 
                 {/* RIGHT */}
                 <motion.div
@@ -95,16 +146,20 @@ export default function Navbar() {
                     onMouseEnter={() => setSignup(true)}
                     onMouseLeave={() => setSignup(false)}
                 >
-                    <motion.div
+                    <MotionLink
+                        href="/login"
                         initial={false}
-                        animate={{ x: signup ? "-92%" : "0%", opacity: signup ? 1 : 0 }}
+                        animate={{
+                            x: signup ? "-92%" : "0%",
+                            clipPath: signup
+                                ? "inset(0px 0px 0px 0px round 9999px)"
+                                : "inset(0px 0px 0px 100% round 9999px)",
+                        }}
                         transition={{ duration: 0.4, ease }}
-                        className="absolute right-0 z-0"
+                        className="absolute right-0 z-0 block whitespace-nowrap rounded-l-full border border-white/15 bg-white/10 py-2.5 pl-5 pr-9 text-sm font-medium text-white backdrop-blur-md"
                     >
-                        <Link href="/login" className="block whitespace-nowrap rounded-l-full border border-white/15 bg-white/10 py-2.5 pl-5 pr-9 text-sm font-medium text-white backdrop-blur-md">
-                            Login
-                        </Link>
-                    </motion.div>
+                        Login
+                    </MotionLink>
 
                     <Link
                         href="/signup"

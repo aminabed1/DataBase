@@ -57,7 +57,7 @@ export default function StatsSection() {
                 {/* عنوان */}
                 <div className="mb-16 flex flex-col items-center text-center">
                     <span className="text-xs font-medium uppercase tracking-[0.25em] text-black/40">
-                        Tickora in numbers
+                        PitchSide in numbers
                     </span>
                     <h2 className="mt-4 text-4xl text-black md:text-5xl">
                         Every game,{" "}

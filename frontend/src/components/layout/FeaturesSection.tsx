@@ -309,7 +309,7 @@ export default function FeaturesSection() {
                     className="mb-14 max-w-2xl"
                 >
           <span className="text-sm font-medium uppercase tracking-widest text-black/40">
-            Why Tickora
+            Why PitchSide
           </span>
 
                     <h2 className="mt-3 text-4xl font-semibold tracking-tight text-black/90 md:text-5xl">
