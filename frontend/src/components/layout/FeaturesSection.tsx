@@ -32,35 +32,78 @@ const cardIn: Variants = {
 };
 
 /* ---------------- Shared card shell ---------------- */
+const CONIC =
+    "conic-gradient(from 0deg," +
+    " transparent 0%," +
+    " rgb(96, 165, 250) 10%," +   // آبی ورزشی (والیبال)
+    " rgb(125, 211, 252) 22%," +  // آبی آسمانی روشن
+    " transparent 34%," +
+    " rgb(249, 115, 22) 48%," +   // نارنجی اصیل بسکتبال
+    " rgb(251, 146, 60) 60%," +   // نارنجی ملایم‌تر (برای محو شدن قشنگ‌تر)
+    " transparent 72%," +
+    " rgb(74, 222, 128) 84%," +   // سبز چمن زنده (فوتبال)
+    " rgb(96, 165, 250) 96%," +   // آبی ورزشی (برای چرخش بدون بریدگی)
+    " transparent 100%)";
 
 function BentoCard({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
+                       children,
+                       className = "",
+                   }: {
+    children: React.ReactNode;
+    className?: string;
 }) {
-  return (
-    <motion.div
-      variants={cardIn}
-      whileHover={{ y: -6 }}
-      transition={{ type: "spring", stiffness: 300, damping: 24 }}
-      className={`group relative overflow-hidden rounded-3xl border border-black/[0.08]
-        bg-white/40 p-6 backdrop-blur-sm
+    return (
+        <motion.div
+            variants={cardIn}
+            whileHover={{ scale: 1.03 }}
+            transition={{ type: "spring", stiffness: 300, damping: 22 }}
+            className={`group relative rounded-3xl ${className}`}
+        >
+            {/* outer glow — spills beyond the card edge (hover only) */}
+            <div className="pointer-events-none absolute -inset-3 -z-10 overflow-hidden rounded-[2rem] opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100">
+                <div
+                    className="absolute left-1/2 top-1/2 h-[220%] w-[220%] -translate-x-1/2 -translate-y-1/2 animate-[spin_6s_linear_infinite] will-change-transform [animation-play-state:paused] group-hover:[animation-play-state:running]"
+                    style={{ background: CONIC }}
+                />
+            </div>
+
+            {/* crisp rotating border — hollow ring */}
+            <div
+                className="pointer-events-none absolute -inset-[1.5px] overflow-hidden rounded-[calc(1.5rem+1.5px)] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                style={{
+                    padding: "1.5px",
+                    WebkitMask:
+                        "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+                    WebkitMaskComposite: "xor",
+                    mask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+                    maskComposite: "exclude",
+                }}
+            >
+                <div
+                    className="absolute left-1/2 top-1/2 h-[300%] w-[300%] -translate-x-1/2 -translate-y-1/2 animate-[spin_6s_linear_infinite] will-change-transform [animation-play-state:paused] group-hover:[animation-play-state:running]"
+                    style={{ background: CONIC }}
+                />
+            </div>
+
+            {/* card surface */}
+            <div
+                className="relative flex h-full flex-col overflow-hidden rounded-3xl
+        border border-black/[0.08] bg-white/55 p-6 backdrop-blur-sm
         shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_8px_30px_-12px_rgba(0,0,0,0.15)]
-        transition-colors duration-500 hover:border-black/[0.16] ${className}`}
-    >
-      {/* subtle hover sheen */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-        style={{
-          background:
-            "radial-gradient(120% 120% at 0% 0%, rgba(255,255,255,0.5), transparent 40%)",
-        }}
-      />
-      <div className="relative z-10 flex h-full flex-col">{children}</div>
-    </motion.div>
-  );
+        transition-shadow duration-500
+        group-hover:shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_24px_50px_-18px_rgba(0,0,0,0.28)]"
+            >
+                <div
+                    className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                    style={{
+                        background:
+                            "radial-gradient(120% 120% at 0% 0%, rgba(255,255,255,0.5), transparent 40%)",
+                    }}
+                />
+                <div className="relative z-10 flex h-full flex-col">{children}</div>
+            </div>
+        </motion.div>
+    );
 }
 
 /* ---------------- Live Seat-Hold timer ---------------- */
@@ -232,8 +275,7 @@ export default function FeaturesSection() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section className="relative w-full px-6 py-24 md:px-10">
-      <div className="mx-auto max-w-6xl">
+      <section className="relative w-full overflow-hidden px-6 py-24 md:px-10"><div className="mx-auto max-w-6xl">
         {/* heading */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
