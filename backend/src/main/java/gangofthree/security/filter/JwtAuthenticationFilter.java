@@ -56,11 +56,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // دریافت کاربر از پایگاه داده
             User user = userRepository.findById(Long.valueOf(userId))
                     .orElse(null);
 
-            // بررسی معتبر بودن توکن و ست کردن Authentication
             if (user != null && jwtService.isAccessTokenValid(token, user)) {
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(

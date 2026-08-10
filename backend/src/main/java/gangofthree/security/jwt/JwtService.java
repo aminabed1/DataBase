@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Date;
 import java.util.Map;
 
@@ -21,13 +22,13 @@ public class JwtService {
     private String jwtSecret;
 
     @Value("${jwt.access-expiration}")
-    private long accessTokenExpiration;
+    private Duration accessTokenExpiration;
 
     @Value("${jwt.reset-expiration}")
-    private long resetTokenExpiration;
+    private Duration resetTokenExpiration;
 
     @Value("${jwt.register-expiration}")
-    private long registerTokenExpiration;
+    private Duration registerTokenExpiration;
 
     public String generateAccessToken(User user) {
         return buildToken(
@@ -134,9 +135,9 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private String buildToken(String subject, Map<String, Object> claims, long expiration) {
+    private String buildToken(String subject, Map<String, Object> claims, Duration expiration) {
         Date now = new Date();
-        Date expirationDate = new Date(now.getTime() + expiration);
+        Date expirationDate = new Date(now.getTime() + expiration.toMillis());
 
         return Jwts.builder()
                 .subject(subject)

@@ -64,7 +64,7 @@ public class UserController {
         return userService.sendOtpToOldPhone(userId);
     }
 
-    @PostMapping("/phone/change/old/verfiy-otp")
+    @PostMapping("/phone/change/old/verify-otp")
     public ApiResponse<String> verifyOldPhoneOtp(Authentication authentication, @Valid @RequestBody OtpRequest request) {
         Long userId = (Long) authentication.getPrincipal();
         String otp = request.getOtp();

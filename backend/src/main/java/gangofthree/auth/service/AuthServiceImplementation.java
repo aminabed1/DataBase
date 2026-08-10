@@ -7,6 +7,7 @@ import gangofthree.auth.dto.request.OtpRequest;
 import gangofthree.auth.dto.request.RegisterRequest;
 import gangofthree.auth.dto.request.forgotpassword.ResetPasswordRequest;
 import gangofthree.auth.dto.response.AuthResponse;
+import gangofthree.auth.exception.custom.DuplicateEmailException;
 import gangofthree.auth.exception.custom.DuplicatePhoneNumberException;
 import gangofthree.auth.exception.custom.InvalidCredentialException;
 import gangofthree.auth.exception.custom.PasswordMismatchException;
@@ -99,6 +100,10 @@ public class AuthServiceImplementation implements AuthService {
     public AuthResponse register(RegisterRequest registerRequest) {
         if (userRepository.existsUserByPhoneNumber(registerRequest.getPhoneNumber())) {
             throw new DuplicatePhoneNumberException("Phone number already exists.");
+        }
+
+        if (userRepository.existsByEmail(registerRequest.getEmail())) {
+            throw new DuplicateEmailException("Email already exists.");
         }
 
         String password = registerRequest.getPassword();

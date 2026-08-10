@@ -44,6 +44,7 @@ public class UserServiceImplementation implements UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .email(user.getEmail())
                 .isActive(user.getIsActive())
+                .role(user.getRole())
                 .build();
 
         return ApiResponse.<UserProfileResponse>builder()
@@ -80,6 +81,7 @@ public class UserServiceImplementation implements UserService {
                 .phoneNumber(user.getPhoneNumber())
                 .email(user.getEmail())
                 .isActive(user.getIsActive())
+                .role(user.getRole())
                 .build();
 
         return ApiResponse.<UserProfileResponse>builder()
