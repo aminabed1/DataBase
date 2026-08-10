@@ -1,5 +1,6 @@
 package gangofthree.auth.exception;
 
+import gangofthree.auth.exception.custom.DuplicateEmailException;
 import gangofthree.auth.exception.custom.DuplicatePhoneNumberException;
 import gangofthree.auth.exception.custom.InvalidCredentialException;
 import gangofthree.auth.exception.custom.PasswordMismatchException;
@@ -25,6 +26,16 @@ public class AuthExceptionHandler {
     @ExceptionHandler(DuplicatePhoneNumberException.class)
     public ResponseEntity<ApiResponse<Void>> handleDuplicatePhoneNumber(
             DuplicatePhoneNumberException exception
+    ) {
+        ApiResponse<Void> response = ApiResponse.failure(exception.getMessage(), 409);
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(response);
+    }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDuplicateEmail(
+            DuplicateEmailException exception
     ) {
         ApiResponse<Void> response = ApiResponse.failure(exception.getMessage(), 409);
         return ResponseEntity

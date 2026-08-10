@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
@@ -39,10 +39,9 @@ spring:
 
 jwt:
   secret: LFWCaUBxcUh6QhMktoYfJdCymfsiLaze4Gbcqpj4j4EIjpSCISoHfQ/iG+rF43qEfT731G4roqFWc6kEPmKOOg==
-  expiration: 3600000
-  access-expiration: 3600000
-  reset-expiration: 3600000
-  register-expiration: 3600000
+  access-expiration: 10h
+  reset-expiration: 15m
+  register-expiration: 30m
 
 
 server:
