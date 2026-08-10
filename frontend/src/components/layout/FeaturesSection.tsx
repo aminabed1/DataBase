@@ -65,10 +65,10 @@ const BentoCard = memo(function BentoCard({
     return (
         <motion.div
             variants={cardIn}
-            className={`group relative rounded-3xl transition-transform duration-300 hover:scale-[1.03] ${className}`}
+            className={`group relative rounded-3xl transition-transform duration-300 hover:scale-[1.03] transform-gpu will-change-transform ${className}`}
         >
             {/* outer glow — desktop only */}
-            <div className="pointer-events-none absolute -inset-3 -z-10 hidden overflow-hidden rounded-[2rem] opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100 md:block">
+            <div className="pointer-events-none absolute -inset-3 -z-10 hidden overflow-hidden rounded-[2rem] opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100 md:block transform-gpu">
                 <div
                     className="absolute left-1/2 top-1/2 h-[220%] w-[220%] -translate-x-1/2 -translate-y-1/2 animate-[spin_12s_linear_infinite] [animation-play-state:paused] group-hover:will-change-transform group-hover:[animation-play-state:running]"
                     style={{ background: CONIC }}
@@ -77,7 +77,7 @@ const BentoCard = memo(function BentoCard({
 
             {/* crisp rotating border — desktop only */}
             <div
-                className="pointer-events-none absolute -inset-[1.5px] hidden overflow-hidden rounded-[calc(1.5rem+1.5px)] opacity-0 transition-opacity duration-500 group-hover:opacity-100 md:block"
+                className="pointer-events-none absolute -inset-[1.5px] hidden overflow-hidden rounded-[calc(1.5rem+1.5px)] opacity-0 transition-opacity duration-500 group-hover:opacity-100 md:block transform-gpu"
                 style={{
                     padding: "1.5px",
                     WebkitMask:
@@ -101,8 +101,9 @@ const BentoCard = memo(function BentoCard({
         transition-shadow duration-500
         group-hover:shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_24px_50px_-18px_rgba(0,0,0,0.28)]"
             >
+                {/* ۳. اضافه کردن transform-gpu برای بک‌گراند نوری */}
                 <div
-                    className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                    className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 transform-gpu"
                     style={{
                         background:
                             "radial-gradient(120% 120% at 0% 0%, rgba(255,255,255,0.5), transparent 40%)",

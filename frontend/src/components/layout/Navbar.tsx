@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 const MotionLink = motion.create(Link);
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -73,6 +74,7 @@ export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [signup, setSignup] = useState(false);
     const [hovered, setHovered] = useState<string | null>(null);
+    const pathname = usePathname();
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 24);
@@ -80,6 +82,10 @@ export default function Navbar() {
         window.addEventListener("scroll", onScroll, { passive: true });
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
+
+    if (pathname?.startsWith("/dashboard")) {
+        return null;
+    }
 
     // ✅ فقط رنگ‌ها transition دارند، نه transform/opacity
     const groupPill = `rounded-full border transition-[background-color,border-color] duration-500 ${
@@ -107,16 +113,19 @@ export default function Navbar() {
                 />
 
                 {/* LEFT */}
-                <motion.div
+                <MotionLink
+                    href="/dashboard"
                     variants={itemVariants}
                     custom={0.9}
-                    className={`${groupPill} relative z-10 flex items-center gap-2 px-2 py-1.5`}
+                    className={`${groupPill} relative z-10 flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors hover:bg-white/10`}
                 >
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-white/30 to-white/10 text-xs font-bold text-white">
                         M
                     </div>
-                    <span className="hidden pr-3 text-sm text-white/80 sm:block">Profile</span>
-                </motion.div>
+                    <span className="hidden pr-3 text-sm text-white/80 transition-colors hover:text-white sm:block">
+                        Profile
+                    </span>
+                </MotionLink>
 
                 {/* CENTER — wrapper ثابت، انیمیشن روی فرزند */}
                 <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
