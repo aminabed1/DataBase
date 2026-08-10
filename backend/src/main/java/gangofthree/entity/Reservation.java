@@ -3,11 +3,16 @@ package gangofthree.entity;
 import gangofthree.entity.enums.ReservationStatus;
 import gangofthree.user.entity.User;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Check;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "reservations")
 @Check(name = "chk_reservation_dates", constraints = "expired_at IS NULL OR reserved_at <= expired_at")
 public class Reservation {

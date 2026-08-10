@@ -43,4 +43,6 @@ List<TicketSearchProjection> searchTickets(@Param("city") String city, @Param("s
             GROUP BY m.id, m.datetime, ht.name, gt.name, s.name, v.name, v.address, tc.name, CAST(tc.amenities AS TEXT), ms.price
             """, nativeQuery = true)
     List<TicketDetailProjection> getTicketDetails(@Param("matchId") Long matchId);
+
+    Ticket findByReservationItemId(Long reservationItemId);
 }

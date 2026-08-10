@@ -5,8 +5,13 @@ import gangofthree.ticket.entity.TicketCategory;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Check;
 import java.math.BigDecimal;
+import lombok.Getter;
+import lombok.Setter;
+
 
 @Entity
+@Getter
+@Setter
 @Table(name = "match_seats")
 @Check(name = "chk_seat_price", constraints = "price >= 0")
 public class MatchSeat {

@@ -5,8 +5,12 @@ import gangofthree.entity.enums.TicketStatus;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Check;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "tickets")
 @Check(name = "chk_ticket_dates", constraints = "used_at IS NULL OR issued_at <= used_at")
 public class Ticket {

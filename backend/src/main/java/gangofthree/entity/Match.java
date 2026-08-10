@@ -3,8 +3,12 @@ package gangofthree.entity;
 import gangofthree.entity.enums.MatchStatus;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "matches")
 public class Match {
 

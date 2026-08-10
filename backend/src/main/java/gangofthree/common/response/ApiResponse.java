@@ -48,11 +48,13 @@ public class ApiResponse<T> {
     }
 
     public static <T> ApiResponse<T> success(String message, Integer status, T data) {
-        return ApiResponse.<T>builder()
-                .message(message)
-                .success(true)
-                .build();
-    }
+    return ApiResponse.<T>builder()
+            .message(message)
+            .status(status)
+            .success(true)
+            .data(data)
+            .build();
+}
 
     public static <T> ApiResponse<T> failure(String message) {
         return ApiResponse.<T>builder()

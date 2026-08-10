@@ -3,8 +3,12 @@ package gangofthree.user.entity;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Check;
 import java.math.BigDecimal;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "wallets")
 @Check(name = "chk_wallet_credit", constraints = "credit >= 0")
 public class Wallet {

@@ -3,7 +3,11 @@ package gangofthree.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import org.hibernate.annotations.Check;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "reservation_items")
 @Check(name = "chk_price_at_time", constraints = "price_at_time >= 0")
