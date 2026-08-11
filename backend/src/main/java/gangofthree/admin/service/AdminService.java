@@ -11,4 +11,6 @@ public interface AdminService {
     ApiResponse<List<IssueReport>> getOpenReports();
     ApiResponse<List<Payment>> getSuspiciousPayments();
     ApiResponse<String> forceCancelReservation(Long reservationId, String reason);
+    ApiResponse<String> replyToReport(Long reportId, String replyText);
+    ApiResponse<List<Reservation>> getCancelledReservations();
 }

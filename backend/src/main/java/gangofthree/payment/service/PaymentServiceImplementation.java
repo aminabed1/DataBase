@@ -2,7 +2,6 @@ package gangofthree.payment.service;
 
 import gangofthree.common.response.ApiResponse;
 import gangofthree.entity.MatchSeat;
-import gangofthree.entity.Payment;
 import gangofthree.entity.PaymentMethod;
 import gangofthree.entity.Reservation;
 import gangofthree.entity.ReservationItem;
@@ -16,9 +15,9 @@ import gangofthree.payment.repository.PaymentRepository;
 import gangofthree.reservation.repository.MatchSeatRepository;
 import gangofthree.reservation.repository.ReservationItemRepository;
 import gangofthree.reservation.repository.ReservationRepository;
-import gangofthree.ticket.entity.Ticket;
 import gangofthree.ticket.repository.TicketRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,10 +39,11 @@ public class PaymentServiceImplementation implements PaymentService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"userBookingsCache", "userProfileCache"}, key = "#userId")
     public ApiResponse<String> processPayment(Long userId, PaymentRequest request) {
         Reservation reservation = reservationRepository.findById(request.getReservationId())
                 .orElseThrow(() -> new RuntimeException("Reservation not found"));
-
+        
         if (!reservation.getUser().getId().equals(userId)) {
             return ApiResponse.failure("Unauthorized access.", 403, "UNAUTHORIZED");
         }
@@ -56,38 +56,33 @@ public class PaymentServiceImplementation implements PaymentService {
 
         PaymentMethod method = paymentMethodRepository.findById(request.getPaymentMethodId())
                 .orElseThrow(() -> new RuntimeException("Payment method not found"));
-
+        
         List<ReservationItem> items = reservationItemRepository.findByReservationId(reservation.getId());
         BigDecimal totalAmount = items.stream()
                 .map(ReservationItem::getPriceAtTime)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Payment payment = new Payment();
-        payment.setReservation(reservation);
-        payment.setPaymentMethod(method);
-        payment.setAmount(totalAmount);
-        payment.setPaymentDate(LocalDateTime.now());
-        payment.setStatus(PaymentStatus.SUCCESS);
-        payment.setTransactionRef("TRX-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        paymentRepository.save(payment);
+        String transactionRef = "TRX-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        LocalDateTime now = LocalDateTime.now();
 
-        reservation.setStatus(ReservationStatus.CONFIRMED);
-        reservationRepository.save(reservation);
+        paymentRepository.insertPaymentNative(
+                totalAmount, now, PaymentStatus.SUCCESS.name(), transactionRef, method.getId(), reservation.getId()
+        );
+
+        reservationRepository.updateReservationStatusNative(reservation.getId(), ReservationStatus.CONFIRMED.name());
 
         for (ReservationItem item : items) {
             MatchSeat seat = item.getMatchSeat();
-            seat.setStatus(MatchSeatStatus.SOLD);
-            matchSeatRepository.save(seat);
+            matchSeatRepository.updateSeatStatusNative(seat.getId(), MatchSeatStatus.SOLD.name());
 
-            Ticket ticket = new Ticket();
-            ticket.setTicketCode("TCK-" + UUID.randomUUID().toString().substring(0, 10).toUpperCase());
-            ticket.setStatus(TicketStatus.ISSUED);
-            ticket.setIssuedAt(LocalDateTime.now());
-            ticket.setQrPayload("https://gangofthree.ir/verify/" + ticket.getTicketCode());
-            ticket.setReservationItem(item);
-            ticketRepository.save(ticket);
+            String ticketCode = "TCK-" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
+            String qrPayload = "https://gangofthree.ir/verify/" + ticketCode;
+            
+            ticketRepository.insertTicketNative(
+                    now, qrPayload, TicketStatus.ISSUED.name(), ticketCode, item.getId()
+            );
         }
 
-        return ApiResponse.success("Payment successful. Tickets have been issued.", 200, payment.getTransactionRef());
+        return ApiResponse.success("Payment successful. Tickets have been issued.", 200, transactionRef);
     }
 }

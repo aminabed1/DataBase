@@ -1,8 +1,12 @@
 package gangofthree.entity;
 import org.hibernate.annotations.Check;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "venues")
 @Check(name = "chk_venue_capacity", constraints = "capacity > 0")
 public class Venue {

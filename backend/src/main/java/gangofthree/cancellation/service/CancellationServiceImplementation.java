@@ -16,7 +16,7 @@ import gangofthree.user.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.cache.annotation.CacheEvict;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -34,6 +34,7 @@ public class CancellationServiceImplementation implements CancellationService {
     private final TicketRepository ticketRepository;
 
     @Override
+    
     public ApiResponse<PenaltyResponse> checkPenalty(Long userId, Long reservationId) {
         Reservation reservation = validateAndGetReservation(userId, reservationId);
         List<ReservationItem> items = reservationItemRepository.findByReservationId(reservation.getId());
@@ -57,6 +58,7 @@ public class CancellationServiceImplementation implements CancellationService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "userBookingsCache", key = "#userId")
     public ApiResponse<String> cancelTicketAndRefund(Long userId, Long reservationId, String reason) {
         Reservation reservation = validateAndGetReservation(userId, reservationId);
         List<ReservationItem> items = reservationItemRepository.findByReservationId(reservation.getId());
@@ -72,30 +74,28 @@ public class CancellationServiceImplementation implements CancellationService {
         BigDecimal refundAmount = totalPaid.subtract(penaltyAmount);
 
         Wallet wallet = walletRepository.findByUserId(userId).orElseThrow(() -> new RuntimeException("Wallet not found"));
-        wallet.setCredit(wallet.getCredit().add(refundAmount));
-        walletRepository.save(wallet);
+        BigDecimal newCredit = wallet.getCredit().add(refundAmount);
+        
+        walletRepository.updateWalletCreditNative(wallet.getId(), newCredit);
 
-        Cancellation cancellation = new Cancellation();
-        cancellation.setReason(reason != null ? reason : "Canceled by user");
-        cancellation.setStatus(CancellationStatus.DONE);
-        cancellation.setRequestedAt(LocalDateTime.now());
-        cancellation.setProcessedAt(LocalDateTime.now());
-        cancellation.setUser(reservation.getUser());
-        cancellation.setReservation(reservation);
-        cancellationRepository.save(cancellation);
+        cancellationRepository.insertCancellationNative(
+                reason != null ? reason : "Canceled by user",
+                CancellationStatus.DONE.name(),
+                LocalDateTime.now(),
+                LocalDateTime.now(),
+                userId,
+                reservation.getId()
+        );
 
-        reservation.setStatus(ReservationStatus.CANCELLED);
-        reservationRepository.save(reservation);
+        reservationRepository.updateReservationStatusNative(reservation.getId(), ReservationStatus.CANCELLED.name());
 
         for (ReservationItem item : items) {
             MatchSeat seat = item.getMatchSeat();
-            seat.setStatus(MatchSeatStatus.AVAILABLE); 
-            matchSeatRepository.save(seat);
+            matchSeatRepository.updateSeatStatusNative(seat.getId(), MatchSeatStatus.AVAILABLE.name());
 
             Ticket ticket = ticketRepository.findByReservationItemId(item.getId()); 
             if (ticket != null) {
-                ticket.setStatus(TicketStatus.CANCELLED);
-                ticketRepository.save(ticket);
+                ticketRepository.updateTicketStatusNative(ticket.getId(), TicketStatus.CANCELLED.name());
             }
         }
 

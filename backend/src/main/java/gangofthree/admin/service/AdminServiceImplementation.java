@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -46,5 +47,28 @@ public class AdminServiceImplementation implements AdminService {
         reservationRepository.save(reservation);
 
         return ApiResponse.success("Reservation force cancelled by Admin.", 200, "Reason: " + reason);
+    }
+
+    @Override
+    public ApiResponse<String> replyToReport(Long reportId, String replyText) {
+        IssueReport report = issueReportRepository.findById(reportId)
+                .orElseThrow(() -> new RuntimeException("Report not found"));
+        
+        String updatedDescription = report.getDescription() + "\n\n--- Admin Reply ---\n" + replyText;
+        report.setDescription(updatedDescription);
+        
+        report.setStatus(IssueReportStatus.RESOLVED);
+        report.setUpdatedAt(LocalDateTime.now());
+        report.setResolvedAt(LocalDateTime.now());
+        
+        issueReportRepository.save(report);
+        
+        return ApiResponse.success("Reply submitted and report resolved.", 200, "Report ID: " + reportId);
+    }
+
+    @Override
+    public ApiResponse<List<Reservation>> getCancelledReservations() {
+        List<Reservation> cancelled = reservationRepository.findByStatus(ReservationStatus.CANCELLED);
+        return ApiResponse.success("Cancelled reservations retrieved.", 200, cancelled);
     }
 }

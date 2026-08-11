@@ -5,11 +5,27 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.Modifying;
+import java.time.LocalDateTime;
 
 import java.util.List;
 
 @Repository
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
+    
+    @Query("""
+        SELECT t FROM Ticket t 
+        JOIN FETCH t.reservationItem ri 
+        JOIN FETCH ri.reservation r 
+        JOIN FETCH ri.matchSeat ms 
+        JOIN FETCH ms.match m 
+        JOIN FETCH m.hostTeam 
+        JOIN FETCH m.guestTeam 
+        JOIN FETCH m.venue 
+        WHERE r.user.id = :userId
+    """)
+    List<Ticket> findAllUserTickets(@Param("userId") Long userId);
+
 
     @Query(value = """
         SELECT m.id AS matchId, s.name AS sport, ht.name AS hostTeam, gt.name AS guestTeam, 
@@ -43,6 +59,21 @@ List<TicketSearchProjection> searchTickets(@Param("city") String city, @Param("s
             GROUP BY m.id, m.datetime, ht.name, gt.name, s.name, v.name, v.address, tc.name, CAST(tc.amenities AS TEXT), ms.price
             """, nativeQuery = true)
     List<TicketDetailProjection> getTicketDetails(@Param("matchId") Long matchId);
+    @Modifying
+    @Query(value = "UPDATE tickets SET status = :status WHERE id = :id", nativeQuery = true)
+    void updateTicketStatusNative(@Param("id") Long id, @Param("status") String status);
 
     Ticket findByReservationItemId(Long reservationItemId);
+    
+    @Modifying
+    @Query(value = "INSERT INTO tickets (issued_at, qr_payload, status, ticket_code, reservation_item_id) VALUES (:issuedAt, :qrPayload, :status, :ticketCode, :reservationItemId)", nativeQuery = true)
+    void insertTicketNative(@Param("issuedAt") LocalDateTime issuedAt, 
+                            @Param("qrPayload") String qrPayload, 
+                            @Param("status") String status, 
+                            @Param("ticketCode") String ticketCode, 
+                            @Param("reservationItemId") Long reservationItemId);
+
 }
+
+
+    

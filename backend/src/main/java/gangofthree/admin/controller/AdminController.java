@@ -4,6 +4,8 @@ import gangofthree.admin.service.AdminService;
 import gangofthree.common.response.ApiResponse;
 import gangofthree.entity.IssueReport;
 import gangofthree.entity.Payment;
+import gangofthree.entity.Reservation;
+import gangofthree.admin.dto.request.ReplyReportRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -31,5 +33,15 @@ public class AdminController {
     @PostMapping("/reservations/{id}/force-cancel")
     public ApiResponse<String> forceCancelReservation(@PathVariable Long id, @RequestParam String reason) {
         return adminService.forceCancelReservation(id, reason);
+    }
+
+    @PostMapping("/reports/{id}/reply")
+    public ApiResponse<String> replyToReport(@PathVariable Long id, @RequestBody ReplyReportRequest request) {
+        return adminService.replyToReport(id, request.getAdminReply());
+    }
+
+    @GetMapping("/reservations/cancelled")
+    public ApiResponse<List<Reservation>> getCancelledReservations() {
+        return adminService.getCancelledReservations();
     }
 }
