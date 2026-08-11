@@ -3,7 +3,7 @@ package gangofthree.booking.service;
 import gangofthree.booking.dto.response.BookingResponse;
 import gangofthree.common.response.ApiResponse;
 import gangofthree.ticket.entity.Ticket;
-import gangofthree.entity.enums.TicketStatus;
+import gangofthree.ticket.entity.enums.TicketStatus;
 import gangofthree.ticket.repository.TicketRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;

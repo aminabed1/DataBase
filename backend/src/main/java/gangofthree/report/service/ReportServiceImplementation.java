@@ -1,10 +1,10 @@
 package gangofthree.report.service;
 
-import gangofthree.admin.repository.IssueReportRepository;
+import gangofthree.report.repository.IssueReportRepository;
 import gangofthree.common.response.ApiResponse;
-import gangofthree.entity.IssueReport;
-import gangofthree.entity.Payment;
-import gangofthree.entity.enums.IssueReportStatus;
+import gangofthree.report.entity.IssueReport;
+import gangofthree.payment.entity.Payment;
+import gangofthree.report.entity.enums.IssueReportStatus;
 import gangofthree.payment.repository.PaymentRepository;
 import gangofthree.report.dto.request.ReportIssueRequest;
 import gangofthree.user.entity.User;
@@ -27,7 +27,7 @@ public class ReportServiceImplementation implements ReportService {
     public ApiResponse<String> submitReport(Long userId, ReportIssueRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         IssueReport report = new IssueReport();
         report.setUser(user);
         report.setSubject(request.getSubject());
@@ -37,15 +37,15 @@ public class ReportServiceImplementation implements ReportService {
 
         if (request.getPaymentId() != null) {
             Payment payment = paymentRepository.findById(request.getPaymentId()).orElse(null);
-            
+
             if (payment == null) {
                 return ApiResponse.failure("Payment ID not found.", 404, "PAYMENT_NOT_FOUND");
             }
-            
+
             if (!payment.getReservation().getUser().getId().equals(userId)) {
                 return ApiResponse.failure("Unauthorized: This payment does not belong to you.", 403, "UNAUTHORIZED_PAYMENT");
             }
-            
+
             report.setPayment(payment);
         }
 

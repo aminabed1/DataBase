@@ -1,7 +1,7 @@
 package gangofthree.reservation.repository;
 
-import gangofthree.entity.Reservation;
-import gangofthree.entity.enums.ReservationStatus;
+import gangofthree.reservation.entity.Reservation;
+import gangofthree.reservation.entity.enums.ReservationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

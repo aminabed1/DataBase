@@ -1,4 +1,4 @@
-package gangofthree.entity.enums;
+package gangofthree.ticket.entity.enums;
 
 public enum TicketStatus {
     ISSUED,

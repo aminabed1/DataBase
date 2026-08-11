@@ -1,4 +1,4 @@
-package gangofthree.entity.enums;
+package gangofthree.payment.entity.enums;
 
 public enum PaymentMethodStatus {
     ALLOWED,

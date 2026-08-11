@@ -1,6 +1,6 @@
 package gangofthree.reservation.repository;
 
-import gangofthree.entity.ReservationItem;
+import gangofthree.reservation.entity.ReservationItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

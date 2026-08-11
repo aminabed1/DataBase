@@ -1,5 +1,8 @@
 package gangofthree.cancellation.service;
 
+import gangofthree.cancellation.entity.enums.CancellationStatus;
+import gangofthree.reservation.entity.ReservationItem;
+import gangofthree.reservation.entity.Reservation;
 import gangofthree.cancellation.dto.response.PenaltyResponse;
 import gangofthree.cancellation.repository.CancellationRepository;
 import gangofthree.common.response.ApiResponse;
@@ -8,8 +11,9 @@ import gangofthree.entity.enums.*;
 import gangofthree.reservation.repository.MatchSeatRepository;
 import gangofthree.reservation.repository.ReservationItemRepository;
 import gangofthree.reservation.repository.ReservationRepository;
+import gangofthree.reservation.entity.enums.ReservationStatus;
 import gangofthree.ticket.entity.Ticket;
-import gangofthree.entity.enums.TicketStatus;
+import gangofthree.ticket.entity.enums.TicketStatus;
 import gangofthree.ticket.repository.TicketRepository;
 import gangofthree.user.entity.Wallet;
 import gangofthree.user.repository.WalletRepository;

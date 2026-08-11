@@ -1,10 +1,11 @@
-package gangofthree.entity;
+package gangofthree.reservation.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import org.hibernate.annotations.Check;
 import lombok.Getter;
 import lombok.Setter;
+import gangofthree.entity.MatchSeat;
 
 @Getter
 @Setter

@@ -1,6 +1,7 @@
-package gangofthree.entity;
+package gangofthree.cancellation.entity;
 
-import gangofthree.entity.enums.CancellationStatus;
+import gangofthree.reservation.entity.Reservation;
+import gangofthree.cancellation.entity.enums.CancellationStatus;
 import gangofthree.user.entity.User;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Check;

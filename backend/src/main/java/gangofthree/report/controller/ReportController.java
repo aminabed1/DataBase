@@ -1,7 +1,7 @@
 package gangofthree.report.controller;
 
 import gangofthree.common.response.ApiResponse;
-import gangofthree.entity.IssueReport;
+import gangofthree.report.entity.IssueReport;
 import gangofthree.report.dto.request.ReportIssueRequest;
 import gangofthree.report.service.ReportService;
 import jakarta.validation.Valid;

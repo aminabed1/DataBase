@@ -1,6 +1,6 @@
 package gangofthree.reservation.dto.response;
 
-import gangofthree.entity.enums.ReservationStatus;
+import gangofthree.reservation.entity.enums.ReservationStatus;
 import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;

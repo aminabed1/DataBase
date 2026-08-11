@@ -1,6 +1,6 @@
-package gangofthree.entity;
+package gangofthree.reservation.entity;
 
-import gangofthree.entity.enums.ReservationStatus;
+import gangofthree.reservation.entity.enums.ReservationStatus;
 import gangofthree.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;

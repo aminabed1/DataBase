@@ -1,7 +1,7 @@
-package gangofthree.admin.repository;
+package gangofthree.report.repository;
 
-import gangofthree.entity.IssueReport;
-import gangofthree.entity.enums.IssueReportStatus;
+import gangofthree.report.entity.IssueReport;
+import gangofthree.report.entity.enums.IssueReportStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

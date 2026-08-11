@@ -1,7 +1,7 @@
 package gangofthree.payment.repository;
 
-import gangofthree.entity.Payment;
-import gangofthree.entity.enums.PaymentStatus;
+import gangofthree.payment.entity.Payment;
+import gangofthree.payment.entity.enums.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;

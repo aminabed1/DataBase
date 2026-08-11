@@ -2,9 +2,9 @@ package gangofthree.admin.controller;
 
 import gangofthree.admin.service.AdminService;
 import gangofthree.common.response.ApiResponse;
-import gangofthree.entity.IssueReport;
-import gangofthree.entity.Payment;
-import gangofthree.entity.Reservation;
+import gangofthree.report.entity.IssueReport;
+import gangofthree.payment.entity.Payment;
+import gangofthree.reservation.entity.Reservation;
 import gangofthree.admin.dto.request.ReplyReportRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;

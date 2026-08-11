@@ -1,12 +1,13 @@
-package gangofthree.entity;
+package gangofthree.report.entity;
 
-import gangofthree.entity.enums.IssueReportStatus;
+import gangofthree.report.entity.enums.IssueReportStatus;
 import gangofthree.user.entity.User;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Check;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
+import gangofthree.payment.entity.Payment;
 
 @Entity
 @Getter

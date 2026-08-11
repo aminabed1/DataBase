@@ -1,6 +1,6 @@
-package gangofthree.entity;
+package gangofthree.payment.entity;
 
-import gangofthree.entity.enums.PaymentMethodStatus;
+import gangofthree.payment.entity.enums.PaymentMethodStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

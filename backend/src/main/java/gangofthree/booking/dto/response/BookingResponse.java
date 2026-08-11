@@ -1,6 +1,6 @@
 package gangofthree.booking.dto.response;
 
-import gangofthree.entity.enums.TicketStatus;
+import gangofthree.ticket.entity.enums.TicketStatus;
 import lombok.Builder;
 import lombok.Data;
 

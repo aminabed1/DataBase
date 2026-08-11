@@ -1,7 +1,7 @@
 package gangofthree.ticket.entity;
 
-import gangofthree.entity.ReservationItem;
-import gangofthree.entity.enums.TicketStatus;
+import gangofthree.reservation.entity.ReservationItem;
+import gangofthree.ticket.entity.enums.TicketStatus;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Check;
 import java.time.LocalDateTime;

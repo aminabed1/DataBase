@@ -1,4 +1,4 @@
-package gangofthree.entity.enums;
+package gangofthree.reservation.entity.enums;
 
 public enum ReservationStatus {
     PENDING,

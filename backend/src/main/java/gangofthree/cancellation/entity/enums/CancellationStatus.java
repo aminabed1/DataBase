@@ -1,4 +1,4 @@
-package gangofthree.entity.enums;
+package gangofthree.cancellation.entity.enums;
 
 public enum CancellationStatus {
     REQUESTED,

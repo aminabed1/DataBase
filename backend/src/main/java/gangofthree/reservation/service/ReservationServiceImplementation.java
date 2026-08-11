@@ -2,10 +2,10 @@ package gangofthree.reservation.service;
 
 import gangofthree.common.response.ApiResponse;
 import gangofthree.entity.MatchSeat;
-import gangofthree.entity.Reservation;
-import gangofthree.entity.ReservationItem;
+import gangofthree.reservation.entity.Reservation;
+import gangofthree.reservation.entity.ReservationItem;
 import gangofthree.entity.enums.MatchSeatStatus;
-import gangofthree.entity.enums.ReservationStatus;
+import gangofthree.reservation.entity.enums.ReservationStatus;
 import gangofthree.reservation.dto.request.ReserveTicketRequest;
 import gangofthree.reservation.dto.response.ReservationResponse;
 import gangofthree.reservation.repository.MatchSeatRepository;

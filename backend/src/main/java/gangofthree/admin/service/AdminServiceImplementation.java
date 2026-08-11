@@ -1,13 +1,13 @@
 package gangofthree.admin.service;
 
-import gangofthree.admin.repository.IssueReportRepository;
+import gangofthree.report.repository.IssueReportRepository;
 import gangofthree.common.response.ApiResponse;
-import gangofthree.entity.IssueReport;
-import gangofthree.entity.Payment;
-import gangofthree.entity.Reservation;
-import gangofthree.entity.enums.IssueReportStatus;
-import gangofthree.entity.enums.PaymentStatus;
-import gangofthree.entity.enums.ReservationStatus;
+import gangofthree.report.entity.IssueReport;
+import gangofthree.payment.entity.Payment;
+import gangofthree.reservation.entity.Reservation;
+import gangofthree.report.entity.enums.IssueReportStatus;
+import gangofthree.payment.entity.enums.PaymentStatus;
+import gangofthree.reservation.entity.enums.ReservationStatus;
 import gangofthree.payment.repository.PaymentRepository;
 import gangofthree.reservation.repository.ReservationRepository;
 import lombok.RequiredArgsConstructor;

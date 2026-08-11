@@ -1,6 +1,6 @@
 package gangofthree.cancellation.repository;
 
-import gangofthree.entity.Cancellation;
+import gangofthree.cancellation.entity.Cancellation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
