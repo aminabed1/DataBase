@@ -13,7 +13,6 @@ export default function DashboardSidebar({ activeTab, setActiveTab }: SidebarPro
         { id: 'profile', label: 'Profile Details', icon: <User size={20} /> },
         { id: 'wallet', label: 'My Wallet', icon: <Wallet size={20} /> },
         { id: 'tickets', label: 'My Tickets', icon: <Ticket size={20} /> },
-        { id: 'transactions', label: 'Transactions', icon: <CreditCard size={20} /> },
         { id: 'support', label: 'Support & Reports', icon: <LifeBuoy size={20} /> },
     ];
 

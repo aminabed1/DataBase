@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import DashboardSidebar from "@/features/dashboard/components/DashboardSidebar";
 import ProfileTab from "@/features/dashboard/components/ProfileTab";
 import WalletTab from "@/features/dashboard/components/WalletTab";
+import TransactionsTab from "@/features/dashboard/components/TransactionsTab";
 import { DashboardTab } from "@/features/dashboard/types";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -25,8 +26,6 @@ export default function DashboardPage() {
         return <WalletTab />;
       case 'tickets':
         return <div className="h-[1200px] rounded-3xl bg-white p-8 shadow-sm border border-gray-100">Tickets List Goes Here</div>;
-      case 'transactions':
-        return <div className="h-[1200px] rounded-3xl bg-white p-8 shadow-sm border border-gray-100">Transactions Table Goes Here</div>;
       case 'support':
         return <div className="h-[1200px] rounded-3xl bg-white p-8 shadow-sm border border-gray-100">Support Tickets Goes Here</div>;
       default:
