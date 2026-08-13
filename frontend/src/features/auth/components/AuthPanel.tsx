@@ -88,7 +88,12 @@ export default function AuthPanel() {
     const inputClass = "block w-full cursor-none rounded-2xl border-2 border-gray-100 bg-gray-50/50 p-4 pl-12 text-sm font-medium text-zinc-900 outline-none backdrop-blur-sm transition-all focus:border-zinc-950 focus:bg-white focus:shadow-xl focus:shadow-black/5 hover:border-gray-200 hover:bg-white";
 
     return (
-        <div className="relative h-full w-full">
+        <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            className="relative h-full w-full"
+        >
 
             <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[2.5rem] border border-gray-100 bg-white shadow-2xl md:flex-row">
 
@@ -104,10 +109,14 @@ export default function AuthPanel() {
                         borderTopRightRadius: mode === "signup" ? "120px" : "0px",
                         borderBottomRightRadius: mode === "signup" ? "120px" : "0px",
                     }}
-                    // سرعت حرکت پنل به همون 0.7 سینمایی برگشت
                     transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute left-0 top-0 z-30 hidden h-full w-1/2 flex-col items-center justify-center overflow-hidden bg-zinc-950 text-white shadow-2xl md:flex"
+                    className="absolute left-0 top-0 z-30 hidden h-full w-1/2 flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-950 via-[#04241c] to-teal-950 text-white shadow-2xl md:flex"
                 >
+                    {/* aurora چرخان — خیلی محو، پشت همه‌چیز */}
+                    <div className="pointer-events-none absolute left-1/2 top-1/2 h-[120%] w-[120%] -translate-x-1/2 -translate-y-1/2 opacity-30 blur-3xl will-change-transform [animation:aurora-spin_40s_linear_infinite] [background:conic-gradient(from_0deg,transparent_0%,#10b981_20%,transparent_35%,#2dd4bf_60%,transparent_80%)]" />
+
+                    {/* بافت نقطه‌ای قبلی */}
+                    <div className="absolute inset-0 bg-[radial-gradient(#fff_1px,transparent_1px)] opacity-10 [background-size:24px_24px]" />
                     <div className="absolute inset-0 bg-[radial-gradient(#fff_1px,transparent_1px)] opacity-10 [background-size:24px_24px]"></div>
 
                     <AnimatePresence mode="wait">
@@ -118,7 +127,12 @@ export default function AuthPanel() {
                                 initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.25, ease: "easeOut" }}
                                 className="relative z-10 flex flex-col items-center px-16 text-center lg:px-24"
                             >
-                                <Trophy size={48} className="mb-6 opacity-80" />
+                                <motion.div
+                                    animate={{ y: [0, -10, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                >
+                                    <Trophy size={48} className="mb-6 opacity-80" />
+                                </motion.div>
                                 <h3 className="mb-4 text-3xl font-black tracking-tight">Join PitchSide</h3>
                                 <p className="mb-8 font-medium text-gray-400">Create an account to get exclusive access to premium matches, fast bookings, and VIP tickets.</p>
                                 <button
@@ -133,11 +147,16 @@ export default function AuthPanel() {
                         {mode === "signup" && (
                             <motion.div
                                 key="promo-login"
-                                // تاخیر حذف شد و سرعت نمایش متن بیشتر شد (0.25)
                                 initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.25, ease: "easeOut" }}
                                 className="relative z-10 flex flex-col items-center px-16 text-center lg:px-24"
                             >
-                                <Ticket size={48} className="mb-6 opacity-80" />
+                                <motion.div
+                                    animate={{ y: [0, -10, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                >
+                                    <Ticket size={48} className="mb-6 opacity-80" />
+                                </motion.div>
+
                                 <h3 className="mb-4 text-3xl font-black tracking-tight">Already a Member?</h3>
                                 <p className="mb-8 font-medium text-gray-400">Sign in to access your wallet, download your tickets, and check your upcoming matches.</p>
                                 <button
@@ -311,6 +330,6 @@ export default function AuthPanel() {
 
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }

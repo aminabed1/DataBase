@@ -4,10 +4,19 @@ import { ArrowLeft } from "lucide-react";
 
 export default function AuthPage() {
     return (
-        // با h-screen و overflow-hidden اسکرول کل صفحه کاملاً قفل می‌شود
         <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-[rgb(211,212,212)] antialiased">
 
-            {/* بافت نقطه‌ای پس‌زمینه */}
+            {/* ===== بلاب‌های متحرک پس‌زمینه ===== */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+                {/* سبز چمنی — بالا چپ */}
+                <div className="absolute -left-32 -top-32 h-[34rem] w-[34rem] rounded-full bg-emerald-400/25 blur-3xl will-change-transform [animation:blob-float_22s_ease-in-out_infinite]" />
+                {/* فیروزه‌ای — پایین راست */}
+                <div className="absolute -bottom-40 -right-24 h-[30rem] w-[30rem] rounded-full bg-teal-300/25 blur-3xl will-change-transform [animation:blob-float-alt_26s_ease-in-out_infinite]" />
+                {/* سفید نرم — وسط، برای عمق */}
+                <div className="absolute left-1/2 top-1/3 h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-white/40 blur-3xl will-change-transform [animation:blob-float_30s_ease-in-out_infinite_-8s]" />
+            </div>
+
+            {/* بافت نقطه‌ای — روی بلاب‌ها که texture حفظ بشه */}
             <div className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgba(0,0,0,0.25)_1px,transparent_1px)] [background-size:28px_28px]" />
 
             {/* دکمه بازگشت */}
@@ -24,19 +33,13 @@ export default function AuthPage() {
             {/* لوگو */}
             <div className="absolute right-6 top-6 z-50 sm:right-10 sm:top-8">
                 <h1 className="cursor-none select-none text-2xl font-black tracking-tight text-zinc-950">
-                    Pitch<span className="text-zinc-500">Side</span>
+                    Pitch<span className="text-emerald-700">Side</span>
                 </h1>
             </div>
 
-            {/*
-              کانتینر اصلی:
-              بزرگتر از قبل (max-w-6xl) اما به لبه‌ها نمی‌چسبد.
-              ارتفاع (h-[90vh] و max-h-[850px]) به اندازه کافی فضا می‌دهد.
-            */}
-            <div className="relative z-10 w-full h-[90vh] max-h-[850px] max-w-6xl px-4 md:px-8">
+            <div className="relative z-10 h-[90vh] max-h-[850px] w-full max-w-6xl px-4 md:px-8">
                 <AuthPanel />
             </div>
-
         </main>
     );
 }
