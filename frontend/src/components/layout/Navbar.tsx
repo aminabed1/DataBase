@@ -83,11 +83,10 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    if (pathname?.startsWith("/dashboard")) {
+    if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/auth")) {
         return null;
     }
 
-    // ✅ فقط رنگ‌ها transition دارند، نه transform/opacity
     const groupPill = `rounded-full border transition-[background-color,border-color] duration-500 ${
         scrolled
             ? "border-transparent bg-transparent"
@@ -127,7 +126,7 @@ export default function Navbar() {
                     </span>
                 </MotionLink>
 
-                {/* CENTER — wrapper ثابت، انیمیشن روی فرزند */}
+                {/* CENTER */}
                 <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
                     <motion.div
                         variants={itemVariants}
@@ -156,7 +155,7 @@ export default function Navbar() {
                     onMouseLeave={() => setSignup(false)}
                 >
                     <MotionLink
-                        href="/login"
+                        href="/auth?mode=login"
                         initial={false}
                         animate={{
                             x: signup ? "-92%" : "0%",
@@ -171,7 +170,7 @@ export default function Navbar() {
                     </MotionLink>
 
                     <Link
-                        href="/signup"
+                        href="/auth?mode=signup"
                         className="relative z-10 flex h-[42px] w-[118px] items-center justify-center overflow-hidden rounded-full bg-white text-sm font-bold text-black transition-transform active:scale-95"
                     >
                         <AnimatePresence mode="wait" initial={false}>
