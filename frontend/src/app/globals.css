@@ -31,20 +31,77 @@ body {
   }
 }
 
-/* globals.css */
-@keyframes blob-float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%      { transform: translate(50px, -70px) scale(1.15); }
-  66%      { transform: translate(-40px, 40px) scale(0.92); }
+@property --theme-blob-a  { syntax: "<color>"; inherits: true; initial-value: rgba(52, 211, 153, 0.25); }
+
+@property --theme-blob-b  { syntax: "<color>"; inherits: true; initial-value: rgba(94, 234, 212, 0.25); }
+
+@property --theme-accent  { syntax: "<color>"; inherits: true; initial-value: #047857; }
+
+@property --theme-panel-1 { syntax: "<color>"; inherits: true; initial-value: #022c22; }
+
+@property --theme-panel-2 { syntax: "<color>"; inherits: true; initial-value: #04241c; }
+
+@property --theme-panel-3 { syntax: "<color>"; inherits: true; initial-value: #042f2e; }
+
+@property --theme-aurora-a { syntax: "<color>"; inherits: true; initial-value: #10b981; }
+
+@property --theme-aurora-b { syntax: "<color>"; inherits: true; initial-value: #2dd4bf; }
+
+
+
+@keyframes sport-theme-cycle {
+  /* ⚽ فوتبال — سبز (از 0 تا 27 درصد ثابت) */
+  0%, 27% {
+    --theme-blob-a: rgba(52, 211, 153, 0.25);
+    --theme-blob-b: rgba(94, 234, 212, 0.25);
+    --theme-accent: #047857;
+    --theme-panel-1: #022c22;
+    --theme-panel-2: #04241c;
+    --theme-panel-3: #042f2e;
+    --theme-aurora-a: #10b981;
+    --theme-aurora-b: #2dd4bf;
+  }
+
+  /* 🏐 والیبال — آبی (از 33 تا 60 درصد ثابت) */
+  33%, 60% {
+    --theme-blob-a: rgba(96, 165, 250, 0.25);
+    --theme-blob-b: rgba(125, 211, 252, 0.25);
+    --theme-accent: #1d4ed8;
+    --theme-panel-1: #172554;
+    --theme-panel-2: #0b1c38;
+    --theme-panel-3: #082f49;
+    --theme-aurora-a: #3b82f6;
+    --theme-aurora-b: #38bdf8;
+  }
+
+  /* 🏀 بسکتبال — نارنجی (از 66 تا 93 درصد ثابت) */
+  66%, 93% {
+    --theme-blob-a: rgba(251, 146, 60, 0.25);
+    --theme-blob-b: rgba(252, 211, 77, 0.22);
+    --theme-accent: #c2410c;
+    --theme-panel-1: #431407;
+    --theme-panel-2: #2b1508;
+    --theme-panel-3: #451a03;
+    --theme-aurora-a: #f97316;
+    --theme-aurora-b: #fbbf24;
+  }
+
+  /* بازگشت نرم به رنگ سبز فوتبال در انتهای لوپ */
+  100% {
+    --theme-blob-a: rgba(52, 211, 153, 0.25);
+    --theme-blob-b: rgba(94, 234, 212, 0.25);
+    --theme-accent: #047857;
+    --theme-panel-1: #022c22;
+    --theme-panel-2: #04241c;
+    --theme-panel-3: #042f2e;
+    --theme-aurora-a: #10b981;
+    --theme-aurora-b: #2dd4bf;
+  }
 }
 
-@keyframes blob-float-alt {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  40%      { transform: translate(-60px, 50px) scale(1.1); }
-  70%      { transform: translate(30px, -40px) scale(0.95); }
-}
 
-@keyframes aurora-spin {
-  from { transform: rotate(0deg) scale(1.6); }
-  to   { transform: rotate(360deg) scale(1.6); }
+.sport-theme {
+
+  animation: sport-theme-cycle 30s ease-in-out infinite;
+
 }

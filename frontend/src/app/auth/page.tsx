@@ -1,25 +1,24 @@
+// app/auth/page.tsx
 import AuthPanel from "@/features/auth/components/AuthPanel";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export default function AuthPage() {
     return (
-        <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-[rgb(211,212,212)] antialiased">
+        <main className="sport-theme relative flex h-screen w-screen items-center justify-center overflow-hidden bg-[rgb(211,212,212)] antialiased">
 
             {/* ===== بلاب‌های متحرک پس‌زمینه ===== */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                {/* سبز چمنی — بالا چپ */}
-                <div className="absolute -left-32 -top-32 h-[34rem] w-[34rem] rounded-full bg-emerald-400/25 blur-3xl will-change-transform [animation:blob-float_22s_ease-in-out_infinite]" />
-                {/* فیروزه‌ای — پایین راست */}
-                <div className="absolute -bottom-40 -right-24 h-[30rem] w-[30rem] rounded-full bg-teal-300/25 blur-3xl will-change-transform [animation:blob-float-alt_26s_ease-in-out_infinite]" />
+                {/* بلاب بالا چپ - متصل به متغیر A */}
+                <div className="absolute -left-32 -top-32 h-[34rem] w-[34rem] rounded-full blur-3xl will-change-transform [animation:blob-float_22s_ease-in-out_infinite] bg-[var(--theme-blob-a)]" />
+                {/* بلاب پایین راست - متصل به متغیر B */}
+                <div className="absolute -bottom-40 -right-24 h-[30rem] w-[30rem] rounded-full blur-3xl will-change-transform [animation:blob-float-alt_26s_ease-in-out_infinite] bg-[var(--theme-blob-b)]" />
                 {/* سفید نرم — وسط، برای عمق */}
                 <div className="absolute left-1/2 top-1/3 h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-white/40 blur-3xl will-change-transform [animation:blob-float_30s_ease-in-out_infinite_-8s]" />
             </div>
 
-            {/* بافت نقطه‌ای — روی بلاب‌ها که texture حفظ بشه */}
             <div className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgba(0,0,0,0.25)_1px,transparent_1px)] [background-size:28px_28px]" />
 
-            {/* دکمه بازگشت */}
             <div className="absolute left-6 top-6 z-50 sm:left-10 sm:top-8">
                 <Link
                     href="/"
@@ -30,10 +29,9 @@ export default function AuthPage() {
                 </Link>
             </div>
 
-            {/* لوگو */}
             <div className="absolute right-6 top-6 z-50 sm:right-10 sm:top-8">
                 <h1 className="cursor-none select-none text-2xl font-black tracking-tight text-zinc-950">
-                    Pitch<span className="text-emerald-700">Side</span>
+                    Pitch<span className="text-[var(--theme-accent)]">Side</span>
                 </h1>
             </div>
 

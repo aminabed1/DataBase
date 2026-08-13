@@ -13,7 +13,6 @@ function CustomDropdown({ value, options, onChange, placeholder }: { value: stri
     const dropdownRef = useRef<HTMLDivElement>(null);
     const selected = options.find(o => o.value === value);
 
-    // Detect clicks outside the dropdown to close it securely
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
