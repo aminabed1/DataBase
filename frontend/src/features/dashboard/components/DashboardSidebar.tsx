@@ -2,6 +2,7 @@
 
 import { DashboardTab } from "../types";
 import { User, Wallet, Ticket, CreditCard, LifeBuoy, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface SidebarProps {
     activeTab: DashboardTab;
@@ -9,6 +10,12 @@ interface SidebarProps {
 }
 
 export default function DashboardSidebar({ activeTab, setActiveTab }: SidebarProps) {
+    const router = useRouter();
+    const handleLogout = () => {
+        localStorage.removeItem("token"); 
+        router.push("/auth?mode=login"); 
+    };
+
     const menuItems: { id: DashboardTab; label: string; icon: React.ReactNode }[] = [
         { id: 'profile', label: 'Profile Details', icon: <User size={20} /> },
         { id: 'wallet', label: 'My Wallet', icon: <Wallet size={20} /> },
@@ -51,7 +58,10 @@ export default function DashboardSidebar({ activeTab, setActiveTab }: SidebarPro
 
                 {/* Logout Button */}
                 <div className="mt-8 border-t border-gray-100 pt-4">
-                    <button className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-red-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600">
+                    <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-red-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
+                    >
                         <LogOut size={20} />
                         Log Out
                     </button>

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authService } from "@/features/auth/services/auth.service";
-import { locationService, type LocationItem } from "@/services/location.service"; // 👈 سرویس جدید
+import { locationService, type LocationItem } from "@/services/location.service";
 import { Mail, Lock, User, Smartphone, MapPin, Map, Key, ArrowRight, ShieldCheck, AlertCircle, Trophy, Ticket, ChevronDown } from "lucide-react";
 
 // ==========================================
@@ -13,8 +13,8 @@ import { Mail, Lock, User, Smartphone, MapPin, Map, Key, ArrowRight, ShieldCheck
 function CustomSelect({
                           icon: Icon,
                           placeholder,
-                          value, // در اینجا آیدی (ID) قرار میگیره
-                          options, // آرایه‌ای از آبجکت‌های استان/شهر
+                          value,
+                          options,
                           onChange,
                           disabled = false
                       }: {
@@ -28,7 +28,6 @@ function CustomSelect({
     const [isOpen, setIsOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
-    // پیدا کردن نام نمایشی بر اساس آیدی انتخاب شده
     const selected = options.find(o => o.id === value);
 
     useEffect(() => {
@@ -67,7 +66,7 @@ function CustomSelect({
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}
                         data-lenis-prevent="true"
-                        className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 max-h-48 overflow-y-auto hide-scrollbar rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl"
+                        className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 max-h-48 overflow-y-auto hide-scrollbar rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                     >
                         {options.length === 0 ? (
                             <div className="p-3 text-center text-sm text-gray-400 select-none cursor-none">No options</div>
@@ -106,25 +105,30 @@ export default function AuthPanel() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Location States
     const [provinces, setProvinces] = useState<LocationItem[]>([]);
     const [cities, setCities] = useState<LocationItem[]>([]);
 
     const [formData, setFormData] = useState({
-        name: "", email: "", phone: "", province_id: "", city_id: "", password: "", identifier: "", otp: ""
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        province_id: "",
+        city_id: "",
+        password: "",
+        confirmPassword: "",
+        identifier: "",
+        otp: ""
     });
 
-    // لود کردن استان‌ها هنگام بالا آمدن کامپوننت
     useEffect(() => {
         locationService.getProvinces().then(setProvinces);
     }, []);
 
-    // لود کردن شهرها با هر بار تغییر استان
     useEffect(() => {
         if (formData.province_id) {
             locationService.getCitiesByProvince(formData.province_id).then(data => {
                 setCities(data);
-                // ریست کردن شهر انتخاب شده اگر تو استان جدید نبود
                 if (!data.find(c => c.id === formData.city_id)) {
                     setFormData(prev => ({ ...prev, city_id: "" }));
                 }
@@ -157,19 +161,39 @@ export default function AuthPanel() {
     const handleSignupSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        if (!formData.name || !formData.email || !formData.phone || !formData.province_id || !formData.city_id || !formData.password) {
-            return setError("Please fill out all fields.");
+
+        // ۱. بررسی فیلدهای اجباری (ایمیل و موبایل جدا بررسی می‌شن)
+        if (!formData.firstName || !formData.lastName || !formData.province_id || !formData.city_id || !formData.password || !formData.confirmPassword) {
+            return setError("Please fill out all required fields.");
+        }
+
+        // ۲. بررسی "حداقل یکی" برای ایمیل و موبایل
+        if (!formData.email && !formData.phone) {
+            return setError("Please provide either an Email Address or a Phone Number.");
+        }
+
+        // ۳. بررسی همخوانی رمزها
+        if (formData.password !== formData.confirmPassword) {
+            return setError("Passwords do not match.");
+        }
+
+        // ۴. بررسی قدرت رمز عبور
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\W]{8,}$/;
+        if (!passwordRegex.test(formData.password)) {
+            return setError("Password must be at least 8 characters long, including an uppercase letter, a lowercase letter, and a number.");
         }
 
         setIsLoading(true);
         try {
             const payload = {
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email || undefined, // اگر خالی بود نفرست
+                phone: formData.phone || undefined, // اگر خالی بود نفرست
                 city_id: formData.city_id,
                 province_id: formData.province_id,
-                password: formData.password
+                password: formData.password,
+                confirmPassword: formData.confirmPassword
             };
             const data = await authService.register(payload);
             handleSuccessAuth(data);
@@ -199,8 +223,12 @@ export default function AuthPanel() {
                     setIsLoading(false);
                     return setError("Please enter your password.");
                 }
-                const data = await authService.loginWithPassword(formData.identifier, formData.password);
-                handleSuccessAuth(data);
+
+                await authService.loginWithPassword(formData.identifier, formData.password);
+
+                setLoginMethod("otp");
+                setOtpStep("verify");
+
             } else {
                 if (otpStep === "request") {
                     await authService.requestOtp(formData.identifier);
@@ -210,6 +238,7 @@ export default function AuthPanel() {
                         setIsLoading(false);
                         return setError("Invalid verification code.");
                     }
+
                     const data = await authService.verifyOtp(formData.identifier, formData.otp);
                     handleSuccessAuth(data);
                 }
@@ -323,7 +352,7 @@ export default function AuthPanel() {
                 <div className="relative flex h-full w-full flex-col md:flex-row">
 
                     {/* LEFT SIDE: LOGIN FORM */}
-                    <div className={`flex h-full w-full flex-col justify-center overflow-y-auto px-6 py-8 md:w-1/2 md:px-12 lg:px-20 hide-scrollbar ${mode === 'login' ? 'block' : 'hidden md:flex'}`}>
+                    <div className={`flex h-full w-full flex-col justify-center overflow-y-auto px-6 py-8 md:w-1/2 md:px-12 lg:px-20 hide-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${mode === 'login' ? 'block' : 'hidden md:flex'}`}>
                         <div className="m-auto w-full max-w-sm">
                             <form onSubmit={handleLoginSubmit} noValidate className="flex flex-col gap-5">
                                 <div className="mb-4 text-center md:mb-6">
@@ -403,7 +432,7 @@ export default function AuthPanel() {
                     </div>
 
                     {/* RIGHT SIDE: SIGNUP FORM */}
-                    <div className={`flex h-full w-full flex-col overflow-y-auto px-6 py-8 md:w-1/2 md:px-12 lg:px-20 hide-scrollbar ${mode === 'signup' ? 'block' : 'hidden md:flex'}`}>
+                    <div className={`flex h-full w-full flex-col justify-center overflow-y-auto px-6 py-8 md:w-1/2 md:px-12 lg:px-20 hide-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${mode === 'signup' ? 'block' : 'hidden md:flex'}`}>
                         <div className="m-auto w-full max-w-sm pb-8">
                             <form onSubmit={handleSignupSubmit} noValidate className="flex flex-col gap-4">
                                 <div className="mb-2 text-center md:mb-6">
@@ -411,17 +440,31 @@ export default function AuthPanel() {
                                     <p className="mt-2 cursor-none select-none text-sm text-zinc-500">Join PitchSide to book your tickets.</p>
                                 </div>
 
-                                <div className="relative group">
-                                    <User size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
-                                    <input type="text" name="name" required placeholder="Full Name" value={formData.name} onChange={handleInputChange} className={inputClass} />
+                                {/* First Name & Last Name (Side by Side) */}
+                                <div className="flex gap-3">
+                                    <div className="relative group w-full">
+                                        <User size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
+                                        <input type="text" name="firstName" required placeholder="First Name" value={formData.firstName} onChange={handleInputChange} className={inputClass} />
+                                    </div>
+                                    <div className="relative group w-full">
+                                        <input type="text" name="lastName" required placeholder="Last Name" value={formData.lastName} onChange={handleInputChange} className={`${inputClass} pl-4`} />
+                                    </div>
                                 </div>
-                                <div className="relative group">
-                                    <Mail size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
-                                    <input type="email" name="email" required placeholder="Email Address" value={formData.email} onChange={handleInputChange} className={inputClass} />
-                                </div>
-                                <div className="relative group">
-                                    <Smartphone size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
-                                    <input type="tel" name="phone" required placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} className={inputClass} dir="ltr" />
+
+                                {/* بــــاکــــس جـــــدیــــد: ایمیل و موبایل با طراحی Fill at least one */}
+                                <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-gray-50/50 p-3 pt-2">
+                                    <div className="flex items-center justify-between px-2 pb-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 select-none">Contact Details</span>
+                                        <span className="rounded-full bg-emerald-100/50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-700 select-none">Fill at least one</span>
+                                    </div>
+                                    <div className="relative group">
+                                        <Mail size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
+                                        <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleInputChange} className={`${inputClass} bg-white`} />
+                                    </div>
+                                    <div className="relative group">
+                                        <Smartphone size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
+                                        <input type="tel" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} className={`${inputClass} bg-white`} dir="ltr" />
+                                    </div>
                                 </div>
 
                                 {/* Province & City Dropdowns */}
@@ -443,20 +486,27 @@ export default function AuthPanel() {
                                     />
                                 </div>
 
-                                <div className="relative group">
-                                    <Lock size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
-                                    <input type="password" name="password" required placeholder="Create Password" value={formData.password} onChange={handleInputChange} className={inputClass} />
+                                {/* Password & Confirm Password (Side by Side for better UX) */}
+                                <div className="flex gap-3">
+                                    <div className="relative group w-full">
+                                        <Lock size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
+                                        <input type="password" name="password" required placeholder="Password" value={formData.password} onChange={handleInputChange} className={inputClass} />
+                                    </div>
+                                    <div className="relative group w-full">
+                                        <Lock size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
+                                        <input type="password" name="confirmPassword" required placeholder="Confirm Pass" value={formData.confirmPassword} onChange={handleInputChange} className={inputClass} />
+                                    </div>
                                 </div>
 
                                 <AnimatePresence>
                                     {error && mode === 'signup' && (
                                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-sm font-semibold text-red-600">
-                                            <AlertCircle size={16} /> {error}
+                                            <AlertCircle size={16} /> <span className="flex-1">{error}</span>
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
 
-                                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" disabled={isLoading} className="mt-2 flex w-full cursor-none items-center justify-center rounded-full bg-zinc-950 py-4 text-sm font-bold text-white transition-opacity disabled:opacity-70 group">
+                                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} type="submit" disabled={isLoading} className="mt-2 flex w-full cursor-none items-center justify-center gap-2 rounded-full bg-zinc-950 py-4 text-sm font-bold text-white transition-opacity disabled:opacity-70 group">
                                     {isLoading ? "Creating Account..." : "Sign Up"}
                                 </motion.button>
                             </form>

@@ -1,7 +1,7 @@
 package gangofthree.ticket.controller;
 
 import gangofthree.common.response.ApiResponse;
-import gangofthree.ticket.dto.response.TicketDetailResponse;
+import gangofthree.ticket.dto.TicketDetailResponse;
 import gangofthree.ticket.dto.response.TicketSearchResponse;
 import gangofthree.ticket.service.TicketService;
 import lombok.RequiredArgsConstructor;
