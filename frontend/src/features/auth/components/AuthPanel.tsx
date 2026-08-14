@@ -66,7 +66,7 @@ function CustomSelect({
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}
                         data-lenis-prevent="true"
-                        className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 max-h-48 overflow-y-auto rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                        className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 max-h-48 overflow-y-auto hide-scrollbar rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                     >
                         {options.length === 0 ? (
                             <div className="p-3 text-center text-sm text-gray-400 select-none cursor-none">No options</div>
@@ -162,14 +162,22 @@ export default function AuthPanel() {
         e.preventDefault();
         setError(null);
 
-        if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || !formData.province_id || !formData.city_id || !formData.password || !formData.confirmPassword) {
-            return setError("Please fill out all fields.");
+        // ۱. بررسی فیلدهای اجباری (ایمیل و موبایل جدا بررسی می‌شن)
+        if (!formData.firstName || !formData.lastName || !formData.province_id || !formData.city_id || !formData.password || !formData.confirmPassword) {
+            return setError("Please fill out all required fields.");
         }
 
+        // ۲. بررسی "حداقل یکی" برای ایمیل و موبایل
+        if (!formData.email && !formData.phone) {
+            return setError("Please provide either an Email Address or a Phone Number.");
+        }
+
+        // ۳. بررسی همخوانی رمزها
         if (formData.password !== formData.confirmPassword) {
             return setError("Passwords do not match.");
         }
 
+        // ۴. بررسی قدرت رمز عبور
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\W]{8,}$/;
         if (!passwordRegex.test(formData.password)) {
             return setError("Password must be at least 8 characters long, including an uppercase letter, a lowercase letter, and a number.");
@@ -180,8 +188,8 @@ export default function AuthPanel() {
             const payload = {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
-                email: formData.email,
-                phone: formData.phone,
+                email: formData.email || undefined, // اگر خالی بود نفرست
+                phone: formData.phone || undefined, // اگر خالی بود نفرست
                 city_id: formData.city_id,
                 province_id: formData.province_id,
                 password: formData.password,
@@ -425,7 +433,7 @@ export default function AuthPanel() {
 
                     {/* RIGHT SIDE: SIGNUP FORM */}
                     <div className={`flex h-full w-full flex-col justify-center overflow-y-auto px-6 py-8 md:w-1/2 md:px-12 lg:px-20 hide-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${mode === 'signup' ? 'block' : 'hidden md:flex'}`}>
-                        <div className="m-auto w-full max-w-sm">
+                        <div className="m-auto w-full max-w-sm pb-8">
                             <form onSubmit={handleSignupSubmit} noValidate className="flex flex-col gap-4">
                                 <div className="mb-2 text-center md:mb-6">
                                     <h2 className="cursor-none select-none text-3xl font-black tracking-tight text-zinc-950">Create Account</h2>
@@ -443,13 +451,20 @@ export default function AuthPanel() {
                                     </div>
                                 </div>
 
-                                <div className="relative group">
-                                    <Mail size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
-                                    <input type="email" name="email" required placeholder="Email Address" value={formData.email} onChange={handleInputChange} className={inputClass} />
-                                </div>
-                                <div className="relative group">
-                                    <Smartphone size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
-                                    <input type="tel" name="phone" required placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} className={inputClass} dir="ltr" />
+                                {/* بــــاکــــس جـــــدیــــد: ایمیل و موبایل با طراحی Fill at least one */}
+                                <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-gray-50/50 p-3 pt-2">
+                                    <div className="flex items-center justify-between px-2 pb-1">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 select-none">Contact Details</span>
+                                        <span className="rounded-full bg-emerald-100/50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-700 select-none">Fill at least one</span>
+                                    </div>
+                                    <div className="relative group">
+                                        <Mail size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
+                                        <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleInputChange} className={`${inputClass} bg-white`} />
+                                    </div>
+                                    <div className="relative group">
+                                        <Smartphone size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
+                                        <input type="tel" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} className={`${inputClass} bg-white`} dir="ltr" />
+                                    </div>
                                 </div>
 
                                 {/* Province & City Dropdowns */}
