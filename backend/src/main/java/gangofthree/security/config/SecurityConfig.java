@@ -38,7 +38,8 @@ public class SecurityConfig {
                                 "/api/auth/register",
                                 "/api/auth/login",
                                 "/api/auth/verify-otp",
-                                "/api/tickets/search"
+                                "/api/tickets/search",
+                                "/api/locations/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

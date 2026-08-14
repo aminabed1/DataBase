@@ -13,4 +13,6 @@ public class UserProfileResponse {
     private String email;
     private Boolean isActive;
     private Role role;
+    private String cityId;
+    private String provinceId;
 }

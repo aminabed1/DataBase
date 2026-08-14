@@ -87,15 +87,21 @@ function CustomDropdown({
 // ==========================================
 // Main Profile Tab Component
 // ==========================================
-export default function ProfileTab() {
+export default function ProfileTab({ user }: { user?: any }) {
     const [isLoading, setIsLoading] = useState(false);
     const [loginMethod, setLoginMethod] = useState("email");
 
-    // Location States
+    // Location States (تعریف دقیق استیت‌ها)
     const [provinces, setProvinces] = useState<LocationItem[]>([]);
     const [cities, setCities] = useState<LocationItem[]>([]);
-    const [provinceId, setProvinceId] = useState("");
-    const [cityId, setCityId] = useState("");
+    const [provinceId, setProvinceId] = useState(user?.provinceId || "");
+    const [cityId, setCityId] = useState(user?.cityId || "");
+
+    // آپدیت استیت‌ها وقتی دیتای کاربر از سرور می‌رسد
+    useEffect(() => {
+        if (user?.provinceId) setProvinceId(user.provinceId);
+        if (user?.cityId) setCityId(user.cityId);
+    }, [user]);
 
     // Fetch Provinces on mount
     useEffect(() => {
@@ -107,7 +113,6 @@ export default function ProfileTab() {
         if (provinceId) {
             locationService.getCitiesByProvince(provinceId).then(data => {
                 setCities(data);
-                // اگه آیدی شهر فعلی تو لیست جدید نبود، پاکش کن
                 if (!data.find(c => c.id === cityId)) setCityId("");
             });
         } else {
@@ -115,11 +120,13 @@ export default function ProfileTab() {
             setCityId("");
         }
     }, [provinceId]);
-
     // Mock user data for initialization and validation comparisons
+   // جایگزینی دیتای فیک با دیتای واقعی بک‌اند
     const currentUserData = {
-        email: "mahdi@example.com",
-        phone: "09123456789"
+        email: user?.email || "Loading...",
+        phone: user?.phoneNumber || "Loading...",
+        firstName: user?.firstName || "",
+        lastName: user?.lastName !== "-" ? user?.lastName : ""
     };
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -195,25 +202,15 @@ export default function ProfileTab() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div>
-                        <label className={labelClass}>First Name</label>
-                        <input type="text" defaultValue="Mahdi" className={inputClass} />
-                    </div>
-                    <div>
-                        <label className={labelClass}>Last Name</label>
-                        <input type="text" defaultValue="" placeholder="Enter your last name" className={inputClass} />
-                    </div>
-                    <div>
-                        <label className={labelClass}>Date of Birth</label>
-                        <div className="relative">
-                            <CalendarDays size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                                type="date"
-                                className={`${inputClass} pl-10 text-gray-600 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-none [&::-webkit-calendar-picker-indicator]:opacity-0`}
-                            />
-                        </div>
-                    </div>
-                </div>
+    <div>
+        <label className={labelClass}>First Name</label>
+        <input type="text" defaultValue={currentUserData.firstName} className={inputClass} />
+    </div>
+    <div>
+        <label className={labelClass}>Last Name</label>
+        <input type="text" defaultValue={currentUserData.lastName} placeholder="Enter your last name" className={inputClass} />
+    </div>
+</div> 
 
                 <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>

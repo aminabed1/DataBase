@@ -7,9 +7,11 @@ import { useRouter } from "next/navigation";
 interface SidebarProps {
     activeTab: DashboardTab;
     setActiveTab: (tab: DashboardTab) => void;
+    user?: any;
+    isLoading?: boolean;
 }
 
-export default function DashboardSidebar({ activeTab, setActiveTab }: SidebarProps) {
+export default function DashboardSidebar({ activeTab, setActiveTab, user, isLoading }: SidebarProps) {
     const router = useRouter();
     const handleLogout = () => {
         localStorage.removeItem("token"); 
@@ -27,14 +29,18 @@ export default function DashboardSidebar({ activeTab, setActiveTab }: SidebarPro
         <aside className="w-full md:w-72 shrink-0">
             <div className="sticky top-28 flex flex-col gap-2 rounded-3xl bg-white p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100">
 
-                {/* User Mini Profile */}
+               {/* User Mini Profile */}
                 <div className="mb-6 flex items-center gap-4 border-b border-gray-100 pb-6 pt-2 px-2">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black text-lg font-bold text-white">
-                        M
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black text-lg font-bold text-white uppercase">
+                        {isLoading ? "..." : user?.firstName?.charAt(0) || "U"}
                     </div>
                     <div>
-                        <h3 className="font-bold text-gray-900">Mahdi</h3>
-                        <p className="text-sm text-gray-500">Premium Member</p>
+                        <h3 className="font-bold text-gray-900 capitalize">
+                            {isLoading ? "Loading..." : `${user?.firstName || "User"} ${user?.lastName !== "-" ? user?.lastName : ""}`}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                            {user?.role === "BUYER" ? "Standard Member" : "Premium Member"}
+                        </p>
                     </div>
                 </div>
 

@@ -144,10 +144,16 @@ export default function AuthPanel() {
         setError(null);
     };
 
-    const handleSuccessAuth = (data: any) => {
-        if (data?.token) {
-            localStorage.setItem("token", data.token);
+    const handleSuccessAuth = (responsePayload: any) => {
+        // چون بک‌اند دیتا را درون کلاس ApiResponse می‌پیچد، توکن در لایه دوم (data.token) قرار دارد
+        const token = responsePayload?.data?.token;
+        
+        if (token) {
+            localStorage.setItem("token", token);
+        } else {
+            console.error("Token not found in response!", responsePayload);
         }
+        
         router.push("/dashboard");
     };
 

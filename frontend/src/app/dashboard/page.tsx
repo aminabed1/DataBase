@@ -7,10 +7,23 @@ import WalletTab from "@/features/dashboard/components/WalletTab";
 import SupportTab from "@/features/dashboard/components/SupportTab";
 import { DashboardTab } from "@/features/dashboard/types";
 import { motion, AnimatePresence } from "framer-motion";
+import { useProfile } from "@/features/dashboard/hooks/useProfile";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<DashboardTab>('profile');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // گرفتن دیتا به صورت تمیز و مدیریت‌شده توسط React Query
+  const { data: user, isLoading, isError } = useProfile();
+
+  useEffect(() => {
+    // در صورت نامعتبر بودن توکن، ریدایرکت به لاگین انجام شود
+    if (isError) {
+      router.push("/auth?mode=login");
+    }
+  }, [isError, router]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -19,10 +32,19 @@ export default function DashboardPage() {
   }, [activeTab]);
 
   const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex h-64 items-center justify-center font-bold text-gray-500">
+          Loading your profile...
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case 'profile':
-        return <ProfileTab />;
+        return <ProfileTab user={user} />;
       case 'wallet':
+        // در آینده برای کیف پول هم می‌توانی یک هوک مشابه مثل useWallet بسازی
         return <WalletTab />;
       case 'tickets':
         return <div className="h-[1200px] rounded-3xl bg-white p-8 shadow-sm border border-gray-100">Tickets List Goes Here</div>;
@@ -34,45 +56,40 @@ export default function DashboardPage() {
   };
 
   return (
-      <main className="h-screen w-full bg-[#f7f7f7] pt-8 pb-8 text-gray-900 overflow-hidden">
-        <div className="mx-auto flex h-full max-w-[90rem] flex-col gap-8 px-4 md:flex-row md:px-8">
+    <main className="h-screen w-full bg-[#f7f7f7] pt-8 pb-8 text-gray-900 overflow-hidden">
+      <div className="mx-auto flex h-full max-w-[90rem] flex-col gap-8 px-4 md:flex-row md:px-8">
+        
+        <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} isLoading={isLoading} />
 
-          {/* Sidebar */}
-          <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <section className="flex flex-1 flex-col h-full overflow-hidden">
+          <div className="mb-6 shrink-0 pl-2">
+            <h1 className="text-3xl font-black tracking-tight text-black capitalize">
+              {activeTab.replace('-', ' ')}
+            </h1>
+            <p className="mt-2 text-gray-500">
+              Manage your account details and preferences.
+            </p>
+          </div>
 
-          {/* Main Content Area */}
-          <section className="flex flex-1 flex-col h-full overflow-hidden">
-
-            {/* Header */}
-            <div className="mb-6 shrink-0 pl-2">
-              <h1 className="text-3xl font-black tracking-tight text-black capitalize">
-                {activeTab.replace('-', ' ')}
-              </h1>
-              <p className="mt-2 text-gray-500">
-                Manage your account details and preferences.
-              </p>
-            </div>
-
-            <div
-                ref={scrollRef}
-                className="flex-1 overflow-y-auto pr-4 pb-12 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-200 hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 transition-colors"
-                data-lenis-prevent="true"
-            >
-              <AnimatePresence mode="wait">
-                <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                >
-                  {renderContent()}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </section>
-
-        </div>
-      </main>
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto pr-4 pb-12 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-200 hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 transition-colors"
+            data-lenis-prevent="true"
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {renderContent()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }
