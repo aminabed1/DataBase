@@ -10,28 +10,24 @@ const apiClient = axios.create({
 });
 
 // اینترسپتور درخواست: چسباندن توکن به تمام ریکوئست‌ها
-apiClient.interceptors.request.use(
-    (config) => {
-        if (typeof window !== "undefined") {
-            const token = localStorage.getItem("token");
-            if (token && config.headers) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
+// اضافه کردن توکن به هدرِ تمام درخواست‌ها به صورت داینامیک
+apiClient.interceptors.request.use((config) => {
+    if (typeof window !== "undefined") {
+        const token = localStorage.getItem("token");
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
-        return config;
-    },
-    (error) => Promise.reject(error)
-);
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
 
-// اینترسپتور پاسخ: مدیریت خطاهای سراسری (مثل منقضی شدن توکن)
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        // اگر ارور 401 مربوط به فرم لاگین یا کد OTP بود، صفحه را رفرش نکن
         const isAuthEndpoint = error.config?.url?.includes("/auth/");
-
         if (error.response?.status === 401 && !isAuthEndpoint) {
-            // فقط در صورتی که توکن کاربر در صفحات داخلی منقضی شده باشد به صفحه لاگین هدایت کن
             if (typeof window !== "undefined") {
                 localStorage.removeItem("token");
                 window.location.href = "/auth?mode=login";

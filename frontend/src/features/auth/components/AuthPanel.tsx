@@ -152,15 +152,15 @@ export default function AuthPanel() {
     // EXTRACT TOKEN AND REDIRECT
     // ==========================================
     const handleSuccessAuth = (responsePayload: any) => {
-        const token = responsePayload?.data?.token;
+        const token = responsePayload?.data?.token || responsePayload?.token || responsePayload?.data?.data?.token;
         
         if (token) {
             localStorage.setItem("token", token);
+            router.push("/dashboard");
         } else {
-            console.error("Token not found in response!", responsePayload);
+            console.error("Authentication successful, but no token was found in the response payload.");
+            setError("Login successful, but a system error occurred. Please try again.");
         }
-        
-        router.push("/dashboard");
     };
 
     // ==========================================

@@ -1,313 +1,247 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import OtpModal from "./OtpModal";
+import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { userService } from "../services/user.service";
 import { locationService, type LocationItem } from "@/services/location.service";
-import { ShieldCheck, User as UserIcon, Camera, Smartphone, Mail, CalendarDays, ChevronDown } from "lucide-react";
+import { User, Mail, Smartphone, MapPin, Shield, CheckCircle2 } from "lucide-react";
 
-// ==========================================
-// Custom Dropdown Component
-// ==========================================
-function CustomDropdown({
-                            value,
-                            options,
-                            onChange,
-                            placeholder
-                        }: {
-    value: string;
-    options: LocationItem[];
-    onChange: (val: string) => void;
-    placeholder: string
-}) {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-
-    // پیدا کردن نام نمایشی (Label) بر اساس آیدی (Value)
-    const selected = options.find(o => o.id === value);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        if (isOpen) {
-            document.addEventListener("mousedown", handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [isOpen]);
-
-    return (
-        <div ref={dropdownRef} className="relative">
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full cursor-none items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-all hover:bg-gray-100 focus:border-black focus:bg-white focus:outline-none focus:ring-1 focus:ring-black"
-            >
-                <span className={selected ? "text-gray-900" : "text-gray-400"}>
-                    {selected ? selected.name : placeholder}
-                </span>
-                <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
-            </button>
-
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
-                        data-lenis-prevent="true"
-                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-48 overflow-y-auto hide-scrollbar rounded-xl border border-gray-100 bg-white p-1.5 shadow-xl"
-                    >
-                        {options.length === 0 ? (
-                            <div className="p-3 text-center text-sm text-gray-400 select-none cursor-none">No options</div>
-                        ) : (
-                            options.map((opt) => (
-                                <button
-                                    key={opt.id}
-                                    type="button"
-                                    onClick={() => { onChange(opt.id); setIsOpen(false); }}
-                                    className={`w-full cursor-none rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${value === opt.id ? 'bg-black font-semibold text-white' : 'text-gray-700 hover:bg-gray-50'}`}
-                                >
-                                    {opt.name}
-                                </button>
-                            ))
-                        )}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
-}
-
-// ==========================================
-// Main Profile Tab Component
-// ==========================================
 export default function ProfileTab({ user }: { user?: any }) {
-    const [isLoading, setIsLoading] = useState(false);
-    const [loginMethod, setLoginMethod] = useState("email");
+    const queryClient = useQueryClient();
 
-    // Location States (تعریف دقیق استیت‌ها)
+    // ==========================================
+    // STATES
+    // ==========================================
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [provinceId, setProvinceId] = useState("");
+    const [cityId, setCityId] = useState("");
+
     const [provinces, setProvinces] = useState<LocationItem[]>([]);
     const [cities, setCities] = useState<LocationItem[]>([]);
-    const [provinceId, setProvinceId] = useState(user?.provinceId || "");
-    const [cityId, setCityId] = useState(user?.cityId || "");
 
-    // آپدیت استیت‌ها وقتی دیتای کاربر از سرور می‌رسد
+    const [isSuccessMessageVisible, setIsSuccessMessageVisible] = useState(false);
+
+    // ==========================================
+    // EFFECTS
+    // ==========================================
+    // Sync user data to states when user prop changes
     useEffect(() => {
-        if (user?.provinceId) setProvinceId(user.provinceId);
-        if (user?.cityId) setCityId(user.cityId);
+        if (user) {
+            setFirstName(user.firstName || "");
+            setLastName(user.lastName && user.lastName !== "-" ? user.lastName : "");
+            setProvinceId(user.provinceId ? String(user.provinceId) : "");
+            setCityId(user.cityId ? String(user.cityId) : "");
+        }
     }, [user]);
 
-    // Fetch Provinces on mount
+    // Fetch provinces on mount
     useEffect(() => {
         locationService.getProvinces().then(setProvinces);
     }, []);
 
-    // Fetch Cities when Province changes
+    // Fetch cities when province changes
     useEffect(() => {
         if (provinceId) {
-            locationService.getCitiesByProvince(provinceId).then(data => {
+            locationService.getCitiesByProvince(provinceId).then((data) => {
                 setCities(data);
-                if (!data.find(c => c.id === cityId)) setCityId("");
+                // Reset city if the new province doesn't have the currently selected city
+                if (!data.find((c) => c.id === cityId)) {
+                    setCityId("");
+                }
             });
         } else {
             setCities([]);
             setCityId("");
         }
     }, [provinceId]);
-    // Mock user data for initialization and validation comparisons
-   // جایگزینی دیتای فیک با دیتای واقعی بک‌اند
-    const currentUserData = {
-        email: user?.email || "Loading...",
-        phone: user?.phoneNumber || "Loading...",
-        firstName: user?.firstName || "",
-        lastName: user?.lastName !== "-" ? user?.lastName : ""
-    };
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [currentAction, setCurrentAction] = useState<string | null>(null);
-
-    const handleSecureAction = (actionType: string) => {
-        setCurrentAction(actionType);
-        setIsModalOpen(true);
-    };
-
-    const handleOtpSuccess = (code: string) => {
-        console.log(`OTP Verified: ${code} for action: ${currentAction}`);
-        if (currentAction?.startsWith("login_method_")) {
-            setLoginMethod(currentAction.replace("login_method_", ""));
+    // ==========================================
+    // MUTATION
+    // ==========================================
+    const updateProfileMutation = useMutation({
+        mutationFn: (payload: any) => userService.updateProfile(payload),
+        onSuccess: () => {
+            // Invalidate the cache to trigger a refetch in useProfile hook
+            queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+            
+            // Show success message temporarily
+            setIsSuccessMessageVisible(true);
+            setTimeout(() => setIsSuccessMessageVisible(false), 3000);
+        },
+        onError: (err) => {
+            console.error("Failed to update profile:", err);
+            alert("Failed to update profile. Please try again.");
         }
-        setIsModalOpen(false);
-    };
+    });
 
-    const handleSubmitGeneralInfo = (e: React.FormEvent) => {
+    const handleSaveChanges = (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-        console.log("Saving Profile:", { provinceId, cityId });
-        setTimeout(() => setIsLoading(false), 1000);
+        updateProfileMutation.mutate({
+            firstName,
+            lastName,
+            cityId: cityId ? Number(cityId) : null
+        });
     };
 
-    // Shared styling classes
-    const inputClass = "block w-full cursor-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-all focus:border-black focus:bg-white focus:outline-none focus:ring-1 focus:ring-black focus:shadow-sm";
-    const labelClass = "mb-2 block cursor-none text-xs font-bold uppercase tracking-wider text-gray-500 select-none";
-    const sectionClass = "rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8";
-    const actionBtnClass = "rounded-full cursor-none bg-gray-100 px-5 py-2.5 text-sm font-bold text-black transition-all hover:bg-gray-200 hover:shadow-sm";
+    // ==========================================
+    // STYLES
+    // ==========================================
+    const inputClass = "block w-full rounded-2xl border-2 border-gray-100 bg-gray-50/50 p-4 text-sm font-medium text-zinc-900 outline-none transition-all focus:border-zinc-950 focus:bg-white hover:border-gray-200";
+    const labelClass = "mb-2 block text-sm font-bold text-gray-700";
 
     return (
         <div className="flex flex-col gap-8">
-            {/* General Information Section */}
-            <form onSubmit={handleSubmitGeneralInfo} className={sectionClass}>
-                <div className="mb-8 flex items-center justify-between border-b border-gray-100 pb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-gray-500">
-                            <UserIcon size={20} />
+            {/* Personal Information Form */}
+            <div className="rounded-[2rem] border border-gray-100 bg-white p-8 shadow-sm">
+                <div className="mb-8 flex items-center gap-3 border-b border-gray-100 pb-6">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-900">
+                        <User size={24} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-zinc-950">Personal Information</h2>
+                        <p className="text-sm font-medium text-zinc-500">Update your basic profile details.</p>
+                    </div>
+                </div>
+
+                <form onSubmit={handleSaveChanges} className="space-y-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <div>
+                            <label className={labelClass}>First Name</label>
+                            <input
+                                type="text"
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                                className={inputClass}
+                                placeholder="Enter your first name"
+                            />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-black select-none cursor-none">General Information</h2>
-                            <p className="text-sm text-gray-500 select-none cursor-none">Update your basic details and location.</p>
+                            <label className={labelClass}>Last Name</label>
+                            <input
+                                type="text"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                                className={inputClass}
+                                placeholder="Enter your last name"
+                            />
                         </div>
                     </div>
 
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        type="submit"
-                        disabled={isLoading}
-                        className="rounded-full cursor-none bg-black px-6 py-2.5 text-sm font-bold text-white shadow-md transition-colors disabled:opacity-70"
-                    >
-                        {isLoading ? "Saving..." : "Save Changes"}
-                    </motion.button>
-                </div>
-
-                <div className="mb-8 flex items-center gap-6">
-                    <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="group relative flex h-20 w-20 cursor-none items-center justify-center overflow-hidden rounded-full bg-black text-2xl font-bold text-white shadow-md transition-shadow hover:shadow-lg"
-                    >
-                        M
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
-                            <Camera size={24} className="text-white" />
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <div>
+                            <label className={labelClass}>Province</label>
+                            <div className="relative">
+                                <MapPin size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <select
+                                    value={provinceId}
+                                    onChange={(e) => setProvinceId(e.target.value)}
+                                    className={`${inputClass} pl-12 appearance-none`}
+                                >
+                                    <option value="" disabled>Select Province</option>
+                                    {provinces.map((prov) => (
+                                        <option key={prov.id} value={prov.id}>
+                                            {prov.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
-                    </motion.div>
+                        <div>
+                            <label className={labelClass}>City</label>
+                            <div className="relative">
+                                <MapPin size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <select
+                                    value={cityId}
+                                    onChange={(e) => setCityId(e.target.value)}
+                                    disabled={!provinceId}
+                                    className={`${inputClass} pl-12 appearance-none disabled:opacity-50 disabled:cursor-not-allowed`}
+                                >
+                                    <option value="" disabled>Select City</option>
+                                    {cities.map((city) => (
+                                        <option key={city.id} value={city.id}>
+                                            {city.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-6">
+                        <div className="h-6">
+                            {isSuccessMessageVisible && (
+                                <span className="flex items-center gap-2 text-sm font-bold text-emerald-600 animate-pulse">
+                                    <CheckCircle2 size={18} />
+                                    Profile updated successfully!
+                                </span>
+                            )}
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={updateProfileMutation.isPending}
+                            className="rounded-full bg-zinc-950 px-8 py-3 text-sm font-bold text-white transition-transform hover:scale-105 disabled:opacity-70 disabled:hover:scale-100"
+                        >
+                            {updateProfileMutation.isPending ? "Saving Changes..." : "Save Changes"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {/* Contact & Security Information */}
+            <div className="rounded-[2rem] border border-gray-100 bg-white p-8 shadow-sm">
+                <div className="mb-8 flex items-center gap-3 border-b border-gray-100 pb-6">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-900">
+                        <Shield size={24} />
+                    </div>
                     <div>
-                        <h3 className="font-bold text-gray-900 select-none cursor-none">Profile Picture</h3>
-                        <p className="mt-1 text-xs text-gray-500 select-none cursor-none">Click to upload (JPG, PNG up to 5MB)</p>
+                        <h2 className="text-xl font-black text-zinc-950">Contact & Security</h2>
+                        <p className="text-sm font-medium text-zinc-500">Manage your email and phone number.</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-    <div>
-        <label className={labelClass}>First Name</label>
-        <input type="text" defaultValue={currentUserData.firstName} className={inputClass} />
-    </div>
-    <div>
-        <label className={labelClass}>Last Name</label>
-        <input type="text" defaultValue={currentUserData.lastName} placeholder="Enter your last name" className={inputClass} />
-    </div>
-</div> 
-
-                <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div>
-                        <label className={labelClass}>Province</label>
-                        <CustomDropdown value={provinceId} options={provinces} onChange={setProvinceId} placeholder="Select Province" />
-                    </div>
-                    <div>
-                        <label className={labelClass}>City</label>
-                        <CustomDropdown value={cityId} options={cities} onChange={setCityId} placeholder="Select City" />
-                    </div>
-                </div>
-            </form>
-
-            {/* Account & Security Section */}
-            <div className={sectionClass}>
-                <div className="mb-6 flex items-center gap-3 border-b border-gray-100 pb-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-gray-500">
-                        <ShieldCheck size={20} />
-                    </div>
-                    <div>
-                        <h2 className="text-lg font-bold text-black select-none cursor-none">Account & Security</h2>
-                        <p className="text-sm text-gray-500 select-none cursor-none">Manage sensitive data. Changes require verification.</p>
-                    </div>
-                </div>
-
-                <div className="flex flex-col gap-4 border-b border-gray-100 py-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h3 className="font-semibold text-gray-900 select-none cursor-none">Email Address</h3>
-                        <p className="mt-1 flex items-center gap-2 text-sm text-gray-600">
-                            <Mail size={14} className="text-gray-400" /> {currentUserData.email}
-                        </p>
-                    </div>
-                    <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} onClick={() => handleSecureAction('email')} className={actionBtnClass}>
-                        Change Email
-                    </motion.button>
-                </div>
-
-                <div className="flex flex-col gap-4 border-b border-gray-100 py-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h3 className="font-semibold text-gray-900 select-none cursor-none">Phone Number</h3>
-                        <p className="mt-1 flex items-center gap-2 text-sm text-gray-600">
-                            <Smartphone size={14} className="text-gray-400" /> {currentUserData.phone}
-                        </p>
-                    </div>
-                    <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} onClick={() => handleSecureAction('phone')} className={actionBtnClass}>
-                        Change Phone
-                    </motion.button>
-                </div>
-
-                <div className="flex flex-col gap-4 border-b border-gray-100 py-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h3 className="font-semibold text-gray-900 select-none cursor-none">Login Method</h3>
-                        <p className="text-sm text-gray-500 select-none cursor-none">Choose how you prefer to sign in.</p>
-                    </div>
-                    <div className="flex rounded-xl bg-gray-100 p-1">
-                        <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            type="button"
-                            onClick={() => { if(loginMethod !== "email") handleSecureAction('login_method_email'); }}
-                            className={`flex cursor-none items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                                loginMethod === "email" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-gray-900"
-                            }`}
+                    {/* Email */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5">
+                        <div className="mb-4 flex items-center gap-3">
+                            <div className="rounded-full bg-white p-2 shadow-sm">
+                                <Mail size={18} className="text-zinc-950" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Email Address</p>
+                                <p className="mt-0.5 text-sm font-bold text-zinc-900">{user?.email || "Not Set"}</p>
+                            </div>
+                        </div>
+                        <button 
+                            className="w-full rounded-xl border-2 border-zinc-200 bg-white py-2 text-sm font-bold text-zinc-900 transition-colors hover:border-zinc-950 hover:bg-zinc-50"
+                            onClick={() => console.log("Open Email Change Modal")}
                         >
-                            <Mail size={16} /> Email
-                        </motion.button>
-                        <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            type="button"
-                            onClick={() => { if(loginMethod !== "phone") handleSecureAction('login_method_phone'); }}
-                            className={`flex cursor-none items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
-                                loginMethod === "phone" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-gray-900"
-                            }`}
-                        >
-                            <Smartphone size={16} /> Phone
-                        </motion.button>
+                            Change Email
+                        </button>
                     </div>
-                </div>
 
-                <div className="flex flex-col gap-4 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h3 className="font-semibold text-gray-900 select-none cursor-none">Password</h3>
-                        <p className="text-sm text-gray-500 select-none cursor-none">Ensure your account is using a secure password.</p>
+                    {/* Phone */}
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5">
+                        <div className="mb-4 flex items-center gap-3">
+                            <div className="rounded-full bg-white p-2 shadow-sm">
+                                <Smartphone size={18} className="text-zinc-950" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Phone Number</p>
+                                <p className="mt-0.5 text-sm font-bold text-zinc-900" dir="ltr">
+                                    {user?.phoneNumber || "Not Set"}
+                                </p>
+                            </div>
+                        </div>
+                        <button 
+                            className="w-full rounded-xl border-2 border-zinc-200 bg-white py-2 text-sm font-bold text-zinc-900 transition-colors hover:border-zinc-950 hover:bg-zinc-50"
+                            onClick={() => console.log("Open Phone Change Modal")}
+                        >
+                            Change Phone Number
+                        </button>
                     </div>
-                    <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.95 }} onClick={() => handleSecureAction('password')} className={actionBtnClass}>
-                        Update Password
-                    </motion.button>
                 </div>
             </div>
-
-            <OtpModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                actionType={currentAction}
-                currentEmail={currentUserData.email}
-                currentPhone={currentUserData.phone}
-                onVerify={handleOtpSuccess}
-            />
         </div>
     );
 }
