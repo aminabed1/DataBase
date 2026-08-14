@@ -148,8 +148,10 @@ export default function AuthPanel() {
         setError(null);
     };
 
+    // ==========================================
+    // EXTRACT TOKEN AND REDIRECT
+    // ==========================================
     const handleSuccessAuth = (responsePayload: any) => {
-        // چون بک‌اند دیتا را درون کلاس ApiResponse می‌پیچد، توکن در لایه دوم (data.token) قرار دارد
         const token = responsePayload?.data?.token;
         
         if (token) {
@@ -168,22 +170,18 @@ export default function AuthPanel() {
         e.preventDefault();
         setError(null);
 
-        // ۱. بررسی فیلدهای اجباری (ایمیل و موبایل جدا بررسی می‌شن)
         if (!formData.firstName || !formData.lastName || !formData.province_id || !formData.city_id || !formData.password || !formData.confirmPassword) {
             return setError("Please fill out all required fields.");
         }
 
-        // ۲. بررسی "حداقل یکی" برای ایمیل و موبایل
         if (!formData.email && !formData.phone) {
             return setError("Please provide either an Email Address or a Phone Number.");
         }
 
-        // ۳. بررسی همخوانی رمزها
         if (formData.password !== formData.confirmPassword) {
             return setError("Passwords do not match.");
         }
 
-        // ۴. بررسی قدرت رمز عبور
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\W]{8,}$/;
         if (!passwordRegex.test(formData.password)) {
             return setError("Password must be at least 8 characters long, including an uppercase letter, a lowercase letter, and a number.");
@@ -194,8 +192,8 @@ export default function AuthPanel() {
             const payload = {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
-                email: formData.email || undefined, // اگر خالی بود نفرست
-                phone: formData.phone || undefined, // اگر خالی بود نفرست
+                email: formData.email || undefined, 
+                phone: formData.phone || undefined, 
                 city_id: formData.city_id,
                 province_id: formData.province_id,
                 password: formData.password,
@@ -457,7 +455,7 @@ export default function AuthPanel() {
                                     </div>
                                 </div>
 
-                                {/* بــــاکــــس جـــــدیــــد: ایمیل و موبایل با طراحی Fill at least one */}
+                                {/* Box: Email and Phone */}
                                 <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-gray-50/50 p-3 pt-2">
                                     <div className="flex items-center justify-between px-2 pb-1">
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 select-none">Contact Details</span>
@@ -492,7 +490,7 @@ export default function AuthPanel() {
                                     />
                                 </div>
 
-                                {/* Password & Confirm Password (Side by Side for better UX) */}
+                                {/* Password & Confirm Password */}
                                 <div className="flex gap-3">
                                     <div className="relative group w-full">
                                         <Lock size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
