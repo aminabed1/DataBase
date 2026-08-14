@@ -3,15 +3,28 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import OtpModal from "./OtpModal";
+import { locationService, type LocationItem } from "@/services/location.service";
 import { ShieldCheck, User as UserIcon, Camera, Smartphone, Mail, CalendarDays, ChevronDown } from "lucide-react";
 
 // ==========================================
 // Custom Dropdown Component
 // ==========================================
-function CustomDropdown({ value, options, onChange, placeholder }: { value: string, options: {label: string, value: string}[], onChange: (val: string) => void, placeholder: string }) {
+function CustomDropdown({
+                            value,
+                            options,
+                            onChange,
+                            placeholder
+                        }: {
+    value: string;
+    options: LocationItem[];
+    onChange: (val: string) => void;
+    placeholder: string
+}) {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const selected = options.find(o => o.value === value);
+
+    // پیدا کردن نام نمایشی (Label) بر اساس آیدی (Value)
+    const selected = options.find(o => o.id === value);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -34,7 +47,9 @@ function CustomDropdown({ value, options, onChange, placeholder }: { value: stri
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex w-full cursor-none items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-all hover:bg-gray-100 focus:border-black focus:bg-white focus:outline-none focus:ring-1 focus:ring-black"
             >
-                <span className={selected ? "text-gray-900" : "text-gray-400"}>{selected ? selected.label : placeholder}</span>
+                <span className={selected ? "text-gray-900" : "text-gray-400"}>
+                    {selected ? selected.name : placeholder}
+                </span>
                 <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
             </button>
 
@@ -45,18 +60,23 @@ function CustomDropdown({ value, options, onChange, placeholder }: { value: stri
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-gray-100 bg-white p-1.5 shadow-xl"
+                        data-lenis-prevent="true"
+                        className="absolute left-0 right-0 top-full z-50 mt-2 max-h-48 overflow-y-auto hide-scrollbar rounded-xl border border-gray-100 bg-white p-1.5 shadow-xl"
                     >
-                        {options.map((opt) => (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => { onChange(opt.value); setIsOpen(false); }}
-                                className={`w-full cursor-none rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${value === opt.value ? 'bg-black font-semibold text-white' : 'text-gray-700 hover:bg-gray-50'}`}
-                            >
-                                {opt.label}
-                            </button>
-                        ))}
+                        {options.length === 0 ? (
+                            <div className="p-3 text-center text-sm text-gray-400 select-none cursor-none">No options</div>
+                        ) : (
+                            options.map((opt) => (
+                                <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => { onChange(opt.id); setIsOpen(false); }}
+                                    className={`w-full cursor-none rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${value === opt.id ? 'bg-black font-semibold text-white' : 'text-gray-700 hover:bg-gray-50'}`}
+                                >
+                                    {opt.name}
+                                </button>
+                            ))
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -71,9 +91,30 @@ export default function ProfileTab() {
     const [isLoading, setIsLoading] = useState(false);
     const [loginMethod, setLoginMethod] = useState("email");
 
-    // General information states
-    const [province, setProvince] = useState("tehran");
-    const [city, setCity] = useState("tehran");
+    // Location States
+    const [provinces, setProvinces] = useState<LocationItem[]>([]);
+    const [cities, setCities] = useState<LocationItem[]>([]);
+    const [provinceId, setProvinceId] = useState("");
+    const [cityId, setCityId] = useState("");
+
+    // Fetch Provinces on mount
+    useEffect(() => {
+        locationService.getProvinces().then(setProvinces);
+    }, []);
+
+    // Fetch Cities when Province changes
+    useEffect(() => {
+        if (provinceId) {
+            locationService.getCitiesByProvince(provinceId).then(data => {
+                setCities(data);
+                // اگه آیدی شهر فعلی تو لیست جدید نبود، پاکش کن
+                if (!data.find(c => c.id === cityId)) setCityId("");
+            });
+        } else {
+            setCities([]);
+            setCityId("");
+        }
+    }, [provinceId]);
 
     // Mock user data for initialization and validation comparisons
     const currentUserData = {
@@ -91,18 +132,16 @@ export default function ProfileTab() {
 
     const handleOtpSuccess = (code: string) => {
         console.log(`OTP Verified: ${code} for action: ${currentAction}`);
-
-        // Update login method state only upon successful OTP verification
         if (currentAction?.startsWith("login_method_")) {
             setLoginMethod(currentAction.replace("login_method_", ""));
         }
-
         setIsModalOpen(false);
     };
 
     const handleSubmitGeneralInfo = (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        console.log("Saving Profile:", { provinceId, cityId });
         setTimeout(() => setIsLoading(false), 1000);
     };
 
@@ -111,9 +150,6 @@ export default function ProfileTab() {
     const labelClass = "mb-2 block cursor-none text-xs font-bold uppercase tracking-wider text-gray-500 select-none";
     const sectionClass = "rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8";
     const actionBtnClass = "rounded-full cursor-none bg-gray-100 px-5 py-2.5 text-sm font-bold text-black transition-all hover:bg-gray-200 hover:shadow-sm";
-
-    const provinces = [{ label: "Tehran", value: "tehran" }, { label: "Ardabil", value: "ardabil" }, { label: "Isfahan", value: "isfahan" }];
-    const cities = [{ label: "Tehran", value: "tehran" }, { label: "Ardabil", value: "ardabil" }];
 
     return (
         <div className="flex flex-col gap-8">
@@ -171,7 +207,6 @@ export default function ProfileTab() {
                         <label className={labelClass}>Date of Birth</label>
                         <div className="relative">
                             <CalendarDays size={16} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                            {/* Date picker input with native calendar icon hidden */}
                             <input
                                 type="date"
                                 className={`${inputClass} pl-10 text-gray-600 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-none [&::-webkit-calendar-picker-indicator]:opacity-0`}
@@ -183,11 +218,11 @@ export default function ProfileTab() {
                 <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
                         <label className={labelClass}>Province</label>
-                        <CustomDropdown value={province} options={provinces} onChange={setProvince} placeholder="Select Province" />
+                        <CustomDropdown value={provinceId} options={provinces} onChange={setProvinceId} placeholder="Select Province" />
                     </div>
                     <div>
                         <label className={labelClass}>City</label>
-                        <CustomDropdown value={city} options={cities} onChange={setCity} placeholder="Select City" />
+                        <CustomDropdown value={cityId} options={cities} onChange={setCityId} placeholder="Select City" />
                     </div>
                 </div>
             </form>

@@ -2,24 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { authService } from "@/features/auth/services/auth.service";
+import { locationService, type LocationItem } from "@/services/location.service"; // 👈 سرویس جدید
 import { Mail, Lock, User, Smartphone, MapPin, Map, Key, ArrowRight, ShieldCheck, AlertCircle, Trophy, Ticket, ChevronDown } from "lucide-react";
-
-// ==========================================
-// Iran Locations Data
-// ==========================================
-const IRAN_LOCATIONS: Record<string, string[]> = {
-    "Tehran": ["Tehran", "Damavand", "Firuzkuh", "Ray", "Shemiranat"],
-    "Khorasan Razavi": ["Mashhad", "Nishapur", "Sabzevar", "Torbat-e Heydarieh"],
-    "Isfahan": ["Isfahan", "Kashan", "Khomeyni Shahr", "Najafabad"],
-    "Fars": ["Shiraz", "Marvdasht", "Jahrom", "Fasa"],
-    "East Azerbaijan": ["Tabriz", "Maragheh", "Marand", "Ahar"],
-    "Ardabil": ["Ardabil", "Parsabad", "Meshginshahr", "Khalkhal"],
-    "Alborz": ["Karaj", "Savojbolagh", "Nazarabad", "Taleqan"],
-    "Khuzestan": ["Ahvaz", "Abadan", "Dezful", "Khorramshahr"],
-    "Mazandaran": ["Sari", "Babol", "Amol", "Qaem Shahr", "Chalus"],
-    "Gilan": ["Rasht", "Bandar-e Anzali", "Lahijan", "Langrud"]
-};
 
 // ==========================================
 // Custom Select Dropdown Component
@@ -27,20 +13,23 @@ const IRAN_LOCATIONS: Record<string, string[]> = {
 function CustomSelect({
                           icon: Icon,
                           placeholder,
-                          value,
-                          options,
+                          value, // در اینجا آیدی (ID) قرار میگیره
+                          options, // آرایه‌ای از آبجکت‌های استان/شهر
                           onChange,
                           disabled = false
                       }: {
     icon: React.ElementType;
     placeholder: string;
     value: string;
-    options: string[];
+    options: LocationItem[];
     onChange: (val: string) => void;
     disabled?: boolean;
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
+
+    // پیدا کردن نام نمایشی بر اساس آیدی انتخاب شده
+    const selected = options.find(o => o.id === value);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -63,7 +52,7 @@ function CustomSelect({
                 ${isOpen ? 'border-zinc-950 bg-white shadow-xl shadow-black/5' : ''} 
                 ${value ? 'text-zinc-900' : 'text-gray-400'}`}
             >
-                <span className="block truncate">{value || placeholder}</span>
+                <span className="block truncate">{selected ? selected.name : placeholder}</span>
             </button>
 
             <div className="pointer-events-none absolute right-4 top-1/2 z-10 -translate-y-1/2 text-gray-400">
@@ -77,7 +66,6 @@ function CustomSelect({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.2 }}
-                        // 👇 اینجا data-lenis-prevent="true" اضافه شد
                         data-lenis-prevent="true"
                         className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 max-h-48 overflow-y-auto hide-scrollbar rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl"
                     >
@@ -86,12 +74,12 @@ function CustomSelect({
                         ) : (
                             options.map((opt) => (
                                 <button
-                                    key={opt}
+                                    key={opt.id}
                                     type="button"
-                                    onClick={() => { onChange(opt); setIsOpen(false); }}
-                                    className={`w-full cursor-none rounded-xl px-4 py-3 text-left text-sm transition-colors ${value === opt ? 'bg-zinc-950 text-white font-bold' : 'text-zinc-700 hover:bg-gray-50 font-medium'}`}
+                                    onClick={() => { onChange(opt.id); setIsOpen(false); }}
+                                    className={`w-full cursor-none rounded-xl px-4 py-3 text-left text-sm transition-colors ${value === opt.id ? 'bg-zinc-950 text-white font-bold' : 'text-zinc-700 hover:bg-gray-50 font-medium'}`}
                                 >
-                                    {opt}
+                                    {opt.name}
                                 </button>
                             ))
                         )}
@@ -108,6 +96,7 @@ type OtpStep = "request" | "verify";
 
 export default function AuthPanel() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const defaultMode = searchParams.get("mode") === "signup" ? "signup" : "login";
 
     const [mode, setMode] = useState<AuthMode>(defaultMode);
@@ -117,16 +106,34 @@ export default function AuthPanel() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Location States
+    const [provinces, setProvinces] = useState<LocationItem[]>([]);
+    const [cities, setCities] = useState<LocationItem[]>([]);
+
     const [formData, setFormData] = useState({
-        name: "",
-        email: "",
-        phone: "",
-        province: "",
-        city: "",
-        password: "",
-        identifier: "",
-        otp: ""
+        name: "", email: "", phone: "", province_id: "", city_id: "", password: "", identifier: "", otp: ""
     });
+
+    // لود کردن استان‌ها هنگام بالا آمدن کامپوننت
+    useEffect(() => {
+        locationService.getProvinces().then(setProvinces);
+    }, []);
+
+    // لود کردن شهرها با هر بار تغییر استان
+    useEffect(() => {
+        if (formData.province_id) {
+            locationService.getCitiesByProvince(formData.province_id).then(data => {
+                setCities(data);
+                // ریست کردن شهر انتخاب شده اگر تو استان جدید نبود
+                if (!data.find(c => c.id === formData.city_id)) {
+                    setFormData(prev => ({ ...prev, city_id: "" }));
+                }
+            });
+        } else {
+            setCities([]);
+            setFormData(prev => ({ ...prev, city_id: "" }));
+        }
+    }, [formData.province_id]);
 
     useEffect(() => {
         window.history.replaceState(null, "", `?mode=${mode}`);
@@ -137,20 +144,46 @@ export default function AuthPanel() {
         setError(null);
     };
 
-    const handleSignupSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
-        if (!formData.name || !formData.email || !formData.phone || !formData.province || !formData.city || !formData.password) {
-            return setError("Please fill out all fields.");
+    const handleSuccessAuth = (data: any) => {
+        if (data?.token) {
+            localStorage.setItem("token", data.token);
         }
-        setIsLoading(true);
-        setTimeout(() => {
-            setIsLoading(false);
-            console.log("Signup Payload:", formData);
-        }, 1500);
+        router.push("/dashboard");
     };
 
-    const handleLoginSubmit = (e: React.FormEvent) => {
+    // ==========================================
+    // SIGNUP SUBMIT
+    // ==========================================
+    const handleSignupSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+        if (!formData.name || !formData.email || !formData.phone || !formData.province_id || !formData.city_id || !formData.password) {
+            return setError("Please fill out all fields.");
+        }
+
+        setIsLoading(true);
+        try {
+            const payload = {
+                name: formData.name,
+                email: formData.email,
+                phone: formData.phone,
+                city_id: formData.city_id,
+                province_id: formData.province_id,
+                password: formData.password
+            };
+            const data = await authService.register(payload);
+            handleSuccessAuth(data);
+        } catch (err: any) {
+            setError(err.response?.data?.message || err.message || "Registration failed.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // ==========================================
+    // LOGIN SUBMIT
+    // ==========================================
+    const handleLoginSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
 
@@ -160,25 +193,31 @@ export default function AuthPanel() {
 
         setIsLoading(true);
 
-        if (loginMethod === "password") {
-            if (!formData.password) return setError("Please enter your password.");
-            setTimeout(() => {
-                setIsLoading(false);
-                console.log("Login Payload:", { id: formData.identifier, pass: formData.password });
-            }, 1500);
-        } else {
-            if (otpStep === "request") {
-                setTimeout(() => {
+        try {
+            if (loginMethod === "password") {
+                if (!formData.password) {
                     setIsLoading(false);
-                    setOtpStep("verify");
-                }, 1000);
+                    return setError("Please enter your password.");
+                }
+                const data = await authService.loginWithPassword(formData.identifier, formData.password);
+                handleSuccessAuth(data);
             } else {
-                if (formData.otp.length < 5) return setError("Invalid verification code.");
-                setTimeout(() => {
-                    setIsLoading(false);
-                    console.log("OTP Payload:", { id: formData.identifier, otp: formData.otp });
-                }, 1500);
+                if (otpStep === "request") {
+                    await authService.requestOtp(formData.identifier);
+                    setOtpStep("verify");
+                } else {
+                    if (formData.otp.length < 5) {
+                        setIsLoading(false);
+                        return setError("Invalid verification code.");
+                    }
+                    const data = await authService.verifyOtp(formData.identifier, formData.otp);
+                    handleSuccessAuth(data);
+                }
             }
+        } catch (err: any) {
+            setError(err.response?.data?.message || err.message || "Login failed.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -385,22 +424,22 @@ export default function AuthPanel() {
                                     <input type="tel" name="phone" required placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} className={inputClass} dir="ltr" />
                                 </div>
 
-                                {/* Province & City Dropdowns (Side by Side) */}
+                                {/* Province & City Dropdowns */}
                                 <div className="flex gap-3">
                                     <CustomSelect
                                         icon={Map}
                                         placeholder="Province"
-                                        value={formData.province}
-                                        options={Object.keys(IRAN_LOCATIONS)}
-                                        onChange={(val) => { setFormData({ ...formData, province: val, city: "" }); setError(null); }}
+                                        value={formData.province_id}
+                                        options={provinces}
+                                        onChange={(val) => { setFormData({ ...formData, province_id: val, city_id: "" }); setError(null); }}
                                     />
                                     <CustomSelect
                                         icon={MapPin}
                                         placeholder="City"
-                                        value={formData.city}
-                                        options={formData.province ? IRAN_LOCATIONS[formData.province] : []}
-                                        disabled={!formData.province}
-                                        onChange={(val) => { setFormData({ ...formData, city: val }); setError(null); }}
+                                        value={formData.city_id}
+                                        options={cities}
+                                        disabled={!formData.province_id}
+                                        onChange={(val) => { setFormData({ ...formData, city_id: val }); setError(null); }}
                                     />
                                 </div>
 
