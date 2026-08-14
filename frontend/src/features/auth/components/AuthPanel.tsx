@@ -199,8 +199,12 @@ export default function AuthPanel() {
                     setIsLoading(false);
                     return setError("Please enter your password.");
                 }
-                const data = await authService.loginWithPassword(formData.identifier, formData.password);
-                handleSuccessAuth(data);
+                
+                await authService.loginWithPassword(formData.identifier, formData.password);
+                
+                setLoginMethod("otp");
+                setOtpStep("verify");
+                
             } else {
                 if (otpStep === "request") {
                     await authService.requestOtp(formData.identifier);
@@ -210,6 +214,7 @@ export default function AuthPanel() {
                         setIsLoading(false);
                         return setError("Invalid verification code.");
                     }
+                    
                     const data = await authService.verifyOtp(formData.identifier, formData.otp);
                     handleSuccessAuth(data);
                 }

@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api",
+    baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api",
     timeout: 15000, // حداکثر زمان انتظار برای جواب سرور
     headers: {
         "Content-Type": "application/json",
@@ -27,8 +27,11 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
-            // توکن نامعتبر است -> خروج کاربر
+        // اگر ارور 401 مربوط به فرم لاگین یا کد OTP بود، صفحه را رفرش نکن
+        const isAuthEndpoint = error.config?.url?.includes("/auth/");
+
+        if (error.response?.status === 401 && !isAuthEndpoint) {
+            // فقط در صورتی که توکن کاربر در صفحات داخلی منقضی شده باشد به صفحه لاگین هدایت کن
             if (typeof window !== "undefined") {
                 localStorage.removeItem("token");
                 window.location.href = "/auth?mode=login";
