@@ -1,7 +1,7 @@
 package gangofthree.ticket.service;
 
 import gangofthree.common.response.ApiResponse;
-import gangofthree.ticket.dto.response.TicketDetailResponse;
+import gangofthree.ticket.dto.TicketDetailResponse;
 import gangofthree.ticket.dto.response.TicketSearchResponse;
 
 import java.util.List;

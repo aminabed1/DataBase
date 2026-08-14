@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gangofthree.common.response.ApiResponse;
-import gangofthree.ticket.dto.response.TicketDetailResponse;
+import gangofthree.ticket.dto.TicketDetailResponse;
 import gangofthree.ticket.dto.response.TicketSearchResponse;
 import gangofthree.ticket.dto.response.TicketCategoryInfo;
 import gangofthree.ticket.repository.TicketDetailProjection;
