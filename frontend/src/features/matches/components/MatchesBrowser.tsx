@@ -565,9 +565,9 @@ export default function MatchesBrowser() {
             </div>
 
             {/* ========================================== */}
-            {/* DYNAMIC STADIUM BOTTOM CURVE               */}
+            {/* DYNAMIC STADIUM BOTTOM CURVE — عقب‌نشینی 1.5rem به پایین */}
             {/* ========================================== */}
-            <div className="pointer-events-none fixed bottom-0 left-0 w-full z-0 h-48 sm:h-64 md:h-80 overflow-visible flex items-end">
+            <div className="pointer-events-none fixed -bottom-20 left-0 w-full z-0 h-48 sm:h-64 md:h-80 overflow-visible flex items-end">
                 <svg
                     viewBox="0 0 1200 300"
                     preserveAspectRatio="none"
