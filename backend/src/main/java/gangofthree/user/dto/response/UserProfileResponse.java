@@ -15,4 +15,6 @@ public class UserProfileResponse {
     private Role role;
     private String cityId;
     private String provinceId;
+    private String cityName;     
+    private String provinceName; 
 }

@@ -9,6 +9,8 @@ import gangofthree.user.dto.request.ChangeEmailRequest;
 import gangofthree.user.dto.request.ChangePhoneRequest;
 import gangofthree.user.dto.request.UpdateProfileRequest;
 import gangofthree.user.dto.response.UserProfileResponse;
+import gangofthree.location.repository.CityRepository;
+import gangofthree.entity.City;
 import gangofthree.user.entity.User;
 import gangofthree.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,17 +29,17 @@ public class UserServiceImplementation implements UserService {
     private final OtpService otpService;
     private final SmsService smsService;
     private final EmailService emailService;
+    private final CityRepository cityRepository;
 
     private static final Duration TEMP_TOKEN_EXPIRE = Duration.ofMinutes(5);
 
     @Override
     public ApiResponse<UserProfileResponse> getProfile(Long userId) {
-        Optional<User> optionalUser = userRepository.findById(userId);
-        if (optionalUser.isEmpty()) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
             return ApiResponse.failure("User not found", 404, "USER_NOT_FOUND");
         }
 
-        User user = optionalUser.get();
         UserProfileResponse response = UserProfileResponse.builder()
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
@@ -47,14 +49,12 @@ public class UserServiceImplementation implements UserService {
                 .role(user.getRole())
                 .cityId(user.getCity() != null ? String.valueOf(user.getCity().getId()) : null)
                 .provinceId(user.getCity() != null ? String.valueOf(user.getCity().getProvince().getId()) : null)
+                // این دو خط پایین باید حتماً در getProfile هم باشند
+                .cityName(user.getCity() != null ? user.getCity().getName() : null)
+                .provinceName(user.getCity() != null && user.getCity().getProvince() != null ? user.getCity().getProvince().getName() : null)
                 .build();
 
-        return ApiResponse.<UserProfileResponse>builder()
-                .success(true)
-                .message("User profile fetched successfully.")
-                .status(200)
-                .data(response)
-                .build();
+        return ApiResponse.success("Profile retrieved successfully.", 200, response);
     }
 
     @Override
@@ -64,10 +64,7 @@ public class UserServiceImplementation implements UserService {
             return ApiResponse.failure("User not found", 404, "USER_NOT_FOUND");
         }
 
-        if (request.getFirstName() == null && request.getLastName() == null && request.getCityId() == null) {
-            return ApiResponse.failure("Request body cannot be empty", 400, "EMPTY_REQUEST_BODY");
-        }
-
+        // آپدیت نام و نام خانوادگی
         if (request.getFirstName() != null) {
             user.setFirstName(request.getFirstName());
         }
@@ -75,23 +72,32 @@ public class UserServiceImplementation implements UserService {
             user.setLastName(request.getLastName());
         }
 
+        // آپدیت شهر (و به تبع آن استان)
+        if (request.getCityId() != null) {
+            gangofthree.entity.City city = cityRepository.findById(request.getCityId()).orElse(null);
+            if (city != null) {
+                user.setCity(city);
+            }
+        }
+
+        // ذخیره تغییرات در دیتابیس
         userRepository.save(user);
 
-        UserProfileResponse response = UserProfileResponse.builder()
+        // ساخت رسپانس برای ارسال به فرانت‌اند
+       UserProfileResponse response = UserProfileResponse.builder()
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .phoneNumber(user.getPhoneNumber())
                 .email(user.getEmail())
                 .isActive(user.getIsActive())
                 .role(user.getRole())
+                .cityId(user.getCity() != null ? String.valueOf(user.getCity().getId()) : null)
+                .provinceId(user.getCity() != null ? String.valueOf(user.getCity().getProvince().getId()) : null)
+                .cityName(user.getCity() != null ? user.getCity().getName() : null)
+                .provinceName(user.getCity() != null && user.getCity().getProvince() != null ? user.getCity().getProvince().getName() : null)
                 .build();
 
-        return ApiResponse.<UserProfileResponse>builder()
-                .success(true)
-                .message("Profile updated successfully")
-                .status(200)
-                .data(response)
-                .build();
+        return ApiResponse.success("Profile updated successfully.", 200, response);
     }
 
     // @Override
