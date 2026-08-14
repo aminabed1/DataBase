@@ -83,7 +83,7 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/auth")) {
+    if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/auth") || pathname?.startsWith("/matches")) {
         return null;
     }
 

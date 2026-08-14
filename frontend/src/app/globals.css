@@ -5,6 +5,11 @@
   --foreground: rgb(23, 23, 23);
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
+
 @media (prefers-color-scheme: dark) {
   :root {
     --page-bg: rgb(211, 212, 212);
