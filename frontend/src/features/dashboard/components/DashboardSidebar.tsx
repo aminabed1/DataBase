@@ -65,8 +65,8 @@ export default function DashboardSidebar({ activeTab, setActiveTab, user, isLoad
                 {/* Logout Button */}
                 <div className="mt-8 border-t border-gray-100 pt-4">
                     <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-red-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
+                        onClick={handleLogout}
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-red-500 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
                     >
                         <LogOut size={20} />
                         Log Out
