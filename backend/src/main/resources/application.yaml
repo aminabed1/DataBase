@@ -1,7 +1,10 @@
 spring:
   application:
     name: GangOfThree
-  
+
+  elasticsearch:
+    uris: http://localhost:9200
+
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
