@@ -15,4 +15,6 @@ public class UpdateProfileRequest {
     private String lastName;
 
     private Long cityId;
+    
+    private String loginMethod;
 }

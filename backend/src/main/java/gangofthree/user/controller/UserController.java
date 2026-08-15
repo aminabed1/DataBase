@@ -6,12 +6,12 @@ import gangofthree.user.dto.request.ChangeEmailRequest;
 import gangofthree.user.dto.request.ChangePhoneRequest;
 import gangofthree.user.dto.request.UpdateProfileRequest;
 import gangofthree.user.dto.response.UserProfileResponse;
+import gangofthree.user.dto.request.ChangePasswordRequest;
 import gangofthree.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/users/me")
@@ -70,6 +70,12 @@ public class UserController {
     //     String otp = request.getOtp();
     //     return userService.verifyOldPhoneOtp(userId, otp);
     // }
+    @PatchMapping("/password")
+    public ApiResponse<Void> changePassword(Authentication authentication, @Valid @RequestBody ChangePasswordRequest request) {
+        Long userId = (Long) authentication.getPrincipal();
+        return userService.changePassword(userId, request);
+    }
+
 
     @PostMapping("/phone/change/new/send-otp")
     public ApiResponse<Void> sendOtpToNewPhone(Authentication authentication, @Valid @RequestBody ChangePhoneRequest request, @RequestHeader(value = "X-Phone-Change-Token", required = false) String tempToken) {

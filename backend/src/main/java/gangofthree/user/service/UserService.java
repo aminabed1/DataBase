@@ -2,6 +2,7 @@ package gangofthree.user.service;
 
 import gangofthree.common.response.ApiResponse;
 import gangofthree.user.dto.request.ChangeEmailRequest;
+import gangofthree.user.dto.request.ChangePasswordRequest;
 import gangofthree.user.dto.request.ChangePhoneRequest;
 import gangofthree.user.dto.request.UpdateProfileRequest;
 import gangofthree.user.dto.response.UserProfileResponse;
@@ -17,5 +18,6 @@ public interface UserService {
     // ApiResponse<String> verifyOldPhoneOtp(Long userId, String otpCode);
     ApiResponse<Void> sendOtpToNewPhone(Long userId, ChangePhoneRequest request);
     ApiResponse<Void> verifyNewPhoneAndChange(Long userId, String otpCode);
+    ApiResponse<Void> changePassword(Long userId, ChangePasswordRequest request);
 
 }

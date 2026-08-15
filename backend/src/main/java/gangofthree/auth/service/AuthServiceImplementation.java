@@ -19,6 +19,7 @@ import gangofthree.security.otp.SmsService;
 import gangofthree.auth.service.validator.CredentialType;
 import gangofthree.auth.service.validator.CredentialDetector;
 import gangofthree.user.entity.User;
+import gangofthree.user.entity.enums.LoginMethod;
 import gangofthree.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,7 +40,6 @@ public class AuthServiceImplementation implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest loginRequest) {
-
         CredentialType credentialType = CredentialDetector.detect(loginRequest.getCredential());
         Optional<User> optionalUser = switch (credentialType) {
             case EMAIL -> userRepository.findUserByEmail(loginRequest.getCredential());
@@ -50,6 +50,15 @@ public class AuthServiceImplementation implements AuthService {
         User user = optionalUser.orElseThrow(() -> new InvalidCredentialException(
                 "Invalid credential or password."));
 
+        // بررسی و اعمال محدودیت روش ورود (Login Method Check)
+        if (user.getLoginMethod() != null) {
+            if (credentialType == CredentialType.EMAIL && user.getLoginMethod() == LoginMethod.PHONE) {
+                throw new InvalidCredentialException("Your preferred login method is set to Phone Number.");
+            }
+            if (credentialType == CredentialType.PHONE && user.getLoginMethod() == LoginMethod.EMAIL) {
+                throw new InvalidCredentialException("Your preferred login method is set to Email Address.");
+            }
+        }
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPasswordHash())) {
             throw new InvalidCredentialException("Invalid credential or password.");
@@ -121,9 +130,9 @@ public class AuthServiceImplementation implements AuthService {
                 .phoneNumber(registerRequest.getPhoneNumber())
                 .email(registerRequest.getEmail())
                 .isActive(true)
+                .loginMethod(LoginMethod.EMAIL) // Default login method
                 .passwordHash(hashedPassword)
                 .role(registerRequest.getRole())
-//                .city(registerRequest.getCity())
                 .build();
 
         userRepository.save(user);
@@ -150,7 +159,7 @@ public class AuthServiceImplementation implements AuthService {
                 new InvalidCredentialException("User not found."));
 
         String otp = otpService.generateOtp();
-        otpService.saveOtp(credential, otp,  OtpPurpose.RESET_PASSWORD);
+        otpService.saveOtp(credential, otp, OtpPurpose.RESET_PASSWORD);
 
         if (credentialType == CredentialType.EMAIL) {
             emailService.sendOtp(user.getEmail(), otp, 120);

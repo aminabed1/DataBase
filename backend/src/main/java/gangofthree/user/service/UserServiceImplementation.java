@@ -7,6 +7,7 @@ import gangofthree.common.response.ApiResponse;
 import gangofthree.security.otp.SmsService;
 import gangofthree.user.dto.request.ChangeEmailRequest;
 import gangofthree.user.dto.request.ChangePhoneRequest;
+import gangofthree.user.dto.request.ChangePasswordRequest;
 import gangofthree.user.dto.request.UpdateProfileRequest;
 import gangofthree.user.dto.response.UserProfileResponse;
 import gangofthree.location.repository.CityRepository;
@@ -16,6 +17,7 @@ import gangofthree.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -30,7 +32,7 @@ public class UserServiceImplementation implements UserService {
     private final SmsService smsService;
     private final EmailService emailService;
     private final CityRepository cityRepository;
-
+    private final PasswordEncoder passwordEncoder;
     private static final Duration TEMP_TOKEN_EXPIRE = Duration.ofMinutes(5);
 
     @Override
@@ -50,6 +52,7 @@ public class UserServiceImplementation implements UserService {
                 .cityId(user.getCity() != null ? String.valueOf(user.getCity().getId()) : null)
                 .provinceId(user.getCity() != null ? String.valueOf(user.getCity().getProvince().getId()) : null)
                 // این دو خط پایین باید حتماً در getProfile هم باشند
+                .loginMethod(user.getLoginMethod() != null ? user.getLoginMethod().name() : "EMAIL")
                 .cityName(user.getCity() != null ? user.getCity().getName() : null)
                 .provinceName(user.getCity() != null && user.getCity().getProvince() != null ? user.getCity().getProvince().getName() : null)
                 .build();
@@ -79,6 +82,16 @@ public class UserServiceImplementation implements UserService {
                 user.setCity(city);
             }
         }
+        if (request.getLoginMethod() != null) {
+            String method = request.getLoginMethod().toUpperCase();
+            if (method.equals("PHONE") || method.equals("PHONE_NUMBER")) {
+                user.setLoginMethod(gangofthree.user.entity.enums.LoginMethod.PHONE);
+            } else if (method.equals("EMAIL")) {
+                user.setLoginMethod(gangofthree.user.entity.enums.LoginMethod.EMAIL);
+            } else {
+                return ApiResponse.failure("Invalid login method provided.", 400, "INVALID_LOGIN_METHOD");
+            }
+        }
 
         // ذخیره تغییرات در دیتابیس
         userRepository.save(user);
@@ -100,45 +113,6 @@ public class UserServiceImplementation implements UserService {
         return ApiResponse.success("Profile updated successfully.", 200, response);
     }
 
-    // @Override
-    // public ApiResponse<Void> sendOtpToOldEmail(Long userId) {
-    //     User user = userRepository.findById(userId).orElse(null);
-    //     if (user == null) {
-    //         return ApiResponse.failure("User not found", 404, "USER_NOT_FOUND");
-    //     }
-
-    //     String oldEmail = user.getEmail();
-    //     if (oldEmail == null || oldEmail.isEmpty()) {
-    //         return ApiResponse.success("No old email registered. Please proceed to verify the new email directly.", 200);
-    //     }
-
-    //     String otp = otpService.generateOtp();
-    //     otpService.saveOtp("CHANGE_EMAIL_" + userId, otp, OtpPurpose.CHANGE_EMAIL);
-    //     emailService.sendOtp(oldEmail, otp);
-
-    //     return ApiResponse.success("Otp sent successfully.");
-    // }
-
-    // @Override
-    // public ApiResponse<String> verifyOldEmailOtp(Long userId, String otpCode) {
-    //     User user = userRepository.findById(userId).orElse(null);
-    //     if (user == null) {
-    //         return ApiResponse.failure("User not found", 404, "USER_NOT_FOUND");
-    //     }
-
-    //     String subject = "CHANGE_EMAIL_" + userId;
-    //     boolean isValidOtp = otpService.verifyOtp(subject, otpCode, OtpPurpose.CHANGE_EMAIL);
-    //     if (!isValidOtp) {
-    //         return ApiResponse.failure("Invalid OTP code.", 400, "INVALID_OTP");
-    //     }
-
-    //     String tempToken = UUID.randomUUID().toString();
-    //     String tokenKey = "email_change_token:" + userId;
-
-    //     redisTemplate.opsForValue().set(tokenKey, tempToken, TEMP_TOKEN_EXPIRE);
-
-    //     return ApiResponse.success("Old email verified. You can now request the new email change.", 200, tempToken);
-    // }
 
     @Override
     public ApiResponse<Void> sendOtpToNewEmail(Long userId, ChangeEmailRequest request) {
@@ -229,4 +203,24 @@ public class UserServiceImplementation implements UserService {
         return ApiResponse.success("Your account phone number has been updated successfully.", 200);
     }
 
+    @Override
+    public ApiResponse<Void> changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            throw new gangofthree.auth.exception.custom.InvalidCredentialException("User not found.");
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new gangofthree.auth.exception.custom.InvalidCredentialException("New passwords do not match.");
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new gangofthree.auth.exception.custom.InvalidCredentialException("Incorrect current password.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return ApiResponse.success("Password updated successfully.", 200);
+    }
 }
