@@ -88,7 +88,8 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/auth") || pathname?.startsWith("/matches")) {
+    if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/auth") || pathname?.startsWith("/matches")
+    || pathname?.startsWith("/booking")) {
         return null;
     }
 
