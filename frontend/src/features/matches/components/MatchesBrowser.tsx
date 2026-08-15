@@ -1,11 +1,100 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, CalendarDays, Clock, SlidersHorizontal, Check, X, ArrowRight, Users, Coffee, Search } from "lucide-react";
+import { MapPin, CalendarDays, Clock, SlidersHorizontal, Check, X, ArrowRight, Users, Coffee, Search, ChevronDown, Map, Ticket } from "lucide-react";
 import { MOCK_MATCHES, LEAGUES, SportType, Match } from "../services/match.service";
 
-// تم رنگی هر ورزش (کلاس‌ها باید کامل نوشته بشن تا Tailwind اون‌ها رو تولید کنه)
+// ==========================================
+// Custom Select Dropdown Component
+// ==========================================
+interface SelectOption {
+    id: string;
+    name: string;
+}
+
+function CustomSelect({
+                          icon: Icon,
+                          placeholder,
+                          value,
+                          options,
+                          onChange,
+                          disabled = false
+                      }: {
+    icon: React.ElementType;
+    placeholder: string;
+    value: string;
+    options: SelectOption[];
+    onChange: (val: string) => void;
+    disabled?: boolean;
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    const selected = options.find(o => String(o.id) === String(value));
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setIsOpen(false);
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    return (
+        <div ref={ref} className={`relative group w-full ${isOpen ? 'z-50' : 'z-10'}`}>
+            <Icon size={18} className={`pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 transition-colors ${isOpen || value ? 'text-zinc-950' : 'text-gray-400 group-hover:text-zinc-950'}`} />
+
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={() => setIsOpen(!isOpen)}
+                className={`block w-full cursor-none rounded-2xl border-2 p-4 pl-12 pr-10 text-left text-sm font-medium outline-none backdrop-blur-sm transition-all 
+                ${disabled ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50/30 text-gray-400' : 'border-gray-100 bg-gray-50/50 hover:border-gray-200 hover:bg-white'} 
+                ${isOpen ? 'border-zinc-950 bg-white shadow-xl shadow-black/5' : ''} 
+                ${value ? 'text-zinc-900' : 'text-gray-400'}`}
+            >
+                <span className="block truncate">{selected ? selected.name : placeholder}</span>
+            </button>
+
+            <div className="pointer-events-none absolute right-4 top-1/2 z-10 -translate-y-1/2 text-gray-400">
+                <ChevronDown size={16} className={`transition-transform duration-300 ${isOpen ? 'rotate-180 text-zinc-950' : ''}`} />
+            </div>
+
+            <AnimatePresence>
+                {isOpen && !disabled && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                        data-lenis-prevent="true"
+                        className="absolute left-0 right-0 top-[calc(100%+8px)] z-50 max-h-48 overflow-y-auto hide-scrollbar rounded-2xl border border-gray-100 bg-white p-2 shadow-2xl [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                    >
+                        {options.length === 0 ? (
+                            <div className="p-3 text-center text-sm text-gray-400 select-none cursor-none">No options</div>
+                        ) : (
+                            options.map((opt) => (
+                                <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => { onChange(String(opt.id)); setIsOpen(false); }}
+                                    className={`w-full cursor-none rounded-xl px-4 py-3 text-left text-sm transition-colors ${String(value) === String(opt.id) ? 'bg-zinc-950 text-white font-bold' : 'text-zinc-700 hover:bg-gray-50 font-medium'}`}
+                                >
+                                    {opt.name}
+                                </button>
+                            ))
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+// ==========================================
+// تم رنگی و تنظیمات
+// ==========================================
 const SPORT_THEME: Record<
     SportType,
     { button: string; text: string; badge: string; logoAccent: string }
@@ -42,23 +131,25 @@ const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.src = FALLBACK_LOGO;
 };
 
-// Variants برای آکاردئون پنل فیلتر
+// Variants برای آکاردئون پنل فیلتر (بدون overflow)
 const filterPanelVariants = {
-    collapsed: { height: 0, opacity: 0 },
-    expanded: { height: "auto", opacity: 1 },
-};
-
-// stagger هماهنگ با جهت باز/بسته شدن
-const filterListVariants = {
     collapsed: {
-        transition: { staggerChildren: 0.04, staggerDirection: -1 },
+        height: 0,
+        opacity: 0,
+        transition: { height: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.25 } },
     },
     expanded: {
-        transition: { staggerChildren: 0.05, delayChildren: 0.08 },
+        height: "auto",
+        opacity: 1,
+        transition: { height: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.25 } },
     },
 };
 
-// آیتم‌ها: باز شدن از بالا به پایین، بسته شدن از پایین به بالا
+const filterListVariants = {
+    collapsed: { transition: { staggerChildren: 0.04, staggerDirection: -1 } },
+    expanded: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } },
+};
+
 const filterItemVariants = {
     collapsed: { opacity: 0, y: -8, transition: { duration: 0.18, ease: [0.4, 0, 1, 1] } },
     expanded: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } },
@@ -73,6 +164,9 @@ export default function MatchesBrowser() {
     const [hoveredSport, setHoveredSport] = useState<SportType | null>(null);
     const [hoveredLeague, setHoveredLeague] = useState<string | null>(null);
 
+    // کنترل overflow برای پنل فیلتر
+    const [panelClip, setPanelClip] = useState(true);
+
     // State فیلترها
     const [filters, setFilters] = useState({
         query: "",
@@ -80,10 +174,10 @@ export default function MatchesBrowser() {
         stadium: "All",
         dateRange: "any",
         tier: "All",
+        availability: "All",
         minPrice: "",
         maxPrice: "",
         ticketCount: 1,
-        onlyAvailable: false,
     });
 
     const setF = (patch: Partial<typeof filters>) =>
@@ -135,6 +229,13 @@ export default function MatchesBrowser() {
                 if (!isNaN(max) && (match.details?.estimatedPrice.max ?? Infinity) > max) return false;
             }
 
+            // فیلتر availability (ساده برای نمونه)
+            if (filters.availability === "Available") {
+                if ((match.details?.remainingSeats ?? 0) === 0) return false;
+            } else if (filters.availability === "SoldOut") {
+                if ((match.details?.remainingSeats ?? 0) > 0) return false;
+            }
+
             return true;
         })
         .sort((a, b) => {
@@ -150,12 +251,16 @@ export default function MatchesBrowser() {
     };
 
     const stadiumPath = "M0,300 L0,0 C400,220 800,220 1200,0 L1200,300 Z";
+    const layoutTransition = { type: "spring", stiffness: 260, damping: 30 } as const;
 
-    const layoutTransition = {
-        type: "spring",
-        stiffness: 260,
-        damping: 30,
-    } as const;
+    // استایل مشترک برای اینپوت‌های متنی (هماهنگ با CustomSelect)
+    const textInputClass = "block w-full cursor-none rounded-2xl border-2 border-gray-100 bg-gray-50/50 p-4 pl-12 text-sm font-medium text-zinc-900 outline-none backdrop-blur-sm transition-all focus:border-zinc-950 focus:bg-white focus:shadow-xl hover:border-gray-200 hover:bg-white";
+
+    // تابع toggle برای مدیریت clip قبل از تغییر وضعیت
+    const toggleFilters = () => {
+        setPanelClip(true); // قبل از هر انیمیشن clip را روشن می‌کنیم
+        setIsFiltersOpen((v) => !v);
+    };
 
     return (
         <div className="relative z-10 w-full pt-4">
@@ -165,22 +270,11 @@ export default function MatchesBrowser() {
             {/* ========================================== */}
             <div className="sticky top-0 z-40 mx-auto w-full max-w-4xl drop-shadow-xl">
 
-                {/* بخش تب بالا */}
                 <div className="mx-auto w-[180px] sm:w-[220px] h-8 sm:h-9 bg-white relative z-10 flex items-center justify-center">
-                    <svg
-                        className="absolute top-0 -left-10 sm:-left-12 w-10 sm:w-12 h-full text-white pointer-events-none"
-                        viewBox="0 0 100 100"
-                        fill="currentColor"
-                        preserveAspectRatio="none"
-                    >
+                    <svg className="absolute top-0 -left-10 sm:-left-12 w-10 sm:w-12 h-full text-white pointer-events-none" viewBox="0 0 100 100" fill="currentColor" preserveAspectRatio="none">
                         <path d="M100,0 A100,100 0 0 0 0,100 L100,100 Z" />
                     </svg>
-                    <svg
-                        className="absolute top-0 -right-10 sm:-right-12 w-10 sm:w-12 h-full text-white pointer-events-none"
-                        viewBox="0 0 100 100"
-                        fill="currentColor"
-                        preserveAspectRatio="none"
-                    >
+                    <svg className="absolute top-0 -right-10 sm:-right-12 w-10 sm:w-12 h-full text-white pointer-events-none" viewBox="0 0 100 100" fill="currentColor" preserveAspectRatio="none">
                         <path d="M0,0 A100,100 0 0 1 100,100 L0,100 Z" />
                     </svg>
                     <h1 className="text-[11px] sm:text-xs font-black tracking-widest uppercase mt-0.5">
@@ -189,14 +283,13 @@ export default function MatchesBrowser() {
                     </h1>
                 </div>
 
-                {/* باکس اصلی هدر — آکاردئون با هدر ثابت */}
+                {/* باکس اصلی هدر */}
                 <motion.div
                     layout
                     transition={{ layout: layoutTransition }}
                     style={{ willChange: "transform, height" }}
-                    className="relative z-0 -mt-2 mx-auto w-full overflow-hidden rounded-[2rem] bg-white p-4 md:p-6 shadow-sm"
+                    className="relative z-30 -mt-2 mx-auto w-full rounded-[2rem] bg-white p-4 md:p-6 shadow-sm"
                 >
-                    {/* هدر پیش‌فرض — همیشه mount */}
                     <motion.div layout="position" className="flex flex-col gap-4">
                         <div className="flex items-center justify-between gap-4">
                             <div className="hidden font-black italic tracking-tight text-zinc-950 sm:block text-xl">
@@ -204,10 +297,7 @@ export default function MatchesBrowser() {
                             </div>
 
                             <div className="flex flex-1 justify-center">
-                                <div
-                                    className="flex rounded-2xl bg-gray-100 p-1"
-                                    onMouseLeave={() => setHoveredSport(null)}
-                                >
+                                <div className="flex rounded-2xl bg-gray-100 p-1" onMouseLeave={() => setHoveredSport(null)}>
                                     {(["football", "basketball", "volleyball"] as SportType[]).map((sport) => (
                                         <button
                                             key={sport}
@@ -215,43 +305,28 @@ export default function MatchesBrowser() {
                                             onMouseEnter={() => setHoveredSport(sport)}
                                             className="relative cursor-none px-4 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-bold capitalize"
                                         >
-                                            {hoveredSport === sport && (
-                                                <motion.div
-                                                    layoutId="sport-hover-matches"
-                                                    className="absolute inset-0 rounded-xl bg-white/60"
-                                                    transition={hoverSpring}
-                                                />
-                                            )}
-                                            {selectedSport === sport && (
-                                                <motion.div layoutId="sport-pill-matches" className="absolute inset-0 rounded-xl bg-white shadow-sm" transition={hoverSpring} />
-                                            )}
+                                            {hoveredSport === sport && <motion.div layoutId="sport-hover-matches" className="absolute inset-0 rounded-xl bg-white/60" transition={hoverSpring} />}
+                                            {selectedSport === sport && <motion.div layoutId="sport-pill-matches" className="absolute inset-0 rounded-xl bg-white shadow-sm" transition={hoverSpring} />}
                                             <span className={`relative z-10 transition-colors ${selectedSport === sport ? "text-zinc-950" : hoveredSport === sport ? "text-zinc-900" : "text-zinc-500"}`}>{sport}</span>
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* دکمه فیلتر — toggle */}
                             <button
-                                onClick={() => setIsFiltersOpen((v) => !v)}
+                                onClick={toggleFilters}
                                 className={`hidden sm:flex h-[44px] cursor-none items-center justify-center gap-2 rounded-full px-6 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 ${isFiltersOpen ? theme.button : "bg-zinc-950"}`}
                             >
                                 {isFiltersOpen ? <X size={15} /> : <SlidersHorizontal size={15} />}
                                 {isFiltersOpen ? "Close" : "Filters"}
                             </button>
 
-                            <button
-                                onClick={() => setIsFiltersOpen((v) => !v)}
-                                className="flex cursor-none items-center justify-center rounded-2xl bg-zinc-100 p-3 text-zinc-700 transition-colors hover:bg-zinc-200 sm:hidden"
-                            >
+                            <button onClick={toggleFilters} className="flex cursor-none items-center justify-center rounded-2xl bg-zinc-100 p-3 text-zinc-700 transition-colors hover:bg-zinc-200 sm:hidden">
                                 {isFiltersOpen ? <X size={18} /> : <SlidersHorizontal size={18} />}
                             </button>
                         </div>
 
-                        <div
-                            className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-gray-100/50"
-                            onMouseLeave={() => setHoveredLeague(null)}
-                        >
+                        <div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-gray-100/50" onMouseLeave={() => setHoveredLeague(null)}>
                             {LEAGUES[selectedSport].map((league) => {
                                 const isActive = selectedLeague === league;
                                 return (
@@ -259,24 +334,10 @@ export default function MatchesBrowser() {
                                         key={league}
                                         onClick={() => setSelectedLeague(league)}
                                         onMouseEnter={() => setHoveredLeague(league)}
-                                        className={`relative cursor-none rounded-full px-4 py-1.5 text-xs font-bold transition-colors ${
-                                            isActive ? "text-white" : hoveredLeague === league ? "text-zinc-900" : "text-zinc-500"
-                                        }`}
+                                        className={`relative cursor-none rounded-full px-4 py-1.5 text-xs font-bold transition-colors ${isActive ? "text-white" : hoveredLeague === league ? "text-zinc-900" : "text-zinc-500"}`}
                                     >
-                                        {hoveredLeague === league && !isActive && (
-                                            <motion.div
-                                                layoutId="league-hover-matches"
-                                                className="absolute inset-0 rounded-full bg-gray-100"
-                                                transition={hoverSpring}
-                                            />
-                                        )}
-                                        {isActive && (
-                                            <motion.div
-                                                layoutId="league-pill-matches"
-                                                className="absolute inset-0 rounded-full bg-zinc-950 shadow-md"
-                                                transition={hoverSpring}
-                                            />
-                                        )}
+                                        {hoveredLeague === league && !isActive && <motion.div layoutId="league-hover-matches" className="absolute inset-0 rounded-full bg-gray-100" transition={hoverSpring} />}
+                                        {isActive && <motion.div layoutId="league-pill-matches" className="absolute inset-0 rounded-full bg-zinc-950 shadow-md" transition={hoverSpring} />}
                                         <span className="relative z-10">{league}</span>
                                     </button>
                                 );
@@ -284,7 +345,6 @@ export default function MatchesBrowser() {
                         </div>
                     </motion.div>
 
-                    {/* پنل فیلتر آکاردئونی — height 0 → auto */}
                     <AnimatePresence initial={false}>
                         {isFiltersOpen && (
                             <motion.div
@@ -293,135 +353,130 @@ export default function MatchesBrowser() {
                                 initial="collapsed"
                                 animate="expanded"
                                 exit="collapsed"
-                                transition={{ height: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.25 } }}
-                                className="overflow-hidden"
+                                onAnimationStart={() => setPanelClip(true)}
+                                onAnimationComplete={(def) => setPanelClip(def !== "expanded")}
+                                style={{ overflow: panelClip ? "hidden" : "visible" }}
+                                className="flex flex-col gap-6"
                             >
-                                {/* wrapper stagger با جهت باز/بسته */}
-                                <motion.div
-                                    variants={filterListVariants}
-                                    initial="collapsed"
-                                    animate="expanded"
-                                    exit="collapsed"
-                                    className="flex flex-col gap-5 pt-5 mt-5 border-t border-gray-100"
-                                >
+                                <motion.div variants={filterListVariants} initial="collapsed" animate="expanded" exit="collapsed" className="flex flex-col gap-5 pt-5 mt-5 border-t border-gray-100">
                                     <motion.div variants={filterItemVariants} className="flex items-center justify-between">
                                         <h3 className="text-lg font-black text-zinc-950">Advanced Filters</h3>
-                                        <button onClick={() => setIsFiltersOpen(false)} className="flex h-8 w-8 cursor-none items-center justify-center rounded-full bg-gray-100 text-zinc-500 hover:bg-gray-200 hover:text-zinc-900">
+                                        <button onClick={toggleFilters} className="flex h-8 w-8 cursor-none items-center justify-center rounded-full bg-gray-100 text-zinc-500 hover:bg-gray-200 hover:text-zinc-900">
                                             <X size={18} />
                                         </button>
                                     </motion.div>
 
-                                    <motion.div variants={filterItemVariants} className="relative">
-                                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+                                    <motion.div variants={filterItemVariants} className="relative group">
+                                        <Search size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
                                         <input
                                             value={filters.query}
                                             onChange={(e) => setF({ query: e.target.value })}
                                             placeholder="Search team, city, stadium..."
-                                            className="w-full cursor-none rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm font-semibold text-zinc-800 placeholder-zinc-400 outline-none focus:border-zinc-950 focus:bg-white"
+                                            className={textInputClass}
                                         />
                                     </motion.div>
 
                                     <motion.div variants={filterItemVariants} className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                                         <div className="flex flex-col gap-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">City</label>
-                                            <select
+                                            <CustomSelect
+                                                icon={MapPin}
+                                                placeholder="All Cities"
                                                 value={filters.city}
-                                                onChange={(e) => setF({ city: e.target.value })}
-                                                className="w-full cursor-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm font-semibold text-zinc-800 outline-none focus:border-zinc-950 focus:bg-white"
-                                            >
-                                                <option>All</option>
-                                                <option>Tehran</option>
-                                                <option>Isfahan</option>
-                                                <option>Tabriz</option>
-                                            </select>
+                                                options={['All', 'Tehran', 'Isfahan', 'Tabriz'].map(v => ({ id: v, name: v }))}
+                                                onChange={(val) => setF({ city: val })}
+                                            />
                                         </div>
 
                                         <div className="flex flex-col gap-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Stadium</label>
-                                            <select
+                                            <CustomSelect
+                                                icon={Map}
+                                                placeholder="All Stadiums"
                                                 value={filters.stadium}
-                                                onChange={(e) => setF({ stadium: e.target.value })}
-                                                className="w-full cursor-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm font-semibold text-zinc-800 outline-none focus:border-zinc-950 focus:bg-white"
-                                            >
-                                                <option>All</option>
-                                                <option>Azadi Stadium</option>
-                                                <option>Naghsh-e Jahan</option>
-                                            </select>
+                                                options={['All', 'Azadi Stadium', 'Naghsh-e Jahan'].map(v => ({ id: v, name: v }))}
+                                                onChange={(val) => setF({ stadium: val })}
+                                            />
                                         </div>
 
                                         <div className="flex flex-col gap-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Date</label>
-                                            <select
+                                            <CustomSelect
+                                                icon={CalendarDays}
+                                                placeholder="Anytime"
                                                 value={filters.dateRange}
-                                                onChange={(e) => setF({ dateRange: e.target.value })}
-                                                className="w-full cursor-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm font-semibold text-zinc-800 outline-none focus:border-zinc-950 focus:bg-white"
-                                            >
-                                                <option value="any">Anytime</option>
-                                                <option value="today">Today</option>
-                                                <option value="week">This Week</option>
-                                                <option value="month">This Month</option>
-                                            </select>
+                                                options={[
+                                                    { id: 'any', name: 'Anytime' },
+                                                    { id: 'today', name: 'Today' },
+                                                    { id: 'week', name: 'This Week' },
+                                                    { id: 'month', name: 'This Month' }
+                                                ]}
+                                                onChange={(val) => setF({ dateRange: val })}
+                                            />
                                         </div>
 
                                         <div className="flex flex-col gap-2">
-                                            <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Ticket Tier</label>
-                                            <select
-                                                value={filters.tier}
-                                                onChange={(e) => setF({ tier: e.target.value })}
-                                                className="w-full cursor-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm font-semibold text-zinc-800 outline-none focus:border-zinc-950 focus:bg-white"
-                                            >
-                                                <option>All</option>
-                                                <option>Normal</option>
-                                                <option>Special</option>
-                                                <option>VIP</option>
-                                            </select>
+                                            <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Availability</label>
+                                            <CustomSelect
+                                                icon={Users}
+                                                placeholder="All Matches"
+                                                value={filters.availability}
+                                                options={[
+                                                    { id: 'All', name: 'All Matches' },
+                                                    { id: 'Available', name: 'Tickets Available' },
+                                                    { id: 'SoldOut', name: 'Almost Sold Out' }
+                                                ]}
+                                                onChange={(val) => setF({ availability: val })}
+                                            />
                                         </div>
 
                                         <div className="flex flex-col gap-2">
-                                            <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Price Range (Toman)</label>
-                                            <div className="flex gap-2">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Price Min</label>
+                                            <div className="relative group">
+                                                <span className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 font-bold">$</span>
                                                 <input
                                                     placeholder="Min"
                                                     value={filters.minPrice}
                                                     onChange={(e) => setF({ minPrice: e.target.value })}
-                                                    className="w-full cursor-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm font-semibold text-zinc-800 placeholder-zinc-400 outline-none focus:border-zinc-950 focus:bg-white"
+                                                    className={textInputClass}
                                                 />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Price Max</label>
+                                            <div className="relative group">
+                                                <span className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 font-bold">$</span>
                                                 <input
                                                     placeholder="Max"
                                                     value={filters.maxPrice}
                                                     onChange={(e) => setF({ maxPrice: e.target.value })}
-                                                    className="w-full cursor-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm font-semibold text-zinc-800 placeholder-zinc-400 outline-none focus:border-zinc-950 focus:bg-white"
+                                                    className={textInputClass}
                                                 />
                                             </div>
                                         </div>
 
                                         <div className="flex flex-col gap-2">
                                             <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">Quantity</label>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                max="10"
-                                                value={filters.ticketCount}
-                                                onChange={(e) => setF({ ticketCount: +e.target.value })}
-                                                className="w-full cursor-none rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm font-semibold text-zinc-800 placeholder-zinc-400 outline-none focus:border-zinc-950 focus:bg-white"
-                                            />
+                                            <div className="relative group">
+                                                <Ticket size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="10"
+                                                    value={filters.ticketCount}
+                                                    onChange={(e) => setF({ ticketCount: +e.target.value })}
+                                                    className={textInputClass}
+                                                />
+                                            </div>
                                         </div>
 
-                                        <div className="flex flex-col justify-end">
+                                        <div className="flex flex-col justify-end gap-2">
                                             <button
-                                                onClick={() => setF({ city: "All", stadium: "All", query: "", dateRange: "any", tier: "All", minPrice: "", maxPrice: "", ticketCount: 1 })}
+                                                onClick={() => setF({ city: "All", stadium: "All", query: "", dateRange: "any", tier: "All", availability: "All", minPrice: "", maxPrice: "", ticketCount: 1 })}
                                                 className="flex w-full cursor-none items-center justify-center gap-2 rounded-xl p-3 text-sm font-bold text-zinc-500 hover:bg-gray-100 transition-colors"
                                             >
                                                 Clear All
-                                            </button>
-                                        </div>
-
-                                        <div className="flex flex-col justify-end">
-                                            <button
-                                                onClick={() => setIsFiltersOpen(false)}
-                                                className={`flex w-full cursor-none items-center justify-center gap-2 rounded-xl p-3 text-sm font-bold text-white transition-colors ${theme.button}`}
-                                            >
-                                                <Check size={18} /> Apply Filters
                                             </button>
                                         </div>
                                     </motion.div>
@@ -433,7 +488,7 @@ export default function MatchesBrowser() {
             </div>
 
             {/* ========================================== */}
-            {/* ACCORDION‑STYLE MATCH CARDS — با AnimatePresence و layout */}
+            {/* ACCORDION‑STYLE MATCH CARDS                */}
             {/* ========================================== */}
             <div className="mx-auto mt-10 flex w-full max-w-4xl flex-col gap-4 px-4 pb-40 relative z-10">
                 {filteredMatches.length === 0 ? (
