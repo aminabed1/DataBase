@@ -21,7 +21,6 @@ const MOCK_MATCH = {
     league: "Premier League",
 };
 
-// Stadium Sections equipped with new Ticket Categories
 const STADIUM_SECTIONS = [
     {
         id: "n-lower", name: "North Stand - Lower Tier", total: 8000, available: 1200, price: 200000,
@@ -55,7 +54,6 @@ const STADIUM_SECTIONS = [
         ],
         path: "M 515 205 L 515 315 L 595 395 L 595 125 Z"
     },
-
     {
         id: "n-upper", name: "North Stand - Upper Tier", total: 12000, available: 5000, price: 100000,
         categories: [
@@ -100,19 +98,19 @@ const getCategoryStyle = (categoryName: string) => {
         case "Premium":
             return { icon: Star, color: "text-indigo-600", fontClass: "font-[cursive] italic text-lg font-bold" };
         case "Economy":
-            return { icon: Leaf, color: "text-emerald-600", fontClass: "font-sans font-bold" };
+            return { icon: Leaf, color: "text-emerald-600", fontClass: "font-sans font-bold text-base" };
         case "Family":
-            return { icon: Users, color: "text-sky-500", fontClass: "font-sans font-bold" };
+            return { icon: Users, color: "text-sky-500", fontClass: "font-sans font-bold text-base" };
         case "Disabled":
-            return { icon: Accessibility, color: "text-blue-600", fontClass: "font-sans font-bold" };
+            return { icon: Accessibility, color: "text-blue-600", fontClass: "font-sans font-bold text-base" };
         case "Student":
-            return { icon: GraduationCap, color: "text-orange-500", fontClass: "font-sans font-bold" };
+            return { icon: GraduationCap, color: "text-orange-500", fontClass: "font-sans font-bold text-base" };
         case "Early Bird":
-            return { icon: Bird, color: "text-teal-600", fontClass: "font-sans font-bold" };
+            return { icon: Bird, color: "text-teal-600", fontClass: "font-sans font-bold text-base" };
         case "Last Minute":
-            return { icon: Flame, color: "text-red-500", fontClass: "font-sans font-bold uppercase tracking-widest text-xs" };
+            return { icon: Flame, color: "text-red-500", fontClass: "font-sans font-bold uppercase tracking-widest text-sm" };
         default:
-            return { icon: ShieldCheck, color: "text-zinc-600", fontClass: "font-sans font-bold" };
+            return { icon: ShieldCheck, color: "text-zinc-600", fontClass: "font-sans font-bold text-base" };
     }
 };
 
@@ -122,38 +120,42 @@ export default function StadiumView() {
     const activeSectionData = STADIUM_SECTIONS.find(s => s.id === hoveredSection);
 
     return (
-        // Lighter gray background without boxes
-        <div className="min-h-screen bg-[#E8E9E9] p-4 md:p-8 font-sans text-zinc-900">
-            <div className="mx-auto max-w-7xl flex flex-col-reverse lg:flex-row gap-16 lg:gap-8 pt-8">
+        // Fixed viewport height, no page scroll
+        <div className="h-screen overflow-hidden bg-[#E8E9E9] px-4 py-3 md:px-8 md:py-4 font-sans text-zinc-900">
+            <div className="mx-auto h-full max-w-7xl flex flex-col-reverse lg:flex-row gap-6 lg:gap-8">
 
                 {/* ========================================== */}
                 {/* LEFT COLUMN: Pure Typography Info Panel    */}
                 {/* ========================================== */}
-                <div className="w-full lg:w-1/3 flex flex-col gap-12 pr-4">
+                <div className="w-full lg:w-[30%] flex flex-col gap-8 pr-2 min-h-0 overflow-y-auto">
 
-                    {/* General Match Info (Moved to left col, unboxed) */}
-                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col gap-4 border-l-4 border-zinc-900 pl-6">
-                        <h1 className="text-4xl font-black uppercase tracking-tighter text-zinc-950">
+                    {/* General Match Info - LARGER & LOWER */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex flex-col gap-3 border-l-4 border-zinc-900 pl-4 mt-4"
+                    >
+                        <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-zinc-950">
                             {MOCK_MATCH.league}
                         </h1>
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-3 text-sm font-semibold text-zinc-600">
+                        <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2 text-base font-semibold text-zinc-600">
                                 <CalendarDays size={18} className="text-zinc-900" />
                                 <span>{MOCK_MATCH.date}</span>
                                 <span className="text-zinc-300">|</span>
                                 <Clock size={18} className="text-zinc-900" />
                                 <span>{MOCK_MATCH.time} Local</span>
                             </div>
-                            <div className="flex items-center gap-3 text-sm font-semibold text-zinc-600">
+                            <div className="flex items-center gap-2 text-base font-semibold text-zinc-600">
                                 <MapPin size={18} className="text-zinc-900" />
                                 <span>{MOCK_MATCH.stadium} Stadium, {MOCK_MATCH.city}</span>
                             </div>
                         </div>
                     </motion.div>
 
-                    {/* Section Details (Unboxed, typographic) */}
-                    <div>
-                        <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-8 flex items-center gap-2">
+                    {/* Section Details */}
+                    <div className="mt-7">
+                        <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-5 flex items-center gap-2">
                             <Armchair size={16} /> Section Details
                         </h2>
 
@@ -162,29 +164,39 @@ export default function StadiumView() {
                                 <motion.div
                                     key={activeSectionData.id}
                                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                    className="flex flex-col gap-8"
+                                    className="flex flex-col gap-6"
                                 >
                                     <div>
-                                        <h3 className="text-3xl font-black text-zinc-900 mb-2">{activeSectionData.name}</h3>
-                                        <p className="text-zinc-500 font-medium">Starting from: <span className="text-zinc-900 font-bold">{activeSectionData.price.toLocaleString()} Toman</span></p>
+                                        <h3 className="text-3xl font-black text-zinc-900 mb-1">{activeSectionData.name}</h3>
+                                        <p className="text-base text-zinc-500 font-medium">Starting from: <span className="text-zinc-900 font-bold">{activeSectionData.price.toLocaleString()} Toman</span></p>
                                     </div>
 
-                                    <div className="flex flex-col gap-6">
+                                    <div className="flex flex-col gap-4">
                                         <div className="flex justify-between items-end border-b border-zinc-300/50 pb-2">
-                                            <span className="text-zinc-500 font-medium">Total Capacity</span>
+                                            <span className="text-base text-zinc-500 font-medium">Total Capacity</span>
                                             <span className="text-lg font-black text-zinc-900">{activeSectionData.total.toLocaleString()}</span>
                                         </div>
 
-                                        <div className="flex justify-between items-end border-b border-zinc-300/50 pb-2">
-                                            <span className="text-zinc-500 font-medium">Available Seats</span>
-                                            <span className={`text-xl font-black ${activeSectionData.available === 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                        <div className="flex justify-between items-end pb-1">
+                                            <span className="text-base text-zinc-500 font-medium">Available Seats</span>
+                                            <span className={`text-lg font-black ${activeSectionData.available === 0 ? 'text-red-500' : 'text-emerald-600'}`}>
                                                 {activeSectionData.available === 0 ? 'Sold Out' : activeSectionData.available.toLocaleString()}
                                             </span>
                                         </div>
+
+                                        {/* Progress Bar (Fill Percentage) */}
+                                        <div className="h-1.5 w-full bg-zinc-300/60 rounded-full overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${((activeSectionData.total - activeSectionData.available) / activeSectionData.total) * 100}%` }}
+                                                transition={{ duration: 0.6, ease: "easeOut" }}
+                                                className={`h-full rounded-full ${activeSectionData.available === 0 ? 'bg-red-500' : 'bg-emerald-500'}`}
+                                            />
+                                        </div>
                                     </div>
 
-                                    {/* Breakdown by DB Categories */}
-                                    <div className="pt-4 flex flex-col gap-5">
+                                    {/* Categories */}
+                                    <div className="pt-2 flex flex-col gap-5">
                                         <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Available Ticket Types</span>
                                         {activeSectionData.categories.map((cat, idx) => {
                                             const { icon: CatIcon, color, fontClass } = getCategoryStyle(cat.name);
@@ -192,10 +204,9 @@ export default function StadiumView() {
                                             return (
                                                 <div key={idx} className="flex items-center justify-between group">
                                                     <div className="flex items-center gap-3">
-                                                        <CatIcon size={20} className={color} />
-                                                        <div className="flex flex-col">
+                                                        <CatIcon size={22} className={color} />
+                                                        <div className="flex flex-col leading-tight">
                                                             <span className={`${fontClass} ${color}`}>{cat.name}</span>
-                                                            {/* Showing Amenities from SQL */}
                                                             <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{cat.amenities}</span>
                                                         </div>
                                                     </div>
@@ -211,11 +222,11 @@ export default function StadiumView() {
                                 <motion.div
                                     key="empty"
                                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                    className="flex flex-col gap-4 opacity-40 mt-10"
+                                    className="flex flex-col gap-3 opacity-40 mt-4"
                                 >
-                                    <Ticket size={40} className="text-zinc-400" />
+                                    <Ticket size={36} className="text-zinc-400" />
                                     <p className="text-xl font-black text-zinc-900">Select a Block</p>
-                                    <p className="text-sm text-zinc-600 font-medium">Hover over the stadium map on the right<br/>to view live capacity and ticket categories.</p>
+                                    <p className="text-sm text-zinc-600 font-medium">Hover over the stadium map on the right<br/>to view live capacity.</p>
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -225,34 +236,34 @@ export default function StadiumView() {
                 {/* ========================================== */}
                 {/* RIGHT COLUMN: Teams & Stadium SVG          */}
                 {/* ========================================== */}
-                <div className="w-full lg:w-2/3 flex flex-col items-center justify-start gap-12">
+                <div className="w-full lg:w-[70%] flex flex-col items-center justify-center gap-4 min-h-0">
 
-                    {/* Teams Header (Unboxed, floating) */}
+                    {/* Teams Header (Compact version) */}
                     <motion.div
                         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center justify-center gap-6 w-full mt-4"
+                        className="flex items-center justify-center gap-4 w-full shrink-0"
                     >
-                        <div className="flex flex-col items-center gap-3">
-                            <img src={MOCK_MATCH.teamHome.logo} alt="Home" className="h-20 w-20 md:h-24 md:w-24 object-contain drop-shadow-xl" />
-                            <span className="text-lg md:text-xl font-black text-zinc-900 tracking-tight">{MOCK_MATCH.teamHome.name}</span>
+                        <div className="flex flex-col items-center gap-2">
+                            <img src={MOCK_MATCH.teamHome.logo} alt="Home" className="h-12 w-12 md:h-16 md:w-16 object-contain drop-shadow-lg" />
+                            <span className="text-sm md:text-base font-black text-zinc-900 tracking-tight">{MOCK_MATCH.teamHome.name}</span>
                         </div>
 
-                        <div className="flex flex-col items-center px-4 md:px-8">
-                            <span className="text-4xl md:text-6xl font-black italic text-zinc-300/80 tracking-tighter">VS</span>
+                        <div className="flex flex-col items-center px-2">
+                            <span className="text-2xl md:text-3xl font-black italic text-zinc-300/80 tracking-tighter">VS</span>
                         </div>
 
-                        <div className="flex flex-col items-center gap-3">
-                            <img src={MOCK_MATCH.teamAway.logo} alt="Away" className="h-20 w-20 md:h-24 md:w-24 object-contain drop-shadow-xl" />
-                            <span className="text-lg md:text-xl font-black text-zinc-900 tracking-tight">{MOCK_MATCH.teamAway.name}</span>
+                        <div className="flex flex-col items-center gap-2">
+                            <img src={MOCK_MATCH.teamAway.logo} alt="Away" className="h-12 w-12 md:h-16 md:w-16 object-contain drop-shadow-lg" />
+                            <span className="text-sm md:text-base font-black text-zinc-900 tracking-tight">{MOCK_MATCH.teamAway.name}</span>
                         </div>
                     </motion.div>
 
-                    {/* Interactive Stadium Map (No box, floating directly on bg) */}
-                    <div className="w-full flex items-center justify-center px-4">
+                    {/* Interactive Stadium Map - Grows to fill remaining space */}
+                    <div className="w-full flex-1 min-h-0 flex items-center justify-center px-2">
                         <svg
-                            viewBox="0 0 800 520"
-                            className="w-full h-auto max-h-[600px]"
-                            style={{ filter: "drop-shadow(0 25px 25px rgb(0 0 0 / 0.1))" }}
+                            viewBox="0 -20 800 560"
+                            className="w-full h-full max-h-[78vh] object-contain"
+                            style={{ filter: "drop-shadow(0 20px 20px rgb(0 0 0 / 0.1))" }}
                         >
                             {/* Pitch / Field */}
                             <g className="pitch">
@@ -261,20 +272,18 @@ export default function StadiumView() {
                                 <line x1="400" y1="210" x2="400" y2="310" stroke="#10b981" strokeWidth="2" opacity="0.5" />
                             </g>
 
-                            {/* Render 8 Stadium Sections */}
                             {STADIUM_SECTIONS.map((section) => {
                                 const isHovered = hoveredSection === section.id;
                                 const isSoldOut = section.available === 0;
 
-                                // Colors adapted for the new lighter gray background
-                                let fillColor = "#d4d4d8"; // Slightly darker gray so it stands out from #E8E9E9
+                                let fillColor = "#d4d4d8";
                                 let strokeColor = "#ffffff";
 
                                 if (isSoldOut) {
                                     fillColor = "#fca5a5";
                                     strokeColor = "#fef2f2";
                                 } else if (isHovered) {
-                                    fillColor = "#10b981"; // Strong green on hover
+                                    fillColor = "#10b981";
                                     strokeColor = "#047857";
                                 }
 
@@ -288,11 +297,8 @@ export default function StadiumView() {
                                         strokeLinejoin="round"
                                         onMouseEnter={() => setHoveredSection(section.id)}
                                         onMouseLeave={() => setHoveredSection(null)}
-                                        onClick={() => {
-                                            if (!isSoldOut) alert(`Navigating to grid view for: ${section.name}`);
-                                        }}
-                                        className={`transition-colors duration-300 ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                        whileHover={!isSoldOut ? { scale: 1.02, zIndex: 10 } : {}}
+                                        className="transition-colors duration-300 cursor-none" // تغییر فقط در این خط اعمال شده
+                                        whileHover={!isSoldOut ? { scale: 1.02 } : {}}
                                         style={{ transformOrigin: "center" }}
                                     />
                                 );
