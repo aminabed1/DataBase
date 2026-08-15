@@ -7,7 +7,7 @@ import gangofthree.ticket.dto.response.TicketResponse;
 import java.util.List;
 
 public interface TicketService {
-    ApiResponse<List<TicketSearchResponse>> searchTickets(String city, String sport);
+    ApiResponse<List<TicketSearchResponse>> searchTickets(String query, String city, String sport);
     ApiResponse<TicketDetailResponse> getTicketDetails(Long matchId);
     ApiResponse<List<TicketResponse>> getMyTickets(Long userId);
 }

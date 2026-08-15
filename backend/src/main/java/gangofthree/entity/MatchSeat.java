@@ -1,6 +1,7 @@
 package gangofthree.entity;
 
 import gangofthree.entity.enums.MatchSeatStatus;
+import gangofthree.match.entity.Match;
 import gangofthree.ticket.entity.TicketCategory;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Check;

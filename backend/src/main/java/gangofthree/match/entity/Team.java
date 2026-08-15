@@ -1,4 +1,4 @@
-package gangofthree.entity;
+package gangofthree.match.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

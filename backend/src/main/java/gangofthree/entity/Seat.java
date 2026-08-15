@@ -1,5 +1,6 @@
 package gangofthree.entity;
 
+import gangofthree.match.entity.Venue;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Check;
 

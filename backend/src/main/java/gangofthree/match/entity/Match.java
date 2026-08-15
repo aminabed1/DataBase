@@ -1,4 +1,4 @@
-package gangofthree.entity;
+package gangofthree.match.entity;
 
 import gangofthree.entity.enums.MatchStatus;
 import jakarta.persistence.*;

@@ -19,11 +19,13 @@ public class TicketController {
 
     @GetMapping("/search")
     public ApiResponse<List<TicketSearchResponse>> searchTickets(
+            @RequestParam(required = false) String query,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String sport) {
-        
-        return ticketService.searchTickets(city, sport);
+
+        return ticketService.searchTickets(query, city, sport);
     }
+
 
     @GetMapping("/{matchId}/details")
     public ApiResponse<TicketDetailResponse> getTicketDetails(@PathVariable Long matchId) {

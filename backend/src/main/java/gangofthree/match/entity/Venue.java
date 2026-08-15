@@ -1,4 +1,5 @@
-package gangofthree.entity;
+package gangofthree.match.entity;
+import gangofthree.entity.City;
 import org.hibernate.annotations.Check;
 import jakarta.persistence.*;
 import lombok.Getter;
