@@ -5,4 +5,5 @@ import gangofthree.payment.dto.request.PaymentRequest;
 
 public interface PaymentService {
     ApiResponse<String> processPayment(Long userId, PaymentRequest request);
+    ApiResponse<java.util.List<gangofthree.payment.entity.PaymentMethod>> getAllowedPaymentMethods();
 }

@@ -1,90 +1,210 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { walletService } from "../services/wallet.service";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Wallet, Plus, ArrowUpRight, ArrowDownLeft, CreditCard,
-    Search, CheckCircle2, Clock, XCircle, Download
+    Search, CheckCircle2, Clock, XCircle, Download, AlertCircle, X, Building2
 } from "lucide-react";
-
-// ==========================================
-// Mock Data
-// ==========================================
-const MOCK_TRANSACTIONS = [
-    { id: "TX-982374", title: "Wallet Top Up", date: "Aug 10, 2026", amount: 100.00, type: "credit", status: "completed", method: "Credit Card ending in 4242" },
-    { id: "TX-982373", title: "Lakers vs Bulls Ticket", date: "Aug 05, 2026", amount: 120.00, type: "debit", status: "completed", method: "Wallet Balance" },
-    { id: "TX-982372", title: "Refund: Cancelled Match", date: "Jul 28, 2026", amount: 45.00, type: "credit", status: "completed", method: "Wallet Balance" },
-    { id: "TX-982371", title: "Withdrawal to Bank", date: "Jul 25, 2026", amount: 50.00, type: "debit", status: "pending", method: "Bank Transfer" },
-    { id: "TX-982370", title: "Failed Top Up", date: "Jul 20, 2026", amount: 200.00, type: "credit", status: "failed", method: "Credit Card ending in 1234" },
-    { id: "TX-982369", title: "Real Madrid vs Barca Ticket", date: "Jul 15, 2026", amount: 150.00, type: "debit", status: "completed", method: "Wallet Balance" },
-];
 
 // ==========================================
 // Merged Wallet & Transactions Component
 // ==========================================
-export default function WalletTab() {
-    // Top-up states
-    const [isLoading, setIsLoading] = useState(false);
-    const [amount, setAmount] = useState("");
-    const [selectedPreset, setSelectedPreset] = useState<number | null>(null);
+export default function WalletTab({ user }: { user?: any }) {
+    const queryClient = useQueryClient();
 
-    // Filter & Search states
+    // ==========================================
+    // Fetch Data
+    // ==========================================
+    const { data: walletData, isLoading: isWalletLoading } = useQuery({
+        queryKey: ['my-wallet'],
+        queryFn: walletService.getMyWallet
+    });
+
+    const { data: txData, isLoading: isTxLoading } = useQuery({
+        queryKey: ['my-transactions'],
+        queryFn: walletService.getMyTransactions
+    });
+
+    const { data: methodsData } = useQuery({
+        queryKey: ['payment-methods'],
+        queryFn: walletService.getPaymentMethods
+    });
+
+    const currentBalance = walletData?.data?.credit || 0.00;
+    const transactions = txData?.data || [];
+    const paymentMethods = methodsData?.data || [];
+    const userName = user ? `${user.firstName} ${user.lastName}` : "User Card";
+
+    // ==========================================
+    // Mutations & States
+    // ==========================================
+    const [amount, setAmount] = useState("");
+    const [topUpSuccess, setTopUpSuccess] = useState("");
+    const [topUpError, setTopUpError] = useState("");
+    
+    // Modal States
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [selectedMethodId, setSelectedMethodId] = useState<number | null>(null);
+
+    // Filter States
     const [searchQuery, setSearchQuery] = useState("");
     const [filterType, setFilterType] = useState<"all" | "credit" | "debit">("all");
-
-    // Mock data for wallet
-    const currentBalance = 245.50;
     const presets = [50, 100, 200, 500];
 
+    const topUpMutation = useMutation({
+        mutationFn: (data: { amount: number; paymentMethodId: number }) => walletService.topUpWallet(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['my-wallet'] });
+            queryClient.invalidateQueries({ queryKey: ['my-transactions'] });
+            setAmount("");
+            setSelectedMethodId(null);
+            setIsPaymentModalOpen(false);
+            setTopUpError("");
+            setTopUpSuccess("Wallet topped up successfully!");
+            setTimeout(() => setTopUpSuccess(""), 4000);
+        },
+        onError: (err: any) => {
+            setIsPaymentModalOpen(false);
+            setTopUpSuccess("");
+            setTopUpError(err.response?.data?.message || "Failed to top up wallet.");
+            setTimeout(() => setTopUpError(""), 4000);
+        }
+    });
+
+    // ==========================================
+    // Handlers
+    // ==========================================
+    const handleProceedClick = (e: React.FormEvent) => {
+        e.preventDefault();
+        const topUpValue = parseFloat(amount);
+        
+        if (!topUpValue || topUpValue <= 0) {
+            setTopUpError("Please enter a valid amount.");
+            return;
+        }
+        setTopUpError("");
+        setIsPaymentModalOpen(true);
+    };
+
+    const handleConfirmPayment = () => {
+        if (!selectedMethodId) return;
+        topUpMutation.mutate({ 
+            amount: parseFloat(amount), 
+            paymentMethodId: selectedMethodId 
+        });
+    };
+
+    const handlePresetClick = (value: number) => {
+        setAmount(value.toString());
+        setTopUpError("");
+    };
+
+    const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value.replace(/[^0-9.]/g, "");
+        setAmount(val);
+        setTopUpError("");
+    };
+
     // Filter Logic
-    const filteredTransactions = MOCK_TRANSACTIONS.filter((tx) => {
+    const filteredTransactions = transactions.filter((tx: any) => {
         const matchesSearch = tx.title.toLowerCase().includes(searchQuery.toLowerCase()) || tx.id.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesType = filterType === "all" ? true : tx.type === filterType;
         return matchesSearch && matchesType;
     });
 
-    // Handlers
-    const handleAddFunds = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!amount && !selectedPreset) return;
-
-        setIsLoading(true);
-        setTimeout(() => {
-            setIsLoading(false);
-            setAmount("");
-            setSelectedPreset(null);
-            console.log(`Redirecting to payment gateway for $${selectedPreset || amount}`);
-        }, 1200);
-    };
-
-    const handlePresetClick = (value: number) => {
-        setSelectedPreset(value);
-        setAmount(""); // Clear custom input when preset is selected
-    };
-
-    const handleCustomAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value.replace(/\D/g, "");
-        setAmount(val);
-        setSelectedPreset(null); // Clear preset when typing custom amount
-    };
-
     const getStatusBadge = (status: string) => {
         switch (status) {
             case "completed":
+            case "success":
                 return <span className="flex w-fit items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-600"><CheckCircle2 size={14} /> Completed</span>;
             case "pending":
                 return <span className="flex w-fit items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-600"><Clock size={14} /> Pending</span>;
             case "failed":
+            case "cancelled":
                 return <span className="flex w-fit items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600"><XCircle size={14} /> Failed</span>;
             default:
                 return null;
         }
     };
 
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+
     const sectionClass = "rounded-3xl border border-gray-100 bg-white p-6 shadow-sm md:p-8";
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-8 relative">
+
+            {/* ========================================== */}
+            {/* Payment Method Selection Modal             */}
+            {/* ========================================== */}
+            <AnimatePresence>
+                {isPaymentModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/40 p-4 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="relative w-full max-w-md overflow-hidden rounded-[2rem] bg-white p-8 shadow-2xl"
+                        >
+                            <button 
+                                onClick={() => setIsPaymentModalOpen(false)} 
+                                className="absolute right-6 top-6 cursor-none text-gray-400 transition-colors hover:text-black"
+                            >
+                                <X size={24} />
+                            </button>
+
+                            <div className="mb-6">
+                                <h3 className="text-2xl font-black text-zinc-950">Select Payment Method</h3>
+                                <p className="mt-2 text-sm font-medium text-zinc-500">
+                                    Choose a gateway to complete your ${amount} top-up.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col gap-3 mb-8 max-h-[300px] overflow-y-auto pr-2">
+                                {paymentMethods.map((method: any) => (
+                                    <button
+                                        key={method.id}
+                                        type="button"
+                                        onClick={() => setSelectedMethodId(method.id)}
+                                        className={`flex w-full cursor-none items-center justify-between rounded-2xl border-2 p-4 transition-all ${
+                                            selectedMethodId === method.id 
+                                            ? 'border-zinc-950 bg-zinc-50' 
+                                            : 'border-gray-100 bg-white hover:border-gray-200'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`flex h-10 w-10 items-center justify-center rounded-full ${selectedMethodId === method.id ? 'bg-zinc-950 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                                <Building2 size={18} />
+                                            </div>
+                                            <span className="font-bold text-zinc-900">{method.description}</span>
+                                        </div>
+                                        {selectedMethodId === method.id && (
+                                            <CheckCircle2 size={20} className="text-zinc-950" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <motion.button
+                                type="button"
+                                onClick={handleConfirmPayment}
+                                disabled={!selectedMethodId || topUpMutation.isPending}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="flex w-full cursor-none items-center justify-center gap-2 rounded-full bg-zinc-950 py-4 text-sm font-bold text-white transition-opacity disabled:opacity-50"
+                            >
+                                {topUpMutation.isPending ? "Processing..." : `Pay $${amount}`}
+                            </motion.button>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* ========================================== */}
             {/* TOP SECTION: Virtual Card & Top Up Form    */}
@@ -108,18 +228,22 @@ export default function WalletTab() {
                         <p className="text-sm text-white/70">Available Funds</p>
                         <h2 className="mt-1 flex items-start text-5xl font-black tracking-tight">
                             <span className="mt-2 text-2xl text-white/70">$</span>
-                            {currentBalance.toFixed(2)}
+                            {isWalletLoading ? (
+                                <span className="ml-2 animate-pulse rounded-md bg-white/20 text-transparent">000.00</span>
+                            ) : (
+                                <span className="ml-2">{currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            )}
                         </h2>
                     </div>
 
                     <div className="relative z-10 flex items-center justify-between text-sm text-white/50">
-                        <span>Mahdi Jorati</span>
+                        <span>{userName}</span>
                         <span>Active</span>
                     </div>
                 </div>
 
                 {/* 2. Add Funds Form */}
-                <form onSubmit={handleAddFunds} className={sectionClass}>
+                <form onSubmit={handleProceedClick} className={sectionClass}>
                     <div className="mb-6 flex items-center gap-3 border-b border-gray-100 pb-4">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-gray-500">
                             <Plus size={20} />
@@ -129,6 +253,25 @@ export default function WalletTab() {
                             <p className="text-sm text-gray-500 select-none cursor-none">Top up your wallet to book faster.</p>
                         </div>
                     </div>
+
+                    <AnimatePresence>
+                        {topUpError && (
+                            <motion.div 
+                                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} 
+                                className="mb-4 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-600"
+                            >
+                                <AlertCircle size={18} /> {topUpError}
+                            </motion.div>
+                        )}
+                        {topUpSuccess && (
+                            <motion.div 
+                                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} 
+                                className="mb-4 flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-600"
+                            >
+                                <CheckCircle2 size={18} /> {topUpSuccess}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     <div className="mb-6">
                         <label className="mb-3 block cursor-none select-none text-xs font-bold uppercase tracking-wider text-gray-500">
@@ -143,7 +286,7 @@ export default function WalletTab() {
                                     whileTap={{ scale: 0.95 }}
                                     onClick={() => handlePresetClick(preset)}
                                     className={`flex cursor-none items-center justify-center rounded-2xl border py-3 text-sm font-semibold transition-colors ${
-                                        selectedPreset === preset
+                                        amount === preset.toString()
                                             ? "border-black bg-black text-white"
                                             : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300"
                                     }`}
@@ -172,13 +315,12 @@ export default function WalletTab() {
 
                     <motion.button
                         type="submit"
-                        disabled={isLoading || (!amount && !selectedPreset)}
+                        disabled={!amount}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="flex w-full cursor-none items-center justify-center gap-2 rounded-full bg-black py-4 text-sm font-bold text-white transition-opacity disabled:opacity-50"
                     >
-                        {isLoading ? "Processing..." : "Proceed to Payment"}
-                        {!isLoading && <ArrowUpRight size={18} />}
+                        Proceed to Payment <ArrowUpRight size={18} />
                     </motion.button>
                 </form>
             </div>
@@ -211,7 +353,7 @@ export default function WalletTab() {
                             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                             <input
                                 type="text"
-                                placeholder="Search by ID or name..."
+                                placeholder="Search by ID or description..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="block w-full cursor-none rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm text-black outline-none transition-all focus:border-black focus:bg-white focus:shadow-sm"
@@ -256,8 +398,12 @@ export default function WalletTab() {
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                             <AnimatePresence>
-                                {filteredTransactions.length > 0 ? (
-                                    filteredTransactions.map((tx) => (
+                                {isTxLoading ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-16 text-center text-sm font-medium text-gray-400">Loading transactions...</td>
+                                    </tr>
+                                ) : filteredTransactions.length > 0 ? (
+                                    filteredTransactions.map((tx: any) => (
                                         <motion.tr
                                             layout
                                             initial={{ opacity: 0, y: 10 }}
@@ -269,7 +415,7 @@ export default function WalletTab() {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-4">
                                                     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-110 ${
-                                                        tx.type === "credit" ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-600"
+                                                        tx.type === "credit" ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
                                                     }`}>
                                                         {tx.type === "credit" ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
                                                     </div>
@@ -282,7 +428,7 @@ export default function WalletTab() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <p className="font-semibold text-gray-900 select-none cursor-none">{tx.date}</p>
+                                                <p className="font-semibold text-gray-900 select-none cursor-none">{formatDate(tx.date)}</p>
                                                 <p className="mt-0.5 text-xs text-gray-400 select-none cursor-none">{tx.id}</p>
                                             </td>
                                             <td className="px-6 py-4">
@@ -290,7 +436,7 @@ export default function WalletTab() {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <p className={`font-black tracking-tight select-none cursor-none ${
-                                                    tx.type === "credit" ? "text-green-600" : "text-gray-900"
+                                                    tx.type === "credit" ? "text-green-600" : "text-red-600"
                                                 }`}>
                                                     {tx.type === "credit" ? "+" : "-"}${tx.amount.toFixed(2)}
                                                 </p>
@@ -318,7 +464,6 @@ export default function WalletTab() {
                     </div>
                 </div>
             </div>
-
         </div>
     );
 }

@@ -65,8 +65,8 @@ public class PaymentServiceImplementation implements PaymentService {
         String transactionRef = "TRX-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         LocalDateTime now = LocalDateTime.now();
 
-        paymentRepository.insertPaymentNative(
-                totalAmount, now, PaymentStatus.SUCCESS.name(), transactionRef, method.getId(), reservation.getId()
+       paymentRepository.insertPaymentNative(
+                totalAmount, now, PaymentStatus.SUCCESS.name(), transactionRef, method.getId(), reservation.getId(), userId
         );
 
         reservationRepository.updateReservationStatusNative(reservation.getId(), ReservationStatus.CONFIRMED.name());
@@ -84,5 +84,14 @@ public class PaymentServiceImplementation implements PaymentService {
         }
 
         return ApiResponse.success("Payment successful. Tickets have been issued.", 200, transactionRef);
+    }
+
+    @Override
+    public ApiResponse<List<PaymentMethod>> getAllowedPaymentMethods() {
+        List<PaymentMethod> methods = paymentMethodRepository.findAll().stream()
+                .filter(m -> m.getStatus() == gangofthree.payment.entity.enums.PaymentMethodStatus.ALLOWED)
+                .collect(java.util.stream.Collectors.toList());
+        
+        return ApiResponse.success("Payment methods retrieved successfully.", 200, methods);
     }
 }

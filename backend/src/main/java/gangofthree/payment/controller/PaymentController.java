@@ -22,4 +22,9 @@ public class PaymentController {
         Long userId = (Long) authentication.getPrincipal();
         return paymentService.processPayment(userId, request);
     }
+
+    @GetMapping("/methods")
+    public ApiResponse<java.util.List<gangofthree.payment.entity.PaymentMethod>> getPaymentMethods() {
+        return paymentService.getAllowedPaymentMethods();
+    }
 }

@@ -1,5 +1,5 @@
 package gangofthree.auth.service;
-
+import gangofthree.user.entity.Wallet;
 import gangofthree.auth.dto.request.forgotpassword.ForgotPasswordOtpRequest;
 import gangofthree.auth.dto.request.forgotpassword.ForgotPasswordRequest;
 import gangofthree.auth.dto.request.LoginRequest;
@@ -24,7 +24,7 @@ import gangofthree.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import gangofthree.user.repository.WalletRepository;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -37,7 +37,7 @@ public class AuthServiceImplementation implements AuthService {
     private final SmsService smsService;
     private final EmailService emailService;
     private final JwtService jwtService;
-
+    private final WalletRepository walletRepository;
     @Override
     public AuthResponse login(LoginRequest loginRequest) {
         CredentialType credentialType = CredentialDetector.detect(loginRequest.getCredential());
@@ -136,8 +136,13 @@ public class AuthServiceImplementation implements AuthService {
                 .build();
 
         userRepository.save(user);
-
+        
+        Wallet wallet = new Wallet();
+        wallet.setUser(user);
+        wallet.setCredit(java.math.BigDecimal.ZERO);
+        walletRepository.save(wallet);
         String jwtToken = jwtService.generateRegisterToken(user);
+
         return AuthResponse.builder()
                 .message("register successful.")
                 .token(jwtToken)

@@ -1,12 +1,14 @@
 package gangofthree.payment.entity;
 
 import gangofthree.payment.entity.enums.PaymentStatus;
+import gangofthree.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import gangofthree.reservation.entity.Reservation;
+
 @Entity
 @Getter
 @Setter
@@ -24,7 +26,6 @@ public class Payment {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
-
     @Column(name = "payment_date", nullable = false)
     private LocalDateTime paymentDate;
 
@@ -36,6 +37,10 @@ public class Payment {
     private PaymentMethod paymentMethod;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reservation_id", nullable = false)
+    @JoinColumn(name = "reservation_id") 
     private Reservation reservation;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }

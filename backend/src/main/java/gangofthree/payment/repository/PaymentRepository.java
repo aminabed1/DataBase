@@ -17,11 +17,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByStatus(PaymentStatus status);
 
     @Modifying
-    @Query(value = "INSERT INTO payments (amount, payment_date, status, transaction_ref, payment_method_id, reservation_id) VALUES (:amount, :paymentDate, :status, :transactionRef, :paymentMethodId, :reservationId)", nativeQuery = true)
+    @Query(value = "INSERT INTO payments (amount, payment_date, status, transaction_ref, payment_method_id, reservation_id, user_id) VALUES (:amount, :paymentDate, :status, :transactionRef, :paymentMethodId, :reservationId, :userId)", nativeQuery = true)
     void insertPaymentNative(@Param("amount") BigDecimal amount, 
                              @Param("paymentDate") LocalDateTime paymentDate, 
                              @Param("status") String status, 
                              @Param("transactionRef") String transactionRef, 
                              @Param("paymentMethodId") Long paymentMethodId, 
-                             @Param("reservationId") Long reservationId);
+                             @Param("reservationId") Long reservationId,
+                             @Param("userId") Long userId);
 }
