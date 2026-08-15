@@ -1,7 +1,7 @@
 package gangofthree.match.service;
 
 import gangofthree.match.entity.Match;
-import gangofthree.match.dto.MatchRequest;
+import gangofthree.match.dto.request.MatchRequest;
 import gangofthree.match.repository.*;
 import gangofthree.search.service.MatchSearchIndexService;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package gangofthree.match.dto;
+package gangofthree.match.dto.request;
 
 import gangofthree.entity.enums.MatchStatus;
 import lombok.Data;

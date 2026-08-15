@@ -2,7 +2,7 @@ package gangofthree.match.controller;
 
 import gangofthree.common.response.ApiResponse;
 import gangofthree.match.entity.Match;
-import gangofthree.match.dto.MatchRequest;
+import gangofthree.match.dto.request.MatchRequest;
 import gangofthree.match.service.MatchService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
