@@ -9,6 +9,7 @@ import { DashboardTab } from "@/features/dashboard/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProfile } from "@/features/dashboard/hooks/useProfile";
 import { useRouter } from "next/navigation";
+import { Home } from "lucide-react";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<DashboardTab>('profile');
@@ -56,8 +57,19 @@ export default function DashboardPage() {
   };
 
   return (
-    <main className="h-screen w-full bg-[#f7f7f7] pt-8 pb-8 text-gray-900 overflow-hidden">
-      <div className="mx-auto flex h-full max-w-[90rem] flex-col gap-8 px-4 md:flex-row md:px-8">
+    <main className="h-screen w-full bg-[#f7f7f7] pt-8 pb-8 text-gray-900 overflow-hidden relative">
+      {/* Back to Home Button */}
+      <div className="absolute left-6 top-6 z-50 md:left-8 md:top-8">
+        <button
+          onClick={() => router.push("/")}
+          className="flex cursor-pointer items-center gap-2 rounded-full border border-black/10 bg-white shadow-sm px-4 py-2 text-sm font-bold text-zinc-900 transition-all hover:shadow-md hover:bg-gray-50"
+        >
+          <Home size={18} />
+          <span>Home</span>
+        </button>
+      </div>
+
+      <div className="mx-auto flex h-full max-w-[90rem] flex-col gap-8 px-4 md:flex-row md:px-8 pt-12 md:pt-4">
         
         <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} isLoading={isLoading} />
 
