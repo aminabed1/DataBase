@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
     CalendarDays, MapPin, Ticket, ShieldCheck, Armchair, Clock,
-    Crown, Star, Leaf, Users, Accessibility, GraduationCap, Bird, Flame, ArrowLeft, Info
+    Crown, Star, Leaf, Users, Accessibility, Bird, Flame, ArrowLeft
 } from "lucide-react";
 
 // ==========================================
@@ -22,6 +22,7 @@ const MOCK_MATCH = {
     league: "Premier League",
 };
 
+// کلاً 10 صندلی برای هر سکو، با دسته‌بندی‌های مختلف که جمعشون 10 میشه
 const STADIUM_SECTIONS = [
     {
         id: "n-lower", name: "North Stand - Lower Tier", total: 10, available: 4, price: 250,
@@ -58,8 +59,8 @@ const STADIUM_SECTIONS = [
     {
         id: "n-upper", name: "North Stand - Upper Tier", total: 10, available: 10, price: 80,
         categories: [
-            { name: "Economy", count: 6, amenities: "Basic Seating" },
-            { name: "Student", count: 4, amenities: "ID Required" }
+            // ظرفیت صندلی‌های دانشجویی به اکونومی اضافه شد تا 10 تا بشه
+            { name: "Economy", count: 10, amenities: "Basic Seating" }
         ],
         path: "M 205 105 L 595 105 L 685 15 Q 400 -25 115 15 Z"
     },
@@ -104,8 +105,6 @@ const getCategoryStyle = (categoryName: string) => {
             return { icon: Users, color: "text-sky-500", bgClass: "bg-sky-400", fontClass: "font-sans font-bold text-base" };
         case "Disabled":
             return { icon: Accessibility, color: "text-blue-600", bgClass: "bg-blue-500", fontClass: "font-sans font-bold text-base" };
-        case "Student":
-            return { icon: GraduationCap, color: "text-orange-500", bgClass: "bg-orange-400", fontClass: "font-sans font-bold text-base" };
         case "Early Bird":
             return { icon: Bird, color: "text-teal-600", bgClass: "bg-teal-500", fontClass: "font-sans font-bold text-base" };
         case "Last Minute":
@@ -287,7 +286,6 @@ export default function StadiumView() {
                                         </div>
                                     </motion.div>
 
-                                    {/* استفاده از mode="wait" برای جابجایی نرم بین کارت و لیست و جلوگیری از پرش ارتفاع */}
                                     <div className="min-h-[200px]">
                                         <AnimatePresence mode="wait">
                                             {selectedSeat ? (
