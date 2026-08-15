@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarDays, MapPin, Ticket, ShieldCheck, Armchair, Clock } from "lucide-react";
+import {
+    CalendarDays, MapPin, Ticket, ShieldCheck, Armchair, Clock,
+    Crown, Star, Leaf, Users, Accessibility, GraduationCap, Bird, Flame
+} from "lucide-react";
 
 // ==========================================
-// Mock Data (Based on your database structure)
+// Mock Data (Mapped from Phase 2 Queries)
 // ==========================================
 const MOCK_MATCH = {
     id: 1,
@@ -18,168 +21,244 @@ const MOCK_MATCH = {
     league: "Premier League",
 };
 
-// 8 Stadium Sections Data
+// Stadium Sections equipped with new Ticket Categories
 const STADIUM_SECTIONS = [
-    { id: "n-lower", name: "North Stand - Lower Tier", total: 8000, available: 1200, price: 200000, categories: [{ name: "VIP", count: 200 }, { name: "Regular", count: 1000 }], path: "M 290 195 L 510 195 L 585 120 L 215 120 Z" },
-    { id: "s-lower", name: "South Stand - Lower Tier", total: 8000, available: 450, price: 200000, categories: [{ name: "VIP", count: 50 }, { name: "Regular", count: 400 }], path: "M 290 325 L 510 325 L 585 400 L 215 400 Z" },
-    { id: "w-lower", name: "West Stand - Lower Tier", total: 6000, available: 3000, price: 150000, categories: [{ name: "Premium", count: 500 }, { name: "Regular", count: 2500 }], path: "M 285 205 L 285 315 L 205 395 L 205 125 Z" },
-    { id: "e-lower", name: "East Stand - Lower Tier", total: 6000, available: 800, price: 150000, categories: [{ name: "Premium", count: 100 }, { name: "Regular", count: 700 }], path: "M 515 205 L 515 315 L 595 395 L 595 125 Z" },
+    {
+        id: "n-lower", name: "North Stand - Lower Tier", total: 8000, available: 1200, price: 200000,
+        categories: [
+            { name: "VVIP", count: 50, amenities: "Parking, Food, Lounge" },
+            { name: "Premium", count: 1150, amenities: "Parking" }
+        ],
+        path: "M 290 195 L 510 195 L 585 120 L 215 120 Z"
+    },
+    {
+        id: "s-lower", name: "South Stand - Lower Tier", total: 8000, available: 450, price: 200000,
+        categories: [
+            { name: "VIP", count: 50, amenities: "Parking, Food" },
+            { name: "Family", count: 400, amenities: "Kid Zone" }
+        ],
+        path: "M 290 325 L 510 325 L 585 400 L 215 400 Z"
+    },
+    {
+        id: "w-lower", name: "West Stand - Lower Tier", total: 6000, available: 3000, price: 150000,
+        categories: [
+            { name: "Disabled", count: 100, amenities: "Wheelchair Access" },
+            { name: "Regular", count: 2900, amenities: "Standard Seating" }
+        ],
+        path: "M 285 205 L 285 315 L 205 395 L 205 125 Z"
+    },
+    {
+        id: "e-lower", name: "East Stand - Lower Tier", total: 6000, available: 800, price: 150000,
+        categories: [
+            { name: "Premium", count: 100, amenities: "Parking" },
+            { name: "Early Bird", count: 700, amenities: "Discounted" }
+        ],
+        path: "M 515 205 L 515 315 L 595 395 L 595 125 Z"
+    },
 
-    { id: "n-upper", name: "North Stand - Upper Tier", total: 12000, available: 5000, price: 100000, categories: [{ name: "Regular", count: 5000 }], path: "M 205 105 L 595 105 L 685 15 Q 400 -25 115 15 Z" },
-    { id: "s-upper", name: "South Stand - Upper Tier", total: 12000, available: 0, price: 100000, categories: [{ name: "Regular", count: 0 }], path: "M 205 415 L 595 415 L 685 505 Q 400 545 115 505 Z" },
-    { id: "w-upper", name: "West Stand - Upper Tier", total: 10000, available: 2100, price: 80000, categories: [{ name: "Regular", count: 2100 }], path: "M 190 120 L 190 400 L 100 490 Q 60 260 100 30 Z" },
-    { id: "e-upper", name: "East Stand - Upper Tier", total: 10000, available: 4300, price: 80000, categories: [{ name: "Regular", count: 4300 }], path: "M 610 120 L 610 400 L 700 490 Q 740 260 700 30 Z" },
+    {
+        id: "n-upper", name: "North Stand - Upper Tier", total: 12000, available: 5000, price: 100000,
+        categories: [
+            { name: "Economy", count: 4000, amenities: "Basic Seating" },
+            { name: "Student", count: 1000, amenities: "ID Required" }
+        ],
+        path: "M 205 105 L 595 105 L 685 15 Q 400 -25 115 15 Z"
+    },
+    {
+        id: "s-upper", name: "South Stand - Upper Tier", total: 12000, available: 0, price: 100000,
+        categories: [
+            { name: "Economy", count: 0, amenities: "Basic Seating" }
+        ],
+        path: "M 205 415 L 595 415 L 685 505 Q 400 545 115 505 Z"
+    },
+    {
+        id: "w-upper", name: "West Stand - Upper Tier", total: 10000, available: 2100, price: 80000,
+        categories: [
+            { name: "Last Minute", count: 500, amenities: "Dynamic Pricing" },
+            { name: "Regular", count: 1600, amenities: "Standard Seating" }
+        ],
+        path: "M 190 120 L 190 400 L 100 490 Q 60 260 100 30 Z"
+    },
+    {
+        id: "e-upper", name: "East Stand - Upper Tier", total: 10000, available: 4300, price: 80000,
+        categories: [
+            { name: "Economy", count: 4300, amenities: "Basic Seating" }
+        ],
+        path: "M 610 120 L 610 400 L 700 490 Q 740 260 700 30 Z"
+    },
 ];
+
+// ==========================================
+// Category Styles Dictionary
+// ==========================================
+const getCategoryStyle = (categoryName: string) => {
+    switch (categoryName) {
+        case "VVIP":
+            return { icon: Crown, color: "text-amber-600", fontClass: "font-[cursive] italic text-xl tracking-wider font-bold" };
+        case "VIP":
+            return { icon: Crown, color: "text-amber-500", fontClass: "font-serif italic text-lg font-bold" };
+        case "Premium":
+            return { icon: Star, color: "text-indigo-600", fontClass: "font-[cursive] italic text-lg font-bold" };
+        case "Economy":
+            return { icon: Leaf, color: "text-emerald-600", fontClass: "font-sans font-bold" };
+        case "Family":
+            return { icon: Users, color: "text-sky-500", fontClass: "font-sans font-bold" };
+        case "Disabled":
+            return { icon: Accessibility, color: "text-blue-600", fontClass: "font-sans font-bold" };
+        case "Student":
+            return { icon: GraduationCap, color: "text-orange-500", fontClass: "font-sans font-bold" };
+        case "Early Bird":
+            return { icon: Bird, color: "text-teal-600", fontClass: "font-sans font-bold" };
+        case "Last Minute":
+            return { icon: Flame, color: "text-red-500", fontClass: "font-sans font-bold uppercase tracking-widest text-xs" };
+        default:
+            return { icon: ShieldCheck, color: "text-zinc-600", fontClass: "font-sans font-bold" };
+    }
+};
 
 export default function StadiumView() {
     const [hoveredSection, setHoveredSection] = useState<string | null>(null);
 
-    // Find the data for the currently hovered section
     const activeSectionData = STADIUM_SECTIONS.find(s => s.id === hoveredSection);
 
     return (
-        <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 font-sans">
-            <div className="mx-auto max-w-6xl">
+        // Lighter gray background without boxes
+        <div className="min-h-screen bg-[#E8E9E9] p-4 md:p-8 font-sans text-zinc-900">
+            <div className="mx-auto max-w-7xl flex flex-col-reverse lg:flex-row gap-16 lg:gap-8 pt-8">
 
                 {/* ========================================== */}
-                {/* HEADER: Match Information                  */}
+                {/* LEFT COLUMN: Pure Typography Info Panel    */}
                 {/* ========================================== */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-                    className="mb-8 flex flex-col md:flex-row items-center justify-between gap-6 rounded-[2rem] bg-white p-6 shadow-sm border border-gray-100"
-                >
-                    {/* Teams */}
-                    <div className="flex items-center gap-6">
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 p-2 border border-gray-100">
-                                <img src={MOCK_MATCH.teamHome.logo} alt="Home" className="h-full w-full object-contain drop-shadow-md" />
+                <div className="w-full lg:w-1/3 flex flex-col gap-12 pr-4">
+
+                    {/* General Match Info (Moved to left col, unboxed) */}
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col gap-4 border-l-4 border-zinc-900 pl-6">
+                        <h1 className="text-4xl font-black uppercase tracking-tighter text-zinc-950">
+                            {MOCK_MATCH.league}
+                        </h1>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-3 text-sm font-semibold text-zinc-600">
+                                <CalendarDays size={18} className="text-zinc-900" />
+                                <span>{MOCK_MATCH.date}</span>
+                                <span className="text-zinc-300">|</span>
+                                <Clock size={18} className="text-zinc-900" />
+                                <span>{MOCK_MATCH.time} Local</span>
                             </div>
-                            <span className="text-sm font-black text-zinc-900">{MOCK_MATCH.teamHome.name}</span>
-                        </div>
-
-                        <div className="flex flex-col items-center px-4">
-                            <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-600 mb-2 whitespace-nowrap">{MOCK_MATCH.league}</span>
-                            <span className="text-2xl font-black italic text-gray-300">VS</span>
-                        </div>
-
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50 p-2 border border-gray-100">
-                                <img src={MOCK_MATCH.teamAway.logo} alt="Away" className="h-full w-full object-contain drop-shadow-md" />
+                            <div className="flex items-center gap-3 text-sm font-semibold text-zinc-600">
+                                <MapPin size={18} className="text-zinc-900" />
+                                <span>{MOCK_MATCH.stadium} Stadium, {MOCK_MATCH.city}</span>
                             </div>
-                            <span className="text-sm font-black text-zinc-900">{MOCK_MATCH.teamAway.name}</span>
                         </div>
-                    </div>
+                    </motion.div>
 
-                    {/* Time & Location */}
-                    <div className="flex flex-col gap-3 rounded-2xl bg-gray-50 p-4 border border-gray-100 min-w-[250px]">
-                        <div className="flex items-center gap-3 text-sm font-bold text-zinc-700">
-                            <CalendarDays size={16} className="text-emerald-500" />
-                            <span>{MOCK_MATCH.date}</span>
-                            <span className="text-gray-300">|</span>
-                            <Clock size={16} className="text-emerald-500" />
-                            <span>{MOCK_MATCH.time} Local</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-sm font-bold text-zinc-700">
-                            <MapPin size={16} className="text-emerald-500" />
-                            <span>{MOCK_MATCH.stadium} Stadium, {MOCK_MATCH.city}</span>
-                        </div>
-                    </div>
-                </motion.div>
+                    {/* Section Details (Unboxed, typographic) */}
+                    <div>
+                        <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-400 mb-8 flex items-center gap-2">
+                            <Armchair size={16} /> Section Details
+                        </h2>
 
-                {/* ========================================== */}
-                {/* MAIN CONTENT: Info Panel & Stadium Map     */}
-                {/* ========================================== */}
-                <div className="flex flex-col-reverse lg:flex-row gap-8">
+                        <AnimatePresence mode="wait">
+                            {activeSectionData ? (
+                                <motion.div
+                                    key={activeSectionData.id}
+                                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                    className="flex flex-col gap-8"
+                                >
+                                    <div>
+                                        <h3 className="text-3xl font-black text-zinc-900 mb-2">{activeSectionData.name}</h3>
+                                        <p className="text-zinc-500 font-medium">Starting from: <span className="text-zinc-900 font-bold">{activeSectionData.price.toLocaleString()} Toman</span></p>
+                                    </div>
 
-                    {/* Information Sidebar */}
-                    <div className="w-full lg:w-1/3 flex flex-col gap-4">
-                        <div className="rounded-[2rem] bg-zinc-950 p-6 shadow-xl text-white min-h-[400px] flex flex-col relative overflow-hidden">
-
-                            {/* Faded Background Pattern */}
-                            <div className="absolute top-0 right-0 opacity-5 pointer-events-none">
-                                <svg width="200" height="200" viewBox="0 0 100 100"><path d="M0,0 L100,100 M100,0 L0,100" stroke="white" strokeWidth="2" fill="none"/></svg>
-                            </div>
-
-                            <h2 className="text-xl font-black mb-6 flex items-center gap-2">
-                                <Armchair className="text-emerald-400" /> Stadium View
-                            </h2>
-
-                            <AnimatePresence mode="wait">
-                                {activeSectionData ? (
-                                    <motion.div
-                                        key={activeSectionData.id}
-                                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-                                        className="flex flex-col gap-6 flex-1"
-                                    >
-                                        <div className="border-b border-zinc-800 pb-4">
-                                            <h3 className="text-2xl font-bold text-emerald-400 mb-1">{activeSectionData.name}</h3>
-                                            <p className="text-zinc-400 text-sm">Starting from: {activeSectionData.price.toLocaleString()} Toman</p>
+                                    <div className="flex flex-col gap-6">
+                                        <div className="flex justify-between items-end border-b border-zinc-300/50 pb-2">
+                                            <span className="text-zinc-500 font-medium">Total Capacity</span>
+                                            <span className="text-lg font-black text-zinc-900">{activeSectionData.total.toLocaleString()}</span>
                                         </div>
 
-                                        <div className="flex flex-col gap-4">
-                                            <div className="flex justify-between items-end">
-                                                <span className="text-zinc-400 text-sm">Total Capacity</span>
-                                                <span className="text-xl font-black">{activeSectionData.total.toLocaleString()}</span>
-                                            </div>
-
-                                            <div className="flex justify-between items-end">
-                                                <span className="text-zinc-400 text-sm">Available Seats</span>
-                                                <span className={`text-2xl font-black ${activeSectionData.available === 0 ? 'text-red-400' : 'text-white'}`}>
-                                                    {activeSectionData.available === 0 ? 'Sold Out' : activeSectionData.available.toLocaleString()}
-                                                </span>
-                                            </div>
-
-                                            {/* Progress Bar */}
-                                            <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden mt-1">
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${(activeSectionData.available / activeSectionData.total) * 100}%` }}
-                                                    className={`h-full rounded-full ${activeSectionData.available === 0 ? 'bg-red-500' : 'bg-emerald-500'}`}
-                                                />
-                                            </div>
+                                        <div className="flex justify-between items-end border-b border-zinc-300/50 pb-2">
+                                            <span className="text-zinc-500 font-medium">Available Seats</span>
+                                            <span className={`text-xl font-black ${activeSectionData.available === 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                                                {activeSectionData.available === 0 ? 'Sold Out' : activeSectionData.available.toLocaleString()}
+                                            </span>
                                         </div>
+                                    </div>
 
-                                        {/* Category Breakdown */}
-                                        <div className="mt-auto pt-4 flex flex-col gap-3">
-                                            <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Availability by Category</span>
-                                            {activeSectionData.categories.map((cat, idx) => (
-                                                <div key={idx} className="flex items-center justify-between bg-zinc-900/50 p-3 rounded-xl border border-zinc-800">
-                                                    <div className="flex items-center gap-2">
-                                                        <ShieldCheck size={16} className={cat.name === 'VIP' ? 'text-amber-400' : 'text-emerald-400'} />
-                                                        <span className="text-sm font-semibold">{cat.name}</span>
+                                    {/* Breakdown by DB Categories */}
+                                    <div className="pt-4 flex flex-col gap-5">
+                                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Available Ticket Types</span>
+                                        {activeSectionData.categories.map((cat, idx) => {
+                                            const { icon: CatIcon, color, fontClass } = getCategoryStyle(cat.name);
+
+                                            return (
+                                                <div key={idx} className="flex items-center justify-between group">
+                                                    <div className="flex items-center gap-3">
+                                                        <CatIcon size={20} className={color} />
+                                                        <div className="flex flex-col">
+                                                            <span className={`${fontClass} ${color}`}>{cat.name}</span>
+                                                            {/* Showing Amenities from SQL */}
+                                                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{cat.amenities}</span>
+                                                        </div>
                                                     </div>
-                                                    <span className="text-sm font-bold text-zinc-300">{cat.count.toLocaleString()} Seats</span>
+                                                    <span className="text-sm font-black text-zinc-700 bg-zinc-200/50 px-3 py-1 rounded-full">
+                                                        {cat.count.toLocaleString()}
+                                                    </span>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="empty"
-                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                        className="flex flex-col items-center justify-center flex-1 text-center opacity-50"
-                                    >
-                                        <Ticket size={48} className="mb-4 text-zinc-600" />
-                                        <p className="text-lg font-bold">Select a Section</p>
-                                        <p className="text-sm text-zinc-500 mt-2">Hover over the stadium map<br/>to view capacity and details.</p>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
+                                            );
+                                        })}
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="empty"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    className="flex flex-col gap-4 opacity-40 mt-10"
+                                >
+                                    <Ticket size={40} className="text-zinc-400" />
+                                    <p className="text-xl font-black text-zinc-900">Select a Block</p>
+                                    <p className="text-sm text-zinc-600 font-medium">Hover over the stadium map on the right<br/>to view live capacity and ticket categories.</p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
+                </div>
 
-                    {/* Interactive Stadium Map */}
-                    <div className="w-full lg:w-2/3 flex items-center justify-center bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm">
+                {/* ========================================== */}
+                {/* RIGHT COLUMN: Teams & Stadium SVG          */}
+                {/* ========================================== */}
+                <div className="w-full lg:w-2/3 flex flex-col items-center justify-start gap-12">
+
+                    {/* Teams Header (Unboxed, floating) */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center justify-center gap-6 w-full mt-4"
+                    >
+                        <div className="flex flex-col items-center gap-3">
+                            <img src={MOCK_MATCH.teamHome.logo} alt="Home" className="h-20 w-20 md:h-24 md:w-24 object-contain drop-shadow-xl" />
+                            <span className="text-lg md:text-xl font-black text-zinc-900 tracking-tight">{MOCK_MATCH.teamHome.name}</span>
+                        </div>
+
+                        <div className="flex flex-col items-center px-4 md:px-8">
+                            <span className="text-4xl md:text-6xl font-black italic text-zinc-300/80 tracking-tighter">VS</span>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-3">
+                            <img src={MOCK_MATCH.teamAway.logo} alt="Away" className="h-20 w-20 md:h-24 md:w-24 object-contain drop-shadow-xl" />
+                            <span className="text-lg md:text-xl font-black text-zinc-900 tracking-tight">{MOCK_MATCH.teamAway.name}</span>
+                        </div>
+                    </motion.div>
+
+                    {/* Interactive Stadium Map (No box, floating directly on bg) */}
+                    <div className="w-full flex items-center justify-center px-4">
                         <svg
                             viewBox="0 0 800 520"
-                            className="w-full h-auto max-h-[500px] drop-shadow-xl"
-                            style={{ filter: "drop-shadow(0 20px 13px rgb(0 0 0 / 0.05))" }}
+                            className="w-full h-auto max-h-[600px]"
+                            style={{ filter: "drop-shadow(0 25px 25px rgb(0 0 0 / 0.1))" }}
                         >
                             {/* Pitch / Field */}
                             <g className="pitch">
-                                <rect x="300" y="210" width="200" height="100" rx="6" fill="#f0fdf4" stroke="#86efac" strokeWidth="2" />
-                                <circle cx="400" cy="260" r="20" fill="none" stroke="#bbf7d0" strokeWidth="2" />
-                                <line x1="400" y1="210" x2="400" y2="310" stroke="#bbf7d0" strokeWidth="2" />
+                                <rect x="300" y="210" width="200" height="100" rx="4" fill="#a7f3d0" stroke="#10b981" strokeWidth="2" opacity="0.5" />
+                                <circle cx="400" cy="260" r="20" fill="none" stroke="#10b981" strokeWidth="2" opacity="0.5" />
+                                <line x1="400" y1="210" x2="400" y2="310" stroke="#10b981" strokeWidth="2" opacity="0.5" />
                             </g>
 
                             {/* Render 8 Stadium Sections */}
@@ -187,16 +266,16 @@ export default function StadiumView() {
                                 const isHovered = hoveredSection === section.id;
                                 const isSoldOut = section.available === 0;
 
-                                // Coloring based on status
-                                let fillColor = "#f4f4f5"; // Default (Light Gray)
-                                let strokeColor = "#e4e4e7";
+                                // Colors adapted for the new lighter gray background
+                                let fillColor = "#d4d4d8"; // Slightly darker gray so it stands out from #E8E9E9
+                                let strokeColor = "#ffffff";
 
                                 if (isSoldOut) {
-                                    fillColor = "#fee2e2"; // Light Red
-                                    strokeColor = "#fca5a5";
+                                    fillColor = "#fca5a5";
+                                    strokeColor = "#fef2f2";
                                 } else if (isHovered) {
-                                    fillColor = "#a7f3d0"; // Light Green (Hover)
-                                    strokeColor = "#10b981"; // Dark Green border
+                                    fillColor = "#10b981"; // Strong green on hover
+                                    strokeColor = "#047857";
                                 }
 
                                 return (
@@ -205,7 +284,7 @@ export default function StadiumView() {
                                         d={section.path}
                                         fill={fillColor}
                                         stroke={strokeColor}
-                                        strokeWidth={isHovered ? "3" : "1.5"}
+                                        strokeWidth={isHovered ? "4" : "2"}
                                         strokeLinejoin="round"
                                         onMouseEnter={() => setHoveredSection(section.id)}
                                         onMouseLeave={() => setHoveredSection(null)}
@@ -213,8 +292,7 @@ export default function StadiumView() {
                                             if (!isSoldOut) alert(`Navigating to grid view for: ${section.name}`);
                                         }}
                                         className={`transition-colors duration-300 ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                                        // Slight scale effect on hover
-                                        whileHover={!isSoldOut ? { scale: 1.01, zIndex: 10 } : {}}
+                                        whileHover={!isSoldOut ? { scale: 1.02, zIndex: 10 } : {}}
                                         style={{ transformOrigin: "center" }}
                                     />
                                 );
