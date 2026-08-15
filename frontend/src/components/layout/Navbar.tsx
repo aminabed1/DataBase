@@ -73,10 +73,15 @@ function NavItem({
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [signup, setSignup] = useState(false);
+    const [hoverProfile, setHoverProfile] = useState(false);
     const [hovered, setHovered] = useState<string | null>(null);
+    const [mounted, setMounted] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const pathname = usePathname();
 
     useEffect(() => {
+        setMounted(true);
+        setIsLoggedIn(!!localStorage.getItem("token"));
         const onScroll = () => setScrolled(window.scrollY > 24);
         onScroll();
         window.addEventListener("scroll", onScroll, { passive: true });
@@ -112,19 +117,40 @@ export default function Navbar() {
                 />
 
                 {/* LEFT */}
-                <MotionLink
-                    href="/dashboard"
-                    variants={itemVariants}
-                    custom={0.9}
-                    className={`${groupPill} relative z-10 flex items-center gap-2 px-2 py-1.5 cursor-pointer transition-colors hover:bg-white/10`}
-                >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-white/30 to-white/10 text-xs font-bold text-white">
-                        M
-                    </div>
-                    <span className="hidden pr-3 text-sm text-white/80 transition-colors hover:text-white sm:block">
-                        Profile
-                    </span>
-                </MotionLink>
+                <div className="flex items-center min-w-[120px]">
+                    {mounted && (
+                        <MotionLink
+                            href={isLoggedIn ? "/dashboard" : "#"}
+                            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                                if (!isLoggedIn) e.preventDefault();
+                            }}
+                            onMouseEnter={() => setHoverProfile(true)}
+                            onMouseLeave={() => setHoverProfile(false)}
+                            variants={itemVariants}
+                            custom={0.9}
+                            layout
+                            className={`${groupPill} relative z-10 flex items-center gap-2 px-2 py-1.5 transition-colors ${isLoggedIn ? "cursor-pointer hover:bg-white/10" : "cursor-not-allowed"}`}
+                        >
+                            <motion.div layout className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-white/30 to-white/10 text-xs font-bold ${isLoggedIn ? "text-white" : "text-white/50"}`}>
+                                M
+                            </motion.div>
+                            <motion.div layout className="hidden sm:block overflow-hidden">
+                                <AnimatePresence mode="wait" initial={false}>
+                                    <motion.span
+                                        key={!isLoggedIn && hoverProfile ? "msg" : "profile"}
+                                        initial={{ y: 18, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        exit={{ y: -18, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className={`block pr-3 text-sm transition-colors whitespace-nowrap ${isLoggedIn ? "text-white/80 hover:text-white" : "text-white/40"}`}
+                                    >
+                                        {!isLoggedIn && hoverProfile ? "please sign up/login first" : "Profile"}
+                                    </motion.span>
+                                </AnimatePresence>
+                            </motion.div>
+                        </MotionLink>
+                    )}
+                </div>
 
                 {/* CENTER */}
                 <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
@@ -147,45 +173,49 @@ export default function Navbar() {
 
 
                 {/* RIGHT */}
-                <motion.div
-                    variants={itemVariants}
-                    custom={0.9}
-                    className="relative z-10 flex items-center"
-                    onMouseEnter={() => setSignup(true)}
-                    onMouseLeave={() => setSignup(false)}
-                >
-                    <MotionLink
-                        href="/auth?mode=login"
-                        initial={false}
-                        animate={{
-                            x: signup ? "-92%" : "0%",
-                            clipPath: signup
-                                ? "inset(0px 0px 0px 0px round 9999px)"
-                                : "inset(0px 0px 0px 100% round 9999px)",
-                        }}
-                        transition={{ duration: 0.4, ease }}
-                        className="absolute right-0 z-0 block whitespace-nowrap rounded-l-full border border-white/15 bg-white/10 py-2.5 pl-5 pr-9 text-sm font-medium text-white backdrop-blur-md"
-                    >
-                        Login
-                    </MotionLink>
-
-                    <Link
-                        href="/auth?mode=signup"
-                        className="relative z-10 flex h-[42px] w-[118px] items-center justify-center overflow-hidden rounded-full bg-white text-sm font-bold text-black transition-transform active:scale-95"
-                    >
-                        <AnimatePresence mode="wait" initial={false}>
-                            <motion.span
-                                key={signup ? "signup" : "dive"}
-                                initial={{ y: 18, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                exit={{ y: -18, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
+                <div className="flex items-center justify-end min-w-[120px]">
+                    {mounted && !isLoggedIn && (
+                        <motion.div
+                            variants={itemVariants}
+                            custom={0.9}
+                            className="relative z-10 flex items-center"
+                            onMouseEnter={() => setSignup(true)}
+                            onMouseLeave={() => setSignup(false)}
+                        >
+                            <MotionLink
+                                href="/auth?mode=login"
+                                initial={false}
+                                animate={{
+                                    x: signup ? "-92%" : "0%",
+                                    clipPath: signup
+                                        ? "inset(0px 0px 0px 0px round 9999px)"
+                                        : "inset(0px 0px 0px 100% round 9999px)",
+                                }}
+                                transition={{ duration: 0.4, ease }}
+                                className="absolute right-0 z-0 block whitespace-nowrap rounded-l-full border border-white/15 bg-white/10 py-2.5 pl-5 pr-9 text-sm font-medium text-white backdrop-blur-md"
                             >
-                                {signup ? "Sign up" : "Dive in"}
-                            </motion.span>
-                        </AnimatePresence>
-                    </Link>
-                </motion.div>
+                                Login
+                            </MotionLink>
+
+                            <Link
+                                href="/auth?mode=signup"
+                                className="relative z-10 flex h-[42px] w-[118px] items-center justify-center overflow-hidden rounded-full bg-white text-sm font-bold text-black transition-transform active:scale-95"
+                            >
+                                <AnimatePresence mode="wait" initial={false}>
+                                    <motion.span
+                                        key={signup ? "signup" : "dive"}
+                                        initial={{ y: 18, opacity: 0 }}
+                                        animate={{ y: 0, opacity: 1 }}
+                                        exit={{ y: -18, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        {signup ? "Sign up" : "Dive in"}
+                                    </motion.span>
+                                </AnimatePresence>
+                            </Link>
+                        </motion.div>
+                    )}
+                </div>
             </motion.div>
         </header>
     );
