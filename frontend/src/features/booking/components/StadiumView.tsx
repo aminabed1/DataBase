@@ -8,79 +8,80 @@ import {
 } from "lucide-react";
 
 // ==========================================
-// Mock Data (Mapped from Phase 2 Queries)
+// Mock Data
 // ==========================================
 const MOCK_MATCH = {
     id: 1,
-    teamHome: { name: "Esteghlal", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/2/24/Esteghlal_FC_logo.svg/1200px-Esteghlal_FC_logo.svg.png" },
-    teamAway: { name: "Persepolis", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/a/ad/Persepolis_F.C._logo.svg/1200px-Persepolis_F.C._logo.svg.png" },
-    date: "2026-08-01",
-    time: "18:00",
-    stadium: "Azadi",
-    city: "Tehran",
+    teamHome: { name: "Arsenal", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/5/53/Arsenal_FC.svg/1200px-Arsenal_FC.svg.png" },
+    teamAway: { name: "Chelsea", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/c/cc/Chelsea_FC.svg/1200px-Chelsea_FC.svg.png" },
+    date: "2026-08-15",
+    time: "20:00",
+    stadium: "Emirates",
+    city: "London",
     league: "Premier League",
 };
 
+// کلاً 10 صندلی برای هر سکو، با دسته‌بندی‌های مختلف که جمعشون 10 میشه
 const STADIUM_SECTIONS = [
     {
-        id: "n-lower", name: "North Stand - Lower Tier", total: 8000, available: 1200, price: 200000,
+        id: "n-lower", name: "North Stand - Lower Tier", total: 10, available: 4, price: 250,
         categories: [
-            { name: "VVIP", count: 50, amenities: "Parking, Food, Lounge" },
-            { name: "Premium", count: 1150, amenities: "Parking" }
+            { name: "VVIP", count: 4, amenities: "Parking, Food, Lounge" },
+            { name: "Premium", count: 6, amenities: "Parking" }
         ],
         path: "M 290 195 L 510 195 L 585 120 L 215 120 Z"
     },
     {
-        id: "s-lower", name: "South Stand - Lower Tier", total: 8000, available: 450, price: 200000,
+        id: "s-lower", name: "South Stand - Lower Tier", total: 10, available: 0, price: 250,
         categories: [
-            { name: "VIP", count: 50, amenities: "Parking, Food" },
-            { name: "Family", count: 400, amenities: "Kid Zone" }
+            { name: "VIP", count: 5, amenities: "Parking, Food" },
+            { name: "Family", count: 5, amenities: "Kid Zone" }
         ],
         path: "M 290 325 L 510 325 L 585 400 L 215 400 Z"
     },
     {
-        id: "w-lower", name: "West Stand - Lower Tier", total: 6000, available: 3000, price: 150000,
+        id: "w-lower", name: "West Stand - Lower Tier", total: 10, available: 8, price: 150,
         categories: [
-            { name: "Disabled", count: 100, amenities: "Wheelchair Access" },
-            { name: "Regular", count: 2900, amenities: "Standard Seating" }
+            { name: "Disabled", count: 2, amenities: "Wheelchair Access" },
+            { name: "Regular", count: 8, amenities: "Standard Seating" }
         ],
         path: "M 285 205 L 285 315 L 205 395 L 205 125 Z"
     },
     {
-        id: "e-lower", name: "East Stand - Lower Tier", total: 6000, available: 800, price: 150000,
+        id: "e-lower", name: "East Stand - Lower Tier", total: 10, available: 2, price: 150,
         categories: [
-            { name: "Premium", count: 100, amenities: "Parking" },
-            { name: "Early Bird", count: 700, amenities: "Discounted" }
+            { name: "Premium", count: 5, amenities: "Parking" },
+            { name: "Early Bird", count: 5, amenities: "Discounted" }
         ],
         path: "M 515 205 L 515 315 L 595 395 L 595 125 Z"
     },
     {
-        id: "n-upper", name: "North Stand - Upper Tier", total: 12000, available: 5000, price: 100000,
+        id: "n-upper", name: "North Stand - Upper Tier", total: 10, available: 10, price: 80,
         categories: [
-            { name: "Economy", count: 4000, amenities: "Basic Seating" },
-            { name: "Student", count: 1000, amenities: "ID Required" }
+            { name: "Economy", count: 6, amenities: "Basic Seating" },
+            { name: "Student", count: 4, amenities: "ID Required" }
         ],
         path: "M 205 105 L 595 105 L 685 15 Q 400 -25 115 15 Z"
     },
     {
-        id: "s-upper", name: "South Stand - Upper Tier", total: 12000, available: 0, price: 100000,
+        id: "s-upper", name: "South Stand - Upper Tier", total: 10, available: 5, price: 80,
         categories: [
-            { name: "Economy", count: 0, amenities: "Basic Seating" }
+            { name: "Economy", count: 10, amenities: "Basic Seating" }
         ],
         path: "M 205 415 L 595 415 L 685 505 Q 400 545 115 505 Z"
     },
     {
-        id: "w-upper", name: "West Stand - Upper Tier", total: 10000, available: 2100, price: 80000,
+        id: "w-upper", name: "West Stand - Upper Tier", total: 10, available: 1, price: 60,
         categories: [
-            { name: "Last Minute", count: 500, amenities: "Dynamic Pricing" },
-            { name: "Regular", count: 1600, amenities: "Standard Seating" }
+            { name: "Last Minute", count: 3, amenities: "Dynamic Pricing" },
+            { name: "Regular", count: 7, amenities: "Standard Seating" }
         ],
         path: "M 190 120 L 190 400 L 100 490 Q 60 260 100 30 Z"
     },
     {
-        id: "e-upper", name: "East Stand - Upper Tier", total: 10000, available: 4300, price: 80000,
+        id: "e-upper", name: "East Stand - Upper Tier", total: 10, available: 7, price: 60,
         categories: [
-            { name: "Economy", count: 4300, amenities: "Basic Seating" }
+            { name: "Economy", count: 10, amenities: "Basic Seating" }
         ],
         path: "M 610 120 L 610 400 L 700 490 Q 740 260 700 30 Z"
     },
@@ -114,22 +115,37 @@ const getCategoryStyle = (categoryName: string) => {
     }
 };
 
+// ==========================================
+// Animation Variants
+// ==========================================
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.08 }
+    },
+    exit: { opacity: 0, transition: { duration: 0.15 } }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
 export default function StadiumView() {
     const [hoveredSection, setHoveredSection] = useState<string | null>(null);
 
     const activeSectionData = STADIUM_SECTIONS.find(s => s.id === hoveredSection);
 
     return (
-        // Fixed viewport height, no page scroll
         <div className="h-screen overflow-hidden bg-[#E8E9E9] px-4 py-3 md:px-8 md:py-4 font-sans text-zinc-900">
             <div className="mx-auto h-full max-w-7xl flex flex-col-reverse lg:flex-row gap-6 lg:gap-8">
 
                 {/* ========================================== */}
-                {/* LEFT COLUMN: Pure Typography Info Panel    */}
+                {/* LEFT COLUMN: Info Panel                    */}
                 {/* ========================================== */}
                 <div className="w-full lg:w-[30%] flex flex-col gap-8 pr-2 min-h-0 overflow-y-auto">
 
-                    {/* General Match Info - LARGER & LOWER */}
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -163,40 +179,43 @@ export default function StadiumView() {
                             {activeSectionData ? (
                                 <motion.div
                                     key={activeSectionData.id}
-                                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                    variants={containerVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    exit="exit"
                                     className="flex flex-col gap-6"
                                 >
-                                    <div>
+                                    <motion.div variants={itemVariants}>
                                         <h3 className="text-3xl font-black text-zinc-900 mb-1">{activeSectionData.name}</h3>
-                                        <p className="text-base text-zinc-500 font-medium">Starting from: <span className="text-zinc-900 font-bold">{activeSectionData.price.toLocaleString()} Toman</span></p>
-                                    </div>
+                                        <p className="text-base text-zinc-500 font-medium">Starting from: <span className="text-zinc-900 font-bold">${activeSectionData.price}</span></p>
+                                    </motion.div>
 
-                                    <div className="flex flex-col gap-4">
+                                    <motion.div variants={itemVariants} className="flex flex-col gap-4">
                                         <div className="flex justify-between items-end border-b border-zinc-300/50 pb-2">
                                             <span className="text-base text-zinc-500 font-medium">Total Capacity</span>
-                                            <span className="text-lg font-black text-zinc-900">{activeSectionData.total.toLocaleString()}</span>
+                                            <span className="text-lg font-black text-zinc-900">{activeSectionData.total} Seats</span>
                                         </div>
 
                                         <div className="flex justify-between items-end pb-1">
                                             <span className="text-base text-zinc-500 font-medium">Available Seats</span>
                                             <span className={`text-lg font-black ${activeSectionData.available === 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                                                {activeSectionData.available === 0 ? 'Sold Out' : activeSectionData.available.toLocaleString()}
+                                                {activeSectionData.available === 0 ? 'Sold Out' : activeSectionData.available}
                                             </span>
                                         </div>
 
-                                        {/* Progress Bar (Fill Percentage) */}
+                                        {/* Progress Bar */}
                                         <div className="h-1.5 w-full bg-zinc-300/60 rounded-full overflow-hidden">
                                             <motion.div
                                                 initial={{ width: 0 }}
                                                 animate={{ width: `${((activeSectionData.total - activeSectionData.available) / activeSectionData.total) * 100}%` }}
-                                                transition={{ duration: 0.6, ease: "easeOut" }}
+                                                transition={{ duration: 0.8, ease: "circOut" }}
                                                 className={`h-full rounded-full ${activeSectionData.available === 0 ? 'bg-red-500' : 'bg-emerald-500'}`}
                                             />
                                         </div>
-                                    </div>
+                                    </motion.div>
 
                                     {/* Categories */}
-                                    <div className="pt-2 flex flex-col gap-5">
+                                    <motion.div variants={itemVariants} className="pt-2 flex flex-col gap-5">
                                         <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Available Ticket Types</span>
                                         {activeSectionData.categories.map((cat, idx) => {
                                             const { icon: CatIcon, color, fontClass } = getCategoryStyle(cat.name);
@@ -211,17 +230,18 @@ export default function StadiumView() {
                                                         </div>
                                                     </div>
                                                     <span className="text-sm font-black text-zinc-700 bg-zinc-200/50 px-3 py-1 rounded-full">
-                                                        {cat.count.toLocaleString()}
+                                                        {cat.count}
                                                     </span>
                                                 </div>
                                             );
                                         })}
-                                    </div>
+                                    </motion.div>
                                 </motion.div>
                             ) : (
                                 <motion.div
                                     key="empty"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    initial={{ opacity: 0, filter: "blur(4px)" }} animate={{ opacity: 1, filter: "blur(0px)" }} exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
                                     className="flex flex-col gap-3 opacity-40 mt-4"
                                 >
                                     <Ticket size={36} className="text-zinc-400" />
@@ -238,7 +258,6 @@ export default function StadiumView() {
                 {/* ========================================== */}
                 <div className="w-full lg:w-[70%] flex flex-col items-center justify-center gap-4 min-h-0">
 
-                    {/* Teams Header (Compact version) */}
                     <motion.div
                         initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
                         className="flex items-center justify-center gap-4 w-full shrink-0"
@@ -258,14 +277,12 @@ export default function StadiumView() {
                         </div>
                     </motion.div>
 
-                    {/* Interactive Stadium Map - Grows to fill remaining space */}
                     <div className="w-full flex-1 min-h-0 flex items-center justify-center px-2">
                         <svg
                             viewBox="0 -20 800 560"
                             className="w-full h-full max-h-[78vh] object-contain"
                             style={{ filter: "drop-shadow(0 20px 20px rgb(0 0 0 / 0.1))" }}
                         >
-                            {/* Pitch / Field */}
                             <g className="pitch">
                                 <rect x="300" y="210" width="200" height="100" rx="4" fill="#a7f3d0" stroke="#10b981" strokeWidth="2" opacity="0.5" />
                                 <circle cx="400" cy="260" r="20" fill="none" stroke="#10b981" strokeWidth="2" opacity="0.5" />
@@ -297,7 +314,7 @@ export default function StadiumView() {
                                         strokeLinejoin="round"
                                         onMouseEnter={() => setHoveredSection(section.id)}
                                         onMouseLeave={() => setHoveredSection(null)}
-                                        className="transition-colors duration-300 cursor-none" // تغییر فقط در این خط اعمال شده
+                                        className="transition-colors duration-300 cursor-none"
                                         whileHover={!isSoldOut ? { scale: 1.02 } : {}}
                                         style={{ transformOrigin: "center" }}
                                     />
