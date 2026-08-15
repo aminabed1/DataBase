@@ -1,3 +1,7 @@
+-- ================================================================== Creating Database =====================================================================
+CREATE DATABASE pitchside_db;
+\c pitchside_db;
+
 -- ================================================================== Creating Tables ======================================================================== 
 
 create table payment_methods
@@ -98,7 +102,10 @@ create table users
             check ((phone)::text ~ '^(09|9)[0-9]{9}$'::text),
     role          varchar(255) not null
         constraint users_role_check
-            check ((role)::text = ANY ((ARRAY ['BUYER'::character varying, 'SUPPORT'::character varying])::text[]))
+            check ((role)::text = ANY ((ARRAY ['BUYER'::character varying, 'SUPPORT'::character varying])::text[])),
+    login_method  varchar(20)  default 'EMAIL' not null
+        constraint users_login_method_check
+            check ((login_method)::text = ANY ((ARRAY ['EMAIL'::character varying, 'PHONE'::character varying])::text[]))
 );
 
 alter table users
@@ -363,10 +370,10 @@ alter table wallets
 -- ==================================================================== Inserting Data Queries ===============================================================
 
 
-INSERT INTO provinces (name) VALUES ('تهران'), ('اصفهان'), ('فارس'), ('خراسان رضوی'), ('آذربایجان شرقی'), ('خوزستان'), ('مازندران'), ('گیلان'), ('کرمان'), ('البرز');
+INSERT INTO provinces (name) VALUES ('تهران'), ('اصفهان'), ('فارس'), ('خراسان رضوی'), ('آذربایجان شرقی'), ('خوزستان'), ('مازندران'), ('گیلان'), ('کرمان'), ('البرز');[cite: 2]
 
 
-INSERT INTO sports (name) VALUES ('فوتبال'), ('والیبال'), ('بسکتبال'), ('کشتی'), ('تکواندو'), ('تنیس'), ('فوتسال'), ('هندبال'), ('شنا'), ('دو و میدانی');
+INSERT INTO sports (name) VALUES ('فوتبال'), ('والیبال'), ('بسکتبال'), ('کشتی'), ('تکواندو'), ('تنیس'), ('فوتسال'), ('هندبال'), ('شنا'), ('دو و میدانی');[cite: 2]
 
 
 INSERT INTO ticket_categories (name, amenities) VALUES
@@ -379,7 +386,7 @@ INSERT INTO ticket_categories (name, amenities) VALUES
 ('Family', '{"kid_zone": true}'),
 ('Disabled', '{"wheelchair_access": true}'),
 ('Early Bird', '{}'),
-('Last Minute', '{}');
+('Last Minute', '{}');[cite: 2]
 
 
 INSERT INTO payment_methods (description, status) VALUES
@@ -392,15 +399,15 @@ INSERT INTO payment_methods (description, status) VALUES
 ('درگاه پاسارگاد', 'ALLOWED'),
 ('درگاه پارسیان', 'ALLOWED'),
 ('آپ', 'ALLOWED'),
-('زرین پال', 'ALLOWED');
+('زرین پال', 'ALLOWED');[cite: 2]
 
-INSERT INTO tournaments (name) VALUES ('لیگ برتر'), ('جام حذفی'), ('جام جهانی'), ('لیگ قهرمانان'), ('المپیک'), ('جام ملت‌ها'), ('لیگ دسته یک'), ('مسابقات دوستانه'), ('لیگ جهانی'), ('تورنمنت چهارجانبه');
-
-
-INSERT INTO cities (name, province_id) VALUES ('تهران', 1), ('اصفهان', 2), ('شیراز', 3), ('مشهد', 4), ('تبریز', 5), ('اهواز', 6), ('ساری', 7), ('رشت', 8), ('کرمان', 9), ('کرج', 10);
+INSERT INTO tournaments (name) VALUES ('لیگ برتر'), ('جام حذفی'), ('جام جهانی'), ('لیگ قهرمانان'), ('المپیک'), ('جام ملت‌ها'), ('لیگ دسته یک'), ('مسابقات دوستانه'), ('لیگ جهانی'), ('تورنمنت چهارجانبه');[cite: 2]
 
 
-INSERT INTO teams (name, sport_id) VALUES ('استقلال', 1), ('پرسپولیس', 1), ('سپاهان', 1), ('تیم ملی والیبال', 2), ('تیم ملی بسکتبال', 3), ('شهداب یزد', 2), ('مهرام', 3), ('تراکتور', 1), ('فولاد', 1), ('ذوب آهن', 1);
+INSERT INTO cities (name, province_id) VALUES ('تهران', 1), ('اصفهان', 2), ('شیراز', 3), ('مشهد', 4), ('تبریز', 5), ('اهواز', 6), ('ساری', 7), ('رشت', 8), ('کرمان', 9), ('کرج', 10);[cite: 2]
+
+
+INSERT INTO teams (name, sport_id) VALUES ('استقلال', 1), ('پرسپولیس', 1), ('سپاهان', 1), ('تیم ملی والیبال', 2), ('تیم ملی بسکتبال', 3), ('شهداب یزد', 2), ('مهرام', 3), ('تراکتور', 1), ('فولاد', 1), ('ذوب آهن', 1);[cite: 2]
 
 
 INSERT INTO venues (name, address, capacity, city_id) VALUES
@@ -413,31 +420,31 @@ INSERT INTO venues (name, address, capacity, city_id) VALUES
 ('شهید وطنی', 'ساری', 15000, 7),
 ('سردار جنگل', 'رشت', 15000, 8),
 ('شهید باهنر', 'کرمان', 15000, 9),
-('انقلاب', 'کرج', 15000, 10);
+('انقلاب', 'کرج', 15000, 10);[cite: 2]
 
 
-INSERT INTO users (first_name, last_name, phone_number, email, password_hash, is_active, role, city_id) VALUES
-('علی', 'رضایی', '09121111111', 'ali@test.com', 'hash1', true, 'BUYER', 1),
-('محمد', 'محمدی', '09122222222', 'mohammad@test.com', 'hash2', true, 'BUYER', 2),
-('سارا', 'احمدی', '09123333333', 'sara@test.com', 'hash3', true, 'BUYER', 3),
-('زهرا', 'کرمی', '09124444444', 'zahra@test.com', 'hash4', true, 'BUYER', 4),
-('رضا', 'ردینگتون', '09125555555', 'reza@test.com', 'hash5', true, 'BUYER', 5),
-('امید', 'نوری', '09126666666', 'omid@test.com', 'hash6', true, 'BUYER', 6),
-('نیما', 'صادقی', '09127777777', 'nima@test.com', 'hash7', true, 'BUYER', 7),
-('پشتیبان۱', 'سایت', '09128888888', 'sup1@test.com', 'hash8', true, 'SUPPORT', 1),
-('پشتیبان۲', 'سایت', '09129999999', 'sup2@test.com', 'hash9', true, 'SUPPORT', 2),
-('پشتیبان۳', 'سایت', '09130000000', 'sup3@test.com', 'hash10', true, 'SUPPORT', 3);
+INSERT INTO users (first_name, last_name, phone, email, password_hash, is_active, role, city_id, login_method) VALUES
+('علی', 'رضایی', '09121111111', 'ali@test.com', 'hash1', true, 'BUYER', 1, 'EMAIL'),
+('محمد', 'محمدی', '09122222222', 'mohammad@test.com', 'hash2', true, 'BUYER', 2, 'EMAIL'),
+('سارا', 'احمدی', '09123333333', 'sara@test.com', 'hash3', true, 'BUYER', 3, 'PHONE'),
+('زهرا', 'کرمی', '09124444444', 'zahra@test.com', 'hash4', true, 'BUYER', 4, 'EMAIL'),
+('رضا', 'ردینگتون', '09125555555', 'reza@test.com', 'hash5', true, 'BUYER', 5, 'PHONE'),
+('امید', 'نوری', '09126666666', 'omid@test.com', 'hash6', true, 'BUYER', 6, 'EMAIL'),
+('نیما', 'صادقی', '09127777777', 'nima@test.com', 'hash7', true, 'BUYER', 7, 'PHONE'),
+('پشتیبان۱', 'سایت', '09128888888', 'sup1@test.com', 'hash8', true, 'SUPPORT', 1, 'EMAIL'),
+('پشتیبان۲', 'سایت', '09129999999', 'sup2@test.com', 'hash9', true, 'SUPPORT', 2, 'EMAIL'),
+('پشتیبان۳', 'سایت', '09130000000', 'sup3@test.com', 'hash10', true, 'SUPPORT', 3, 'EMAIL');
 
 
 INSERT INTO seats (position_number, position_section, position_row_label, venue_id) VALUES
 (1, 'A', 'R1', 1), (2, 'A', 'R1', 1), (3, 'A', 'R1', 1),
 (1, 'B', 'R2', 2), (2, 'B', 'R2', 2), (3, 'B', 'R2', 2),
-(1, 'C', 'R3', 3), (2, 'C', 'R3', 3), (3, 'C', 'R3', 3), (4, 'C', 'R3', 3);
+(1, 'C', 'R3', 3), (2, 'C', 'R3', 3), (3, 'C', 'R3', 3), (4, 'C', 'R3', 3);[cite: 2]
 
 
 INSERT INTO wallets (credit, user_id) VALUES
 (100000, 1), (50000, 2), (0, 3), (200000, 4), (15000, 5),
-(0, 6), (30000, 7), (0, 8), (0, 9), (0, 10);
+(0, 6), (30000, 7), (0, 8), (0, 9), (0, 10);[cite: 2]
 
 
 INSERT INTO matches (datetime, status, host_team_id, guest_team_id, sport_id, tournament_id, venue_id) VALUES
@@ -450,7 +457,7 @@ INSERT INTO matches (datetime, status, host_team_id, guest_team_id, sport_id, to
 ('2026-08-07 18:00:00', 'POSTPONED', 9, 10, 1, 1, 6),
 ('2026-08-08 18:00:00', 'SCHEDULED', 1, 3, 1, 2, 1),
 ('2026-08-09 18:00:00', 'SCHEDULED', 2, 8, 1, 2, 1),
-('2026-08-10 18:00:00', 'SCHEDULED', 10, 1, 1, 2, 10);
+('2026-08-10 18:00:00', 'SCHEDULED', 10, 1, 1, 2, 10);[cite: 2]
 
 
 INSERT INTO match_seats (price, status, match_id, seat_id, ticket_category_id) VALUES
@@ -463,7 +470,7 @@ INSERT INTO match_seats (price, status, match_id, seat_id, ticket_category_id) V
 (120000, 'SOLD', 4, 7, 2),
 (120000, 'AVAILABLE', 5, 8, 2),
 (80000, 'RESERVED', 6, 9, 3),
-(80000, 'SOLD', 7, 10, 3);
+(80000, 'SOLD', 7, 10, 3);[cite: 2]
 
 
 INSERT INTO reservations (reserved_at, expired_at, status, user_id) VALUES
@@ -476,7 +483,7 @@ INSERT INTO reservations (reserved_at, expired_at, status, user_id) VALUES
 ('2026-07-26 16:00:00', '2026-07-26 16:15:00', 'CONFIRMED', 7),
 ('2026-07-27 17:00:00', '2026-07-27 17:15:00', 'CONFIRMED', 1),
 ('2026-07-28 18:00:00', '2026-07-28 18:15:00', 'CONFIRMED', 2),
-('2026-07-29 19:00:00', '2026-07-29 19:15:00', 'CONFIRMED', 3);
+('2026-07-29 19:00:00', '2026-07-29 19:15:00', 'CONFIRMED', 3);[cite: 2]
 
 
 INSERT INTO reservation_items (price_at_time, match_seat_id, reservation_id) VALUES
@@ -489,7 +496,7 @@ INSERT INTO reservation_items (price_at_time, match_seat_id, reservation_id) VAL
 (120000, 7, 7),
 (120000, 8, 8),
 (80000, 9, 9),
-(80000, 10, 10);
+(80000, 10, 10);[cite: 2]
 
 
 INSERT INTO tickets (issued_at, used_at, ticket_code, qr_payload, status, reservation_item_id) VALUES
@@ -502,7 +509,7 @@ INSERT INTO tickets (issued_at, used_at, ticket_code, qr_payload, status, reserv
 ('2026-07-26 16:05:00', NULL, 'TCK-1007', 'QR7', 'ISSUED', 7),
 ('2026-07-27 17:05:00', NULL, 'TCK-1008', 'QR8', 'ISSUED', 8),
 ('2026-07-28 18:05:00', NULL, 'TCK-1009', 'QR9', 'ISSUED', 9),
-('2026-07-29 19:05:00', NULL, 'TCK-1010', 'QR10', 'ISSUED', 10);
+('2026-07-29 19:05:00', NULL, 'TCK-1010', 'QR10', 'ISSUED', 10);[cite: 2]
 
 
 INSERT INTO payments (amount, payment_date, transaction_ref, status, payment_method_id, reservation_id) VALUES
@@ -515,7 +522,7 @@ INSERT INTO payments (amount, payment_date, transaction_ref, status, payment_met
 (120000, '2026-07-26 16:02:00', 'TRX-007', 'SUCCESS', 7, 7),
 (120000, '2026-07-27 17:02:00', 'TRX-008', 'SUCCESS', 8, 8),
 (80000, '2026-07-28 18:02:00', 'TRX-009', 'SUCCESS', 9, 9),
-(80000, '2026-07-29 19:02:00', 'TRX-010', 'SUCCESS', 10, 10);
+(80000, '2026-07-29 19:02:00', 'TRX-010', 'SUCCESS', 10, 10);[cite: 2]
 
 
 INSERT INTO cancellations (reason, requested_at, processed_at, status, reservation_id, user_id) VALUES
@@ -528,7 +535,7 @@ INSERT INTO cancellations (reason, requested_at, processed_at, status, reservati
 ('خرید بلیط بهتر', '2026-07-22 12:30:00', '2026-07-22 13:00:00', 'APPROVED', 3, 9),
 ('دور بودن ورزشگاه', '2026-07-25 15:30:00', NULL, 'REQUESTED', 6, 10),
 ('عدم امکان حضور', '2026-07-26 16:30:00', '2026-07-26 17:00:00', 'DONE', 7, 8),
-('دلیل نامشخص', '2026-07-27 17:30:00', '2026-07-27 18:00:00', 'REJECTED', 8, 9);
+('دلیل نامشخص', '2026-07-27 17:30:00', '2026-07-27 18:00:00', 'REJECTED', 8, 9);[cite: 2]
 
 
 INSERT INTO issue_reports (subject, description, status, created_at, resolved_at, updated_at, user_id, payment_id) VALUES
@@ -541,7 +548,7 @@ INSERT INTO issue_reports (subject, description, status, created_at, resolved_at
 ('کنسلی مسابقه', 'تکلیف پول ما چه میشود؟', 'RESOLVED', '2026-07-27 12:00:00', '2026-07-27 13:00:00', '2026-07-27 13:00:00', 1, 18),
 ('مشکل ورود', 'بارکد خوانده نشد', 'CLOSED', '2026-07-28 13:00:00', '2026-07-28 14:00:00', '2026-07-28 14:00:00', 2, 19),
 ('تغییر صندلی', 'میخواهم جایم را عوض کنم', 'IN_PROGRESS', '2026-07-29 14:00:00', NULL, '2026-07-29 15:00:00', 3, 20),
-('انتقاد از پشتیبانی', 'دیر جواب دادید', 'OPEN', '2026-07-22 15:00:00', NULL, '2026-07-22 15:00:00', 3, 13);
+('انتقاد از پشتیبانی', 'دیر جواب دادید', 'OPEN', '2026-07-22 15:00:00', NULL, '2026-07-22 15:00:00', 3, 13);[cite: 2]
 
 
 INSERT INTO logs (action, action_date, user_id) VALUES
@@ -554,21 +561,21 @@ INSERT INTO logs (action, action_date, user_id) VALUES
 ('SUPPORT_TICKET_CREATED', '2026-07-23 13:05:00', 4),
 ('CANCELLATION_REQUESTED', '2026-07-24 14:10:00', 5),
 ('ADMIN_LOGIN', '2026-07-20 08:00:00', 8),
-('ADMIN_RESOLVED_ISSUE', '2026-07-23 14:00:00', 8);
+('ADMIN_RESOLVED_ISSUE', '2026-07-23 14:00:00', 8);[cite: 2]
 
 -- =============================================================== Informational And Analytical Queries ======================================================
 
 --1
-SELECT first_name,last_name
-    FROM users
-WHERE id NOT IN (SELECT user_id FROM reservations);
+SELECT first_name, last_name
+FROM users
+WHERE id NOT IN (SELECT user_id FROM reservations);[cite: 2]
 
 --2
-SELECT DISTINCT u.first_name , u.last_name
+SELECT DISTINCT u.first_name, u.last_name
 FROM users u
 JOIN reservations r ON u.id = r.user_id
 JOIN reservation_items ri ON r.id = ri.reservation_id
-JOIN tickets t ON ri.id = t.reservation_item_id;
+JOIN tickets t ON ri.id = t.reservation_item_id;[cite: 2]
 
 --3
 SELECT u.first_name, u.last_name,
@@ -578,7 +585,7 @@ SELECT u.first_name, u.last_name,
 FROM payments p
 JOIN reservations r ON p.reservation_id = r.id
 JOIN users u ON r.user_id = u.id
-GROUP BY u.id, u.first_name, u.last_name, pay_year, pay_month;
+GROUP BY u.id, u.first_name, u.last_name, pay_year, pay_month;[cite: 2]
 
 --4
 SELECT u.first_name, u.last_name, c.name AS city_name
@@ -591,7 +598,7 @@ JOIN matches m ON ms.match_id = m.id
 JOIN venues v ON m.venue_id = v.id
 JOIN cities c ON v.city_id = c.id
 GROUP BY u.id, u.first_name, u.last_name, c.id, c.name
-HAVING COUNT(t.id) = 1;
+HAVING COUNT(t.id) = 1;[cite: 2]
 
 --5
 SELECT u.*
@@ -600,7 +607,7 @@ JOIN reservation_items ri ON t.reservation_item_id = ri.id
 JOIN reservations r ON ri.reservation_id = r.id
 JOIN users u ON r.user_id = u.id
 ORDER BY t.issued_at DESC
-LIMIT 1;
+LIMIT 1;[cite: 2]
 
 --6
 SELECT u.phone, u.email
@@ -608,7 +615,7 @@ FROM users u
 JOIN reservations r ON u.id = r.user_id
 JOIN payments p ON r.id = p.reservation_id
 GROUP BY u.id, u.phone, u.email
-HAVING SUM(p.amount) > (SELECT AVG(total_paid) FROM (SELECT SUM(amount) AS total_paid FROM payments GROUP BY reservation_id) AS sub);
+HAVING SUM(p.amount) > (SELECT AVG(total_paid) FROM (SELECT SUM(amount) AS total_paid FROM payments GROUP BY reservation_id) AS sub);[cite: 2]
 
 --7
 SELECT s.name AS sport_name, COUNT(t.id) AS total_tickets
@@ -617,7 +624,7 @@ JOIN matches m ON s.id = m.sport_id
 JOIN match_seats ms ON m.id = ms.match_id
 JOIN reservation_items ri ON ri.match_seat_id = ms.id
 JOIN tickets t ON t.reservation_item_id = ri.id
-GROUP BY s.id, s.name;
+GROUP BY s.id, s.name;[cite: 2]
 
 --8
 SELECT u.first_name, u.last_name, COUNT(t.id) AS tickets_count
@@ -628,7 +635,7 @@ JOIN tickets t ON ri.id = t.reservation_item_id
 WHERE t.issued_at >= CURRENT_DATE - INTERVAL '7 days'
 GROUP BY u.id, u.first_name, u.last_name
 ORDER BY tickets_count DESC
-LIMIT 3;
+LIMIT 3;[cite: 2]
 
 --9
 SELECT c.name AS city_name, COUNT(t.id) AS total_tickets
@@ -640,7 +647,7 @@ JOIN reservation_items ri ON ri.match_seat_id = ms.id
 JOIN tickets t ON t.reservation_item_id = ri.id
 JOIN provinces p ON c.province_id = p.id
 WHERE p.name = 'تهران'
-GROUP BY c.id, c.name;
+GROUP BY c.id, c.name;[cite: 2]
 
 --10
 SELECT DISTINCT c.name
@@ -651,12 +658,12 @@ JOIN match_seats ms ON m.id = ms.match_id
 JOIN reservation_items ri ON ri.match_seat_id = ms.id
 JOIN tickets t ON t.reservation_item_id = ri.id
 JOIN reservations r ON ri.reservation_id = r.id
-WHERE r.user_id = (SELECT id FROM users ORDER BY id ASC LIMIT 1);
+WHERE r.user_id = (SELECT id FROM users ORDER BY id ASC LIMIT 1);[cite: 2]
 
 --11
 SELECT first_name, last_name
 FROM users
-WHERE role = 'SUPPORT';
+WHERE role = 'SUPPORT';[cite: 2]
 
 --12
 SELECT u.first_name, u.last_name
@@ -665,7 +672,7 @@ JOIN reservations r ON u.id = r.user_id
 JOIN reservation_items ri ON r.id = ri.reservation_id
 JOIN tickets t ON t.reservation_item_id = ri.id
 GROUP BY u.id
-HAVING COUNT(t.id) >= 2;
+HAVING COUNT(t.id) >= 2;[cite: 2]
 
 --13
 SELECT u.first_name, u.last_name
@@ -678,7 +685,7 @@ JOIN matches m ON ms.match_id = m.id
 JOIN sports s ON m.sport_id = s.id
 WHERE s.name = 'فوتبال'
 GROUP BY u.id, u.first_name, u.last_name
-HAVING COUNT(t.id) <= 2;
+HAVING COUNT(t.id) <= 2;[cite: 2]
 
 --14
 SELECT u.email, u.phone
@@ -691,13 +698,13 @@ JOIN matches m ON ms.match_id = m.id
 JOIN sports s ON m.sport_id = s.id
 WHERE s.name IN ('فوتبال', 'والیبال', 'بسکتبال')
 GROUP BY u.id
-HAVING COUNT(DISTINCT s.name) = 3;
+HAVING COUNT(DISTINCT s.name) = 3;[cite: 2]
 
 --15
 SELECT t.*
 FROM tickets t
 WHERE t.issued_at::date = CURRENT_DATE
-ORDER BY t.issued_at ASC;
+ORDER BY t.issued_at ASC;[cite: 2]
 
 --16
 SELECT ms.id, COUNT(t.id) AS sales_count
@@ -705,7 +712,7 @@ FROM tickets t
 JOIN match_seats ms ON t.reservation_item_id = ms.id
 GROUP BY ms.id
 ORDER BY sales_count DESC
-OFFSET 1 LIMIT 1;
+OFFSET 1 LIMIT 1;[cite: 2]
 
 --17
 SELECT
@@ -718,13 +725,13 @@ JOIN cancellations c ON u.id = c.user_id
 WHERE u.role = 'SUPPORT'
 GROUP BY u.id, u.first_name, u.last_name
 ORDER BY total_cancellations_by_support DESC
-LIMIT 1;
+LIMIT 1;[cite: 2]
 
 --18
 UPDATE users
 SET last_name = 'ردینگتون'
 WHERE id = (SELECT u.id FROM users u JOIN cancellations c ON u.id = c.user_id
-            GROUP BY u.id ORDER BY COUNT(c.id) DESC LIMIT 1);
+            GROUP BY u.id ORDER BY COUNT(c.id) DESC LIMIT 1);[cite: 2]
 
 --19
 DELETE FROM tickets
@@ -734,11 +741,11 @@ WHERE reservation_item_id IN (
     JOIN cancellations c ON ri.reservation_id = c.reservation_id
     JOIN users u ON c.user_id = u.id
     WHERE u.last_name = 'ردینگتون'
-    );
+    );[cite: 2]
 
 --20
 DELETE FROM tickets
-WHERE id IN (SELECT t.id FROM tickets t WHERE t.status = 'CANCELLED');
+WHERE id IN (SELECT t.id FROM tickets t WHERE t.status = 'CANCELLED');[cite: 2]
 
 --21
 UPDATE match_seats ms
@@ -746,14 +753,14 @@ SET price = price * 0.9
 FROM matches m
 JOIN venues v ON m.venue_id = v.id
 WHERE ms.match_id = m.id AND v.name = 'آزادی'
-AND m.datetime::date = CURRENT_DATE - INTERVAL '1 day';
+AND m.datetime::date = CURRENT_DATE - INTERVAL '1 day';[cite: 2]
 
 --22
 SELECT subject, COUNT(*) AS report_count
 FROM issue_reports
 GROUP BY subject
 ORDER BY report_count DESC
-LIMIT 1;
+LIMIT 1;[cite: 2]
 
 
 --=========================================================== Stored Procedures Queries ========================================================
@@ -772,7 +779,7 @@ BEGIN
     WHERE u.email = p_identifier OR u.phone = p_identifier
     ORDER BY t.issued_at ASC;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;[cite: 2]
 
 --2
 CREATE OR REPLACE FUNCTION get_canceled_users_by_support(p_support_identifier VARCHAR)
@@ -787,7 +794,7 @@ BEGIN
     WHERE (support_agent.email = p_support_identifier OR support_agent.phone = p_support_identifier)
       AND support_agent.role = 'SUPPORT';
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;[cite: 2]
 
 
 --3
@@ -804,7 +811,7 @@ BEGIN
     JOIN tickets t ON ri.id = t.reservation_item_id
     WHERE c.name = p_city_name;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;[cite: 2]
 
 --4
 CREATE OR REPLACE FUNCTION search_tickets(p_phrase VARCHAR)
@@ -829,7 +836,7 @@ BEGIN
        OR gt.name ILIKE '%' || p_phrase || '%'
        OR tc.name ILIKE '%' || p_phrase || '%';
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;[cite: 2]
 
 --5
 CREATE OR REPLACE FUNCTION get_same_city_users(p_identifier VARCHAR)
@@ -842,7 +849,7 @@ BEGIN
     WHERE (target_user.email = p_identifier OR target_user.phone = p_identifier)
       AND other.id != target_user.id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;[cite: 2]
 
 --6
 CREATE OR REPLACE FUNCTION get_top_buyers_since(p_date TIMESTAMP, p_limit INT)
@@ -859,7 +866,7 @@ BEGIN
     ORDER BY t_count DESC
     LIMIT p_limit;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;[cite: 2]
 
 --7
 CREATE OR REPLACE FUNCTION get_canceled_tickets_by_sport(p_sport_name VARCHAR)
@@ -877,7 +884,7 @@ BEGIN
     WHERE s.name = p_sport_name
     ORDER BY c.requested_at ASC;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;[cite: 2]
 
 --8
 CREATE OR REPLACE FUNCTION get_top_reporters_by_subject(p_subject VARCHAR)
@@ -891,21 +898,18 @@ BEGIN
     GROUP BY u.id, u.first_name, u.last_name
     ORDER BY r_count DESC;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;[cite: 2]
 
 
 
 -- Index on email and phone to speed up user searches (used in functions 1, 2, and 5)
-CREATE INDEX idx_users_email_phone ON users(email, phone);
+CREATE INDEX idx_users_email_phone ON users(email, phone);[cite: 2]
 
 -- Index on city name to speed up filtering by city (used in function 3)
-CREATE INDEX idx_cities_name ON cities(name);
+CREATE INDEX idx_cities_name ON cities(name);[cite: 2]
 
 -- Index on ticket issuance date to speed up date range queries (used in function 6)
-CREATE INDEX idx_tickets_issued_at ON tickets(issued_at);
+CREATE INDEX idx_tickets_issued_at ON tickets(issued_at);[cite: 2]
 
 -- Index on support issue reports subject (used in function 8)
-CREATE INDEX idx_issue_reports_subject ON issue_reports(subject);
-
-
-
+CREATE INDEX idx_issue_reports_subject ON issue_reports(subject);[cite: 2]

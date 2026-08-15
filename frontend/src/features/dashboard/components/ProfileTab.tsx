@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "../services/user.service";
 import { locationService, type LocationItem } from "@/services/location.service";
-import { User, Mail, Smartphone, MapPin, Shield, CheckCircle2, Map, ChevronDown, MapPinned, Lock, Key } from "lucide-react";
+import { User, Mail, Smartphone, MapPin, Shield, CheckCircle2, Map, ChevronDown, MapPinned, Lock, Key, X, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ==========================================
@@ -92,30 +92,55 @@ function CustomSelect({
 export default function ProfileTab({ user }: { user?: any }) {
     const queryClient = useQueryClient();
 
+    // ==========================================
+    // Profile States
+    // ==========================================
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [provinceId, setProvinceId] = useState("");
     const [cityId, setCityId] = useState("");
-    const [loginMethod, setLoginMethod] = useState("email"); // Added Login Method State
+    const [loginMethod, setLoginMethod] = useState("email");
 
     const [provinces, setProvinces] = useState<LocationItem[]>([]);
     const [cities, setCities] = useState<LocationItem[]>([]);
 
     const [isSuccessMessageVisible, setIsSuccessMessageVisible] = useState(false);
+    const [profileErrorMessage, setProfileErrorMessage] = useState("");
     const [isEditingLocation, setIsEditingLocation] = useState(false);
 
-    // Password change states
+    // ==========================================
+    // Password States
+    // ==========================================
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [passwordSuccess, setPasswordSuccess] = useState("");
 
+    // ==========================================
+    // Contact Modal States
+    // ==========================================
+    const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+    const [contactModalType, setContactModalType] = useState<"email" | "phone">("email");
+    const [contactModalStep, setContactModalStep] = useState<"request" | "verify">("request");
+    const [newContactValue, setNewContactValue] = useState("");
+    const [otpCode, setOtpCode] = useState("");
+    const [contactModalError, setContactModalError] = useState("");
+    const [securityMessage, setSecurityMessage] = useState("");
+    const [securityError, setSecurityError] = useState("");
+
+    // ==========================================
+    // Effects
+    // ==========================================
     useEffect(() => {
         if (user) {
             setFirstName(user.firstName || "");
             setLastName(user.lastName && user.lastName !== "-" ? user.lastName : "");
             setProvinceId(user.provinceId ? String(user.provinceId) : "");
             setCityId(user.cityId ? String(user.cityId) : "");
-            // If backend supports storing login method, you can set it here too
+            if (user.loginMethod) {
+                setLoginMethod(user.loginMethod.toLowerCase());
+            }
         }
     }, [user]);
 
@@ -140,27 +165,88 @@ export default function ProfileTab({ user }: { user?: any }) {
         }
     }, [provinceId]);
 
+    // ==========================================
+    // Mutations
+    // ==========================================
     const updateProfileMutation = useMutation({
         mutationFn: (payload: any) => userService.updateProfile(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['user-profile'] });
             setIsEditingLocation(false);
+            setProfileErrorMessage("");
             setIsSuccessMessageVisible(true);
             setTimeout(() => setIsSuccessMessageVisible(false), 3000);
         },
-        onError: (err) => {
-            console.error("Failed to update profile:", err);
-            alert("Failed to update profile. Please try again.");
+        onError: (err: any) => {
+            setProfileErrorMessage(err.response?.data?.message || "Failed to update profile.");
+            setTimeout(() => setProfileErrorMessage(""), 5000);
         }
     });
 
-    const handleSaveChanges = (e: React.FormEvent) => {
+    const changeLoginMethodMutation = useMutation({
+        mutationFn: (payload: any) => userService.updateProfile(payload),
+        onSuccess: (data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+            setLoginMethod(variables.loginMethod.toLowerCase());
+            setSecurityError("");
+            setSecurityMessage(`Login method successfully updated to ${variables.loginMethod}.`);
+            setTimeout(() => setSecurityMessage(""), 4000);
+        },
+        onError: (err: any) => {
+            setSecurityMessage("");
+            setSecurityError(err.response?.data?.message || "Failed to update login method.");
+            setTimeout(() => setSecurityError(""), 5000);
+        }
+    });
+
+    const changePasswordMutation = useMutation({
+        mutationFn: (payload: any) => userService.changePassword(payload),
+        onSuccess: () => {
+            setPasswordSuccess("Your password has been updated successfully.");
+            setPasswordError("");
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+            setTimeout(() => setPasswordSuccess(""), 4000);
+        },
+        onError: (err: any) => {
+            setPasswordError(err.response?.data?.message || "Failed to update password.");
+            setPasswordSuccess("");
+        }
+    });
+
+    const requestOtpMutation = useMutation({
+        mutationFn: (value: string) => contactModalType === "email" ? userService.sendNewEmailOtp(value) : userService.sendNewPhoneOtp(value),
+        onSuccess: () => {
+            setContactModalStep("verify");
+            setContactModalError("");
+        },
+        onError: (err: any) => {
+            setContactModalError(err.response?.data?.message || "Failed to send verification code.");
+        }
+    });
+
+    const verifyOtpMutation = useMutation({
+        mutationFn: (payload: { identifier: string; otp: string }) => 
+            contactModalType === "email" ? userService.verifyNewEmail(payload) : userService.verifyNewPhone(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+            closeContactModal();
+            setSecurityError("");
+            setSecurityMessage(`${contactModalType === "email" ? "Email Address" : "Phone Number"} updated successfully!`);
+            setTimeout(() => setSecurityMessage(""), 4000);
+        },
+        onError: (err: any) => {
+            setContactModalError(err.response?.data?.message || "Invalid or expired verification code.");
+        }
+    });
+
+    // ==========================================
+    // Handlers
+    // ==========================================
+    const handleSaveChanges = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        updateProfileMutation.mutate({
-            firstName,
-            lastName,
-            cityId: cityId ? Number(cityId) : null
-        });
+        updateProfileMutation.mutate({ firstName, lastName, cityId: cityId ? Number(cityId) : null });
     };
 
     const handleCancelLocation = () => {
@@ -169,22 +255,177 @@ export default function ProfileTab({ user }: { user?: any }) {
         setIsEditingLocation(false);
     };
 
-    const handlePasswordChange = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (newPassword !== confirmPassword) {
-            alert("New passwords do not match.");
-            return;
+    const handleLoginMethodChange = (method: 'EMAIL' | 'PHONE') => {
+        // برای جلوگیری از ارور اعتبارسنجی بک‌اند، کل اطلاعات مورد نیاز را همراه متد لاگین می‌فرستیم
+        const payload: any = {
+            firstName: firstName || user?.firstName || "Unknown",
+            lastName: lastName || user?.lastName || "Unknown",
+            loginMethod: method
+        };
+        
+        if (cityId || user?.cityId) {
+            payload.cityId = cityId ? Number(cityId) : Number(user.cityId);
         }
-        alert("Password change frontend action triggered (Backend pending).");
+
+        changeLoginMethodMutation.mutate(payload);
     };
 
+    const handlePasswordChange = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setPasswordError("");
+        setPasswordSuccess("");
+
+        if (newPassword !== confirmPassword) {
+            setPasswordError("New passwords do not match.");
+            return;
+        }
+        
+        // الگوی دقیق و سخت‌گیرانه برای پسورد (حروف بزرگ، کوچک، عدد، علامت ویژه، حداقل ۸ حرف)
+        const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!strongPasswordRegex.test(newPassword)) {
+            setPasswordError("Password must contain at least 8 characters, one uppercase, one lowercase, one number, and one special character.");
+            return;
+        }
+
+        changePasswordMutation.mutate({ currentPassword, newPassword, confirmPassword });
+    };
+
+    const openContactModal = (type: "email" | "phone") => {
+        setContactModalType(type);
+        setContactModalStep("request");
+        setNewContactValue("");
+        setOtpCode("");
+        setContactModalError("");
+        setIsContactModalOpen(true);
+    };
+
+    const closeContactModal = () => {
+        setIsContactModalOpen(false);
+        setContactModalStep("request");
+        setNewContactValue("");
+        setOtpCode("");
+        setContactModalError("");
+    };
+
+    const handleRequestOtpSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!newContactValue) return setContactModalError(`Please enter a valid ${contactModalType}.`);
+        requestOtpMutation.mutate(newContactValue);
+    };
+
+    const handleVerifyOtpSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (otpCode.length < 5) return setContactModalError("Please enter a valid code.");
+        verifyOtpMutation.mutate({ identifier: newContactValue, otp: otpCode });
+    };
+
+    // ==========================================
+    // Styles
+    // ==========================================
     const inputClass = "block w-full cursor-none rounded-2xl border-2 border-gray-100 bg-gray-50/50 p-4 text-sm font-medium text-zinc-900 outline-none transition-all focus:border-zinc-950 focus:bg-white hover:border-gray-200";
     const labelClass = "mb-2 block text-sm font-bold text-gray-700";
     const readonlyTextClass = "flex items-center w-full cursor-default rounded-2xl border-2 border-transparent bg-gray-50/80 p-4 text-sm font-medium text-zinc-900";
 
     return (
-        <div className="flex flex-col gap-8">
-            {/* Personal Information Form */}
+        <div className="flex flex-col gap-8 relative">
+            
+            {/* ========================================== */}
+            {/* Modal for Changing Email/Phone             */}
+            {/* ========================================== */}
+            <AnimatePresence>
+                {isContactModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/40 p-4 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="relative w-full max-w-md overflow-hidden rounded-[2rem] bg-white p-8 shadow-2xl"
+                        >
+                            <button onClick={closeContactModal} className="absolute right-6 top-6 cursor-none text-gray-400 transition-colors hover:text-black">
+                                <X size={24} />
+                            </button>
+
+                            <div className="mb-6">
+                                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100">
+                                    {contactModalType === "email" ? <Mail size={24} className="text-zinc-950" /> : <Smartphone size={24} className="text-zinc-950" />}
+                                </div>
+                                <h3 className="text-2xl font-black text-zinc-950">
+                                    Change {contactModalType === "email" ? "Email" : "Phone Number"}
+                                </h3>
+                                <p className="mt-2 text-sm font-medium text-zinc-500">
+                                    {contactModalStep === "request" 
+                                        ? `Enter your new ${contactModalType} to receive a verification code.` 
+                                        : `Enter the code sent to ${newContactValue}.`}
+                                </p>
+                            </div>
+
+                            {contactModalError && (
+                                <div className="mb-4 flex items-center gap-2 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-600">
+                                    <AlertCircle size={18} /> {contactModalError}
+                                </div>
+                            )}
+
+                            {contactModalStep === "request" && (
+                                <form onSubmit={handleRequestOtpSubmit} className="flex flex-col gap-4">
+                                    <input
+                                        type={contactModalType === "email" ? "email" : "tel"}
+                                        placeholder={contactModalType === "email" ? "new@example.com" : "0912..."}
+                                        value={newContactValue}
+                                        onChange={(e) => { setNewContactValue(e.target.value); setContactModalError(""); }}
+                                        className={inputClass}
+                                        dir={contactModalType === "phone" ? "ltr" : "auto"}
+                                        required
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={requestOtpMutation.isPending}
+                                        className="mt-2 w-full cursor-none rounded-full bg-zinc-950 py-4 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100"
+                                    >
+                                        {requestOtpMutation.isPending ? "Sending Code..." : "Send Verification Code"}
+                                    </button>
+                                </form>
+                            )}
+
+                            {contactModalStep === "verify" && (
+                                <form onSubmit={handleVerifyOtpSubmit} className="flex flex-col gap-4 text-center">
+                                    <input
+                                        type="text"
+                                        maxLength={6}
+                                        placeholder="• • • • • •"
+                                        value={otpCode}
+                                        onChange={(e) => { 
+                                            const englishNum = e.target.value.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString());
+                                            setOtpCode(englishNum.replace(/\D/g, "")); 
+                                            setContactModalError(""); 
+                                        }}
+                                        className="block w-full cursor-none rounded-2xl border-2 border-gray-100 bg-gray-50/50 p-4 text-center text-2xl font-black tracking-[0.5em] text-zinc-950 outline-none transition-all focus:border-zinc-950 focus:bg-white"
+                                        autoFocus
+                                        required
+                                    />
+                                    <button
+                                        type="submit"
+                                        disabled={verifyOtpMutation.isPending}
+                                        className="mt-2 w-full cursor-none rounded-full bg-zinc-950 py-4 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-70 disabled:hover:scale-100"
+                                    >
+                                        {verifyOtpMutation.isPending ? "Verifying..." : "Verify & Update"}
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => { setContactModalStep("request"); setOtpCode(""); }} 
+                                        className="mt-2 cursor-none text-xs font-bold text-zinc-500 hover:text-zinc-950"
+                                    >
+                                        Change Contact Info
+                                    </button>
+                                </form>
+                            )}
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* ========================================== */}
+            {/* Personal Information Form                  */}
+            {/* ========================================== */}
             <div className="rounded-[2rem] border border-gray-100 bg-white p-8 shadow-sm">
                 <div className="mb-8 flex items-center gap-3 border-b border-gray-100 pb-6">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-900">
@@ -195,6 +436,19 @@ export default function ProfileTab({ user }: { user?: any }) {
                         <p className="text-sm font-medium text-zinc-500">Update your basic profile details.</p>
                     </div>
                 </div>
+
+                <AnimatePresence>
+                    {profileErrorMessage && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }} 
+                            animate={{ opacity: 1, height: 'auto' }} 
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mb-6 flex items-center gap-2 rounded-xl bg-red-50 p-4 text-sm font-bold text-red-600"
+                        >
+                            <AlertCircle size={18} /> {profileErrorMessage}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 <form onSubmit={handleSaveChanges} className="space-y-6">
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -324,20 +578,46 @@ export default function ProfileTab({ user }: { user?: any }) {
                 </form>
             </div>
 
-            {/* Account & Security Information */}
+            {/* ========================================== */}
+            {/* Account & Security Information             */}
+            {/* ========================================== */}
             <div className="rounded-[2rem] border border-gray-100 bg-white p-8 shadow-sm">
-                <div className="mb-8 flex items-center gap-3 border-b border-gray-100 pb-6">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-900">
-                        <Shield size={24} />
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-black text-zinc-950">Contact & Security</h2>
-                        <p className="text-sm font-medium text-zinc-500">Manage your email, phone number, and password.</p>
+                <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-900">
+                            <Shield size={24} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-black text-zinc-950">Contact & Security</h2>
+                            <p className="text-sm font-medium text-zinc-500">Manage your email, phone number, and password.</p>
+                        </div>
                     </div>
                 </div>
 
-                {/* Login Method Toggle - Restored Feature */}
-                {/* Login Method Toggle - Restored Feature */}
+                <AnimatePresence>
+                    {securityMessage && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }} 
+                            animate={{ opacity: 1, height: 'auto' }} 
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mb-8 flex items-center gap-2 rounded-xl bg-emerald-50 p-4 text-sm font-bold text-emerald-600"
+                        >
+                            <CheckCircle2 size={18} /> {securityMessage}
+                        </motion.div>
+                    )}
+                    {securityError && (
+                        <motion.div 
+                            initial={{ opacity: 0, height: 0 }} 
+                            animate={{ opacity: 1, height: 'auto' }} 
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mb-8 flex items-center gap-2 rounded-xl bg-red-50 p-4 text-sm font-bold text-red-600"
+                        >
+                            <AlertCircle size={18} /> {securityError}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Login Method Toggle - ظاهر اصلی بازگردانی شد */}
                 <div className="flex flex-col gap-4 border-b border-gray-100 py-5 sm:flex-row sm:items-center sm:justify-between mb-8">
                     <div>
                         <h3 className="font-semibold text-gray-900 select-none cursor-none">Login Method</h3>
@@ -347,20 +627,22 @@ export default function ProfileTab({ user }: { user?: any }) {
                         <motion.button
                             whileTap={{ scale: 0.95 }}
                             type="button"
-                            onClick={() => setLoginMethod('email')}
+                            disabled={changeLoginMethodMutation.isPending}
+                            onClick={() => handleLoginMethodChange('EMAIL')}
                             className={`flex cursor-none items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
                                 loginMethod === "email" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-gray-900"
-                            }`}
+                            } ${changeLoginMethodMutation.isPending ? "opacity-50" : ""}`}
                         >
                             <Mail size={16} /> Email
                         </motion.button>
                         <motion.button
                             whileTap={{ scale: 0.95 }}
                             type="button"
-                            onClick={() => setLoginMethod('phone')}
+                            disabled={changeLoginMethodMutation.isPending}
+                            onClick={() => handleLoginMethodChange('PHONE')}
                             className={`flex cursor-none items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
                                 loginMethod === "phone" ? "bg-white text-black shadow-sm" : "text-gray-500 hover:text-gray-900"
-                            }`}
+                            } ${changeLoginMethodMutation.isPending ? "opacity-50" : ""}`}
                         >
                             <Smartphone size={16} /> Phone
                         </motion.button>
@@ -381,7 +663,7 @@ export default function ProfileTab({ user }: { user?: any }) {
                         </div>
                         <button 
                             className="w-full cursor-none rounded-xl border-2 border-zinc-200 bg-white py-2 text-sm font-bold text-zinc-900 transition-colors hover:border-zinc-950 hover:bg-zinc-50"
-                            onClick={() => console.log("Open Email Change Modal")}
+                            onClick={() => openContactModal("email")}
                         >
                             Change Email
                         </button>
@@ -402,7 +684,7 @@ export default function ProfileTab({ user }: { user?: any }) {
                         </div>
                         <button 
                             className="w-full cursor-none rounded-xl border-2 border-zinc-200 bg-white py-2 text-sm font-bold text-zinc-900 transition-colors hover:border-zinc-950 hover:bg-zinc-50"
-                            onClick={() => console.log("Open Phone Change Modal")}
+                            onClick={() => openContactModal("phone")}
                         >
                             Change Phone Number
                         </button>
@@ -422,6 +704,29 @@ export default function ProfileTab({ user }: { user?: any }) {
                     </div>
 
                     <form onSubmit={handlePasswordChange} className="space-y-4">
+                        <AnimatePresence>
+                            {passwordError && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }} 
+                                    animate={{ opacity: 1, height: 'auto' }} 
+                                    exit={{ opacity: 0, height: 0 }} 
+                                    className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-600"
+                                >
+                                    <AlertCircle size={18} className="shrink-0" /> <span className="leading-relaxed">{passwordError}</span>
+                                </motion.div>
+                            )}
+                            {passwordSuccess && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }} 
+                                    animate={{ opacity: 1, height: 'auto' }} 
+                                    exit={{ opacity: 0, height: 0 }} 
+                                    className="flex items-center gap-2 rounded-xl bg-emerald-50 p-3 text-sm font-bold text-emerald-600"
+                                >
+                                    <CheckCircle2 size={18} className="shrink-0" /> <span>{passwordSuccess}</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <div>
                                 <label className="mb-1 block text-xs font-bold text-gray-700">Current Password</label>
@@ -431,6 +736,7 @@ export default function ProfileTab({ user }: { user?: any }) {
                                     onChange={(e) => setCurrentPassword(e.target.value)}
                                     placeholder="••••••••"
                                     className={inputClass}
+                                    required
                                 />
                             </div>
                             <div>
@@ -441,6 +747,7 @@ export default function ProfileTab({ user }: { user?: any }) {
                                     onChange={(e) => setNewPassword(e.target.value)}
                                     placeholder="••••••••"
                                     className={inputClass}
+                                    required
                                 />
                             </div>
                             <div>
@@ -451,15 +758,17 @@ export default function ProfileTab({ user }: { user?: any }) {
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     placeholder="••••••••"
                                     className={inputClass}
+                                    required
                                 />
                             </div>
                         </div>
                         <div className="flex justify-end pt-2">
                             <button
                                 type="submit"
-                                className="cursor-none rounded-xl border border-zinc-300 bg-white px-6 py-2.5 text-xs font-bold text-zinc-900 transition-all hover:bg-zinc-950 hover:text-white"
+                                disabled={changePasswordMutation.isPending}
+                                className="cursor-none rounded-xl border border-zinc-300 bg-white px-6 py-2.5 text-xs font-bold text-zinc-900 transition-all hover:bg-zinc-950 hover:text-white disabled:opacity-50"
                             >
-                                Update Password
+                                {changePasswordMutation.isPending ? "Updating..." : "Update Password"}
                             </button>
                         </div>
                     </form>

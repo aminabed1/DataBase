@@ -2,6 +2,7 @@ package gangofthree.user.entity;
 
 import gangofthree.entity.City;
 import gangofthree.user.entity.enums.Role;
+import gangofthree.user.entity.enums.LoginMethod;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Check;
@@ -40,6 +41,11 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "login_method")
+    private LoginMethod loginMethod = LoginMethod.EMAIL;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id" , nullable = true)

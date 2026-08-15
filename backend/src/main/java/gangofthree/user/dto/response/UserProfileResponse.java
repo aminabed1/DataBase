@@ -17,4 +17,5 @@ public class UserProfileResponse {
     private String provinceId;
     private String cityName;     
     private String provinceName; 
+    private String loginMethod;
 }
