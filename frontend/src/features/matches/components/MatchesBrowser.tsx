@@ -49,7 +49,7 @@ function CustomSelect({
                 type="button"
                 disabled={disabled}
                 onClick={() => setIsOpen(!isOpen)}
-                className={`block w-full cursor-none rounded-2xl border-2 p-4 pl-12 pr-10 text-left text-sm font-medium outline-none backdrop-blur-sm transition-all 
+                className={`block w-full cursor-none rounded-2xl border-2 p-4 pl-12 pr-10 text-left text-sm font-medium outline-none transition-all 
                 ${disabled ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50/30 text-gray-400' : 'border-gray-100 bg-gray-50/50 hover:border-gray-200 hover:bg-white'} 
                 ${isOpen ? 'border-zinc-950 bg-white shadow-xl shadow-black/5' : ''} 
                 ${value ? 'text-zinc-900' : 'text-gray-400'}`}
@@ -185,7 +185,24 @@ export default function MatchesBrowser() {
 
     const theme = SPORT_THEME[selectedSport];
 
+    // ============================================================
+    // ۱) هندلر رزرو + بستن با Esc
+    // ============================================================
+    const handleBook = (match: Match) => {
+        // TODO: router.push(`/booking/${match.id}?qty=${filters.ticketCount}`)
+        console.log("BOOK", match.id, filters.ticketCount);
+    };
+
+    useEffect(() => {
+        if (!selectedMatch) return;
+        const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSelectedMatch(null);
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [selectedMatch]);
+
+    // ============================================================
     // فیلتر و مرتب‌سازی مسابقات
+    // ============================================================
     const filteredMatches = MOCK_MATCHES
         .filter(match => {
             if (match.sport !== selectedSport) return false;
@@ -253,8 +270,8 @@ export default function MatchesBrowser() {
     const stadiumPath = "M0,300 L0,0 C400,220 800,220 1200,0 L1200,300 Z";
     const layoutTransition = { type: "spring", stiffness: 260, damping: 30 } as const;
 
-    // استایل مشترک برای اینپوت‌های متنی (هماهنگ با CustomSelect)
-    const textInputClass = "block w-full cursor-none rounded-2xl border-2 border-gray-100 bg-gray-50/50 p-4 pl-12 text-sm font-medium text-zinc-900 outline-none backdrop-blur-sm transition-all focus:border-zinc-950 focus:bg-white focus:shadow-xl hover:border-gray-200 hover:bg-white";
+    // استایل مشترک برای اینپوت‌های متنی (بدون backdrop-blur)
+    const textInputClass = "block w-full cursor-none rounded-2xl border-2 border-gray-100 bg-gray-50/50 p-4 pl-12 text-sm font-medium text-zinc-900 outline-none transition-all focus:border-zinc-950 focus:bg-white focus:shadow-xl hover:border-gray-200 hover:bg-white";
 
     // تابع toggle برای مدیریت clip قبل از تغییر وضعیت
     const toggleFilters = () => {
@@ -490,7 +507,7 @@ export default function MatchesBrowser() {
             {/* ========================================== */}
             {/* ACCORDION‑STYLE MATCH CARDS                */}
             {/* ========================================== */}
-            <div className="mx-auto mt-10 flex w-full max-w-4xl flex-col gap-4 px-4 pb-40 relative z-10">
+            <div className="mx-auto mt-10 flex w-full max-w-4xl flex-col gap-4 px-4 pb-40 min-h-[250vh]">
                 {filteredMatches.length === 0 ? (
                     <motion.div
                         key="empty"
@@ -523,20 +540,16 @@ export default function MatchesBrowser() {
                                         y: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
                                         scale: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
                                     }}
-                                    className={`relative w-full overflow-hidden rounded-[2rem] border border-gray-100 bg-white/90 shadow-sm backdrop-blur-md transition-shadow duration-300 ${
-                                        isSelected ? "z-40 ring-1 ring-gray-200 shadow-2xl" : "z-20 hover:bg-white hover:shadow-xl group"
-                                    }`}
+                                    // مورد ۱: z-index ثابت + ring با transition
+                                    // مورد ۳: حذف backdrop-blur و استفاده از bg-white
+                                    className={`relative z-20 w-full overflow-hidden rounded-[2rem] border border-gray-100 bg-white
+                                        ring-1 transition-[box-shadow,ring-color] duration-300
+                                        ${isSelected ? "ring-gray-200 shadow-2xl" : "ring-transparent shadow-sm hover:shadow-xl group"}`}
                                 >
-                                    {isSelected && (
-                                        <div
-                                            className="fixed inset-0 z-30 cursor-none"
-                                            onClick={() => setSelectedMatch(null)}
-                                        />
-                                    )}
-
+                                    {/* هدر کارت: فقط باز می‌کند، بسته نمی‌کند + z-10 */}
                                     <div
-                                        onClick={() => setSelectedMatch(isSelected ? null : match)}
-                                        className="flex cursor-none flex-col items-center justify-between gap-6 p-5 sm:flex-row sm:p-6"
+                                        onClick={() => { if (!isSelected) setSelectedMatch(match); }}
+                                        className="relative z-10 flex cursor-none flex-col items-center justify-between gap-6 p-5 sm:flex-row sm:p-6"
                                     >
                                         <div className="flex flex-1 min-w-0 items-center justify-between gap-4 sm:justify-start sm:gap-8 w-full sm:w-auto">
                                             <div className="flex flex-1 min-w-0 flex-col items-center gap-2 sm:flex-row sm:text-left">
@@ -570,20 +583,25 @@ export default function MatchesBrowser() {
                                             </div>
                                         </div>
 
+                                        {/* دکمه سمت راست: Close با آیکون X */}
                                         <div className="w-full shrink-0 sm:w-auto">
-                                            <button
+                                            <motion.button
+                                                type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setSelectedMatch(isSelected ? null : match);
                                                 }}
-                                                className={`w-full whitespace-nowrap cursor-none rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest text-white transition-all ${
+                                                whileHover={{ scale: 1.04 }}
+                                                whileTap={{ scale: 0.96 }}
+                                                transition={hoverSpring}
+                                                className={`flex w-full items-center justify-center gap-2 whitespace-nowrap cursor-none rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest transition-colors ${
                                                     isSelected
-                                                        ? "bg-zinc-200 !text-zinc-500 hover:bg-zinc-300"
-                                                        : `group-hover:scale-105 ${theme.button}`
+                                                        ? "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+                                                        : `text-white ${theme.button}`
                                                 }`}
                                             >
-                                                {isSelected ? "Close" : "Get Tickets"}
-                                            </button>
+                                                {isSelected ? (<><X size={15} /> Close</>) : "Get Tickets"}
+                                            </motion.button>
                                         </div>
                                     </div>
 
@@ -600,7 +618,8 @@ export default function MatchesBrowser() {
                                                 }}
                                                 className="overflow-hidden"
                                             >
-                                                <div className="flex flex-col gap-4 border-t border-gray-100 p-6 md:p-8">
+                                                {/* جزئیات کارت */}
+                                                <div className="relative z-10 flex flex-col gap-4 border-t border-gray-100 p-6 md:p-8">
                                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                         <div className="flex flex-col gap-1 rounded-2xl bg-gray-50 p-4 border border-gray-100">
                                                             <div className="flex items-center gap-2 text-zinc-400 mb-1"><MapPin size={15}/> <span className="text-[10px] font-bold uppercase tracking-wider">Location</span></div>
@@ -643,10 +662,18 @@ export default function MatchesBrowser() {
                                                         </div>
                                                     </div>
 
-                                                    <button className={`group mx-auto mt-2 flex cursor-none items-center justify-center gap-2 rounded-2xl px-16 py-4 text-sm font-black uppercase tracking-widest text-white transition-all ${theme.button}`}>
+                                                    {/* دکمه Book Now واقعی */}
+                                                    <motion.button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); handleBook(match); }}
+                                                        whileHover={{ scale: 1.03 }}
+                                                        whileTap={{ scale: 0.97 }}
+                                                        transition={hoverSpring}
+                                                        className={`group/book mx-auto mt-2 flex cursor-none items-center justify-center gap-2 rounded-2xl px-16 py-4 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-black/5 ${theme.button}`}
+                                                    >
                                                         Book Now
-                                                        <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
-                                                    </button>
+                                                        <ArrowRight size={18} className="transition-transform duration-300 group-hover/book:translate-x-1" />
+                                                    </motion.button>
                                                 </div>
                                             </motion.div>
                                         )}
