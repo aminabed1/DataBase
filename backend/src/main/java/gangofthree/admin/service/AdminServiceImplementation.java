@@ -54,8 +54,7 @@ public class AdminServiceImplementation implements AdminService {
         IssueReport report = issueReportRepository.findById(reportId)
                 .orElseThrow(() -> new RuntimeException("Report not found"));
         
-        String updatedDescription = report.getDescription() + "\n\n--- Admin Reply ---\n" + replyText;
-        report.setDescription(updatedDescription);
+        report.setAdminReply(replyText);
         
         report.setStatus(IssueReportStatus.RESOLVED);
         report.setUpdatedAt(LocalDateTime.now());

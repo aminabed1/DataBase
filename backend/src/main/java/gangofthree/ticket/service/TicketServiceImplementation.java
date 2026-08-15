@@ -1,5 +1,5 @@
 package gangofthree.ticket.service;
-
+import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,15 +9,16 @@ import gangofthree.ticket.dto.response.TicketSearchResponse;
 import gangofthree.ticket.dto.response.TicketCategoryInfo;
 import gangofthree.ticket.repository.TicketDetailProjection;
 import gangofthree.ticket.repository.TicketRepository;
+import gangofthree.ticket.entity.Ticket;
 import gangofthree.ticket.repository.TicketSearchProjection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-
+import gangofthree.ticket.dto.response.TicketResponse;
 import java.time.Duration;
 import java.util.List;
-
+import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -123,5 +124,28 @@ public class TicketServiceImplementation implements TicketService {
         }
 
         return ApiResponse.success("Ticket details retrieved from Database.", 200, response);
+    }
+
+    @Override
+    public ApiResponse<List<TicketResponse>> getMyTickets(Long userId) {
+        List<Ticket> tickets = ticketRepository.findAllUserTickets(userId);
+
+        List<TicketResponse> responses = tickets.stream().map(t -> {
+            var match = t.getReservationItem().getMatchSeat().getMatch();
+            return TicketResponse.builder()
+                    .id(t.getId())
+                    .ticketCode(t.getTicketCode())
+                    .status(t.getStatus().name())
+                    .sport(match.getSport() != null ? match.getSport().getName() : "General")
+                    .issuedAt(t.getIssuedAt() != null ? t.getIssuedAt().toString() : "")
+                    .matchDate(match.getDatetime() != null ? match.getDatetime().toString() : "")
+                    .venueName(match.getVenue() != null ? match.getVenue().getName() : "")
+                    .hostTeam(match.getHostTeam() != null ? match.getHostTeam().getName() : "")
+                    .guestTeam(match.getGuestTeam() != null ? match.getGuestTeam().getName() : "")
+                    .price(t.getReservationItem().getPriceAtTime())
+                    .build();
+        }).collect(Collectors.toList());
+
+        return ApiResponse.success("Tickets retrieved successfully", 200, responses);
     }
 }

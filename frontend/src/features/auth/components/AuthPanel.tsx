@@ -156,7 +156,7 @@ export default function AuthPanel() {
         
         if (token) {
             localStorage.setItem("token", token);
-            router.push("/dashboard");
+            router.push('/auth?mode=login');
         } else {
             console.error("Authentication successful, but no token was found in the response payload.");
             setError("Login successful, but a system error occurred. Please try again.");

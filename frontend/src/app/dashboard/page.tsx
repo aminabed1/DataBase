@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import DashboardSidebar from "@/features/dashboard/components/DashboardSidebar";
 import ProfileTab from "@/features/dashboard/components/ProfileTab";
 import WalletTab from "@/features/dashboard/components/WalletTab";
+import TicketHistoryTab from "@/features/dashboard/components/TicketHistoryTab";
 import SupportTab from "@/features/dashboard/components/SupportTab";
 import { DashboardTab } from "@/features/dashboard/types";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,11 +17,21 @@ export default function DashboardPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // گرفتن دیتا به صورت تمیز و مدیریت‌شده توسط React Query
   const { data: user, isLoading, isError } = useProfile();
 
   useEffect(() => {
-    // در صورت نامعتبر بودن توکن، ریدایرکت به لاگین انجام شود
+    const savedTab = sessionStorage.getItem('dashboardTab') as DashboardTab;
+    if (savedTab) {
+      setActiveTab(savedTab);
+    }
+  }, []);
+
+  const handleTabChange = (tab: DashboardTab) => {
+    setActiveTab(tab);
+    sessionStorage.setItem('dashboardTab', tab);
+  };
+
+  useEffect(() => {
     if (isError) {
       router.push("/auth?mode=login");
     }
@@ -45,10 +56,9 @@ export default function DashboardPage() {
       case 'profile':
         return <ProfileTab user={user} />;
       case 'wallet':
-        // در آینده برای کیف پول هم می‌توانی یک هوک مشابه مثل useWallet بسازی
-        return <WalletTab />;
+        return <WalletTab user={user} />;
       case 'tickets':
-        return <div className="h-[1200px] rounded-3xl bg-white p-8 shadow-sm border border-gray-100">Tickets List Goes Here</div>;
+        return <TicketHistoryTab />;
       case 'support':
         return <SupportTab />;
       default:
@@ -58,7 +68,6 @@ export default function DashboardPage() {
 
   return (
     <main className="h-screen w-full bg-[#f7f7f7] pt-8 pb-8 text-gray-900 overflow-hidden relative">
-      {/* Back to Home Button */}
       <div className="absolute left-6 top-6 z-50 md:left-8 md:top-8">
         <button
           onClick={() => router.push("/")}
@@ -71,7 +80,8 @@ export default function DashboardPage() {
 
       <div className="mx-auto flex h-full max-w-[90rem] flex-col gap-8 px-4 md:flex-row md:px-8 pt-12 md:pt-4">
         
-        <DashboardSidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} isLoading={isLoading} />
+        {/* پاس دادن handleTabChange به جای setActiveTab */}
+        <DashboardSidebar activeTab={activeTab} setActiveTab={handleTabChange} user={user} isLoading={isLoading} />
 
         <section className="flex flex-1 flex-col h-full overflow-hidden">
           <div className="mb-6 shrink-0 pl-2">

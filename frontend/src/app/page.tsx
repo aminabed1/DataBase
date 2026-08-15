@@ -2,7 +2,7 @@ import HeroSection from "@/components/layout/HeroSection";
 import StatsSection from "@/components/layout/StatsSection";
 import FeaturesSection from "@/components/layout/FeaturesSection";
 import Footer from "@/components/layout/Footer";
-
+import TicketHistoryTab from "@/features/dashboard/components/TicketHistoryTab";
 export default function Home() {
     return (
         <main>

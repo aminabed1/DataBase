@@ -5,8 +5,9 @@ import gangofthree.ticket.dto.TicketDetailResponse;
 import gangofthree.ticket.dto.response.TicketSearchResponse;
 import gangofthree.ticket.service.TicketService;
 import lombok.RequiredArgsConstructor;
+import gangofthree.ticket.dto.response.TicketResponse;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.security.core.Authentication;
 import java.util.List;
 
 @RestController
@@ -27,5 +28,11 @@ public class TicketController {
     @GetMapping("/{matchId}/details")
     public ApiResponse<TicketDetailResponse> getTicketDetails(@PathVariable Long matchId) {
         return ticketService.getTicketDetails(matchId);
+    }
+
+    @GetMapping("/me")
+    public ApiResponse<List<TicketResponse>> getMyTickets(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        return ticketService.getMyTickets(userId);
     }
 }

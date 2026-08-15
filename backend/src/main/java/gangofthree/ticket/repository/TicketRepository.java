@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.Modifying;
 import java.time.LocalDateTime;
-
+import java.util.Map;
 import java.util.List;
 
 @Repository
@@ -19,6 +19,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
         JOIN FETCH ri.reservation r 
         JOIN FETCH ri.matchSeat ms 
         JOIN FETCH ms.match m 
+        JOIN FETCH m.sport
         JOIN FETCH m.hostTeam 
         JOIN FETCH m.guestTeam 
         JOIN FETCH m.venue 
@@ -73,6 +74,21 @@ List<TicketSearchProjection> searchTickets(@Param("city") String city, @Param("s
                             @Param("ticketCode") String ticketCode, 
                             @Param("reservationItemId") Long reservationItemId);
 
+    @Query(value = """
+        SELECT t.id, t.ticket_code, t.status, t.issued_at, m.datetime as match_date, 
+        v.name as venue_name, ht.name as host_team, gt.name as guest_team, ri.price_at_time as price 
+        FROM tickets t 
+        JOIN reservation_items ri ON t.reservation_item_id = ri.id 
+        JOIN reservations r ON ri.reservation_id = r.id 
+        JOIN match_seats ms ON ri.match_seat_id = ms.id 
+        JOIN matches m ON ms.match_id = m.id 
+        JOIN venues v ON m.venue_id = v.id 
+        JOIN teams ht ON m.host_team_id = ht.id 
+        JOIN teams gt ON m.guest_team_id = gt.id 
+        WHERE r.user_id = :userId ORDER BY t.issued_at DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> findUserTicketsNative(@Param("userId") Long userId);
+    
 }
 
 

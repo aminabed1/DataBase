@@ -39,6 +39,9 @@ public class IssueReport {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "admin_reply", columnDefinition = "text")
+    private String adminReply;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = true)
     private User user;

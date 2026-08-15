@@ -7,6 +7,7 @@ import gangofthree.payment.entity.Payment;
 import gangofthree.report.entity.enums.IssueReportStatus;
 import gangofthree.payment.repository.PaymentRepository;
 import gangofthree.report.dto.request.ReportIssueRequest;
+import gangofthree.report.dto.response.IssueReportResponse;
 import gangofthree.user.entity.User;
 import gangofthree.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -54,8 +55,22 @@ public class ReportServiceImplementation implements ReportService {
     }
 
     @Override
-    public ApiResponse<List<IssueReport>> getUserReports(Long userId) {
+    public ApiResponse<List<IssueReportResponse>> getUserReports(Long userId) {
         List<IssueReport> reports = issueReportRepository.findByUserId(userId);
-        return ApiResponse.success("User reports retrieved.", 200, reports);
+        
+        List<IssueReportResponse> responses = reports.stream()
+            .map(report -> gangofthree.report.dto.response.IssueReportResponse.builder()
+                .id(report.getId())
+                .subject(report.getSubject())
+                .description(report.getDescription())
+                .status(report.getStatus().name())
+                .createdAt(report.getCreatedAt())
+                .adminReply(report.getAdminReply())
+                .relatedPaymentId(report.getPayment() != null ? report.getPayment().getId() : null)
+                .build())
+            .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt())) // مرتب‌سازی از جدید به قدیم
+            .collect(java.util.stream.Collectors.toList());
+
+        return ApiResponse.success("User reports retrieved.", 200, responses);
     }
 }
