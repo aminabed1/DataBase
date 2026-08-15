@@ -27,7 +27,7 @@ export const authService = {
     },
 
     requestOtp: async (identifier: string) => {
-        const response = await apiClient.post("/auth/forgot-password", {
+        const response = await apiClient.post("/auth/login/otp-request", {
             credential: identifier
         });
         return response.data;

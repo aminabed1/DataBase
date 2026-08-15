@@ -64,18 +64,45 @@ public class AuthServiceImplementation implements AuthService {
             throw new InvalidCredentialException("Invalid credential or password.");
         }
 
+       String jwtToken = jwtService.generateAccessToken(user);
+
+        return AuthResponse.builder()
+                .message("login successful.")
+                .token(jwtToken)
+                .build();
+    }
+    @Override
+    public AuthResponse requestLoginOtp(String credential) {
+        CredentialType credentialType = CredentialDetector.detect(credential);
+        Optional<User> optionalUser = switch (credentialType) {
+            case EMAIL -> userRepository.findUserByEmail(credential);
+            case PHONE -> userRepository.findUserByPhoneNumber(credential);
+            case INVALID -> throw new InvalidCredentialException("Invalid credential.");
+        };
+
+        User user = optionalUser.orElseThrow(() -> new InvalidCredentialException("User not found."));
+
+        if (user.getLoginMethod() != null) {
+            if (credentialType == CredentialType.EMAIL && user.getLoginMethod() == LoginMethod.PHONE) {
+                throw new InvalidCredentialException("Your preferred login method is set to Phone Number.");
+            }
+            if (credentialType == CredentialType.PHONE && user.getLoginMethod() == LoginMethod.EMAIL) {
+                throw new InvalidCredentialException("Your preferred login method is set to Email Address.");
+            }
+        }
+
         String otp = otpService.generateOtp();
-        String credential = credentialType.equals(CredentialType.PHONE) ? user.getPhoneNumber() : user.getEmail();
-        otpService.saveOtp(credential, otp, OtpPurpose.LOGIN);
+        String targetCredential = credentialType.equals(CredentialType.PHONE) ? user.getPhoneNumber() : user.getEmail();
+        otpService.saveOtp(targetCredential, otp, OtpPurpose.LOGIN);
 
         if (credentialType.equals(CredentialType.EMAIL)) {
-            emailService.sendOtp(credential, otp, 120);
+            emailService.sendOtp(targetCredential, otp, 120);
         } else {
-            smsService.sendOtp(credential, otp, 120);
+            smsService.sendOtp(targetCredential, otp, 120);
         }
 
         return AuthResponse.builder()
-                .message("first step of login successful. otp sent successfully!")
+                .message("OTP sent successfully!")
                 .build();
     }
 

@@ -122,6 +122,8 @@ export default function AuthPanel() {
     });
 
     useEffect(() => {
+        localStorage.removeItem("token");
+        
         locationService.getProvinces().then(setProvinces);
     }, []);
 
@@ -149,17 +151,27 @@ export default function AuthPanel() {
     };
 
     // ==========================================
-    // EXTRACT TOKEN AND REDIRECT
+    // EXTRACT TOKEN AND REDIRECT (FIXED)
     // ==========================================
-    const handleSuccessAuth = (responsePayload: any) => {
+    const handleSuccessAuth = (responsePayload: any, isLogin: boolean) => {
         const token = responsePayload?.data?.token || responsePayload?.token || responsePayload?.data?.data?.token;
         
         if (token) {
-            localStorage.setItem("token", token);
-            router.push('/auth?mode=login');
+            if (isLogin) {
+                // If logging in, save token and go to dashboard
+                localStorage.setItem("token", token);
+                router.push('/dashboard');
+            } else {
+                // If signing up, DO NOT log them in automatically. Send them to the login tab.
+                localStorage.removeItem("token");
+                setMode("login");
+                setOtpStep("request");
+                setFormData(prev => ({ ...prev, password: "", confirmPassword: "" }));
+                router.push('/auth?mode=login');
+            }
         } else {
-            console.error("Authentication successful, but no token was found in the response payload.");
-            setError("Login successful, but a system error occurred. Please try again.");
+            console.error("No token was found in the response payload.");
+            setError("Success, but a system error occurred. Please try again.");
         }
     };
 
@@ -200,7 +212,7 @@ export default function AuthPanel() {
                 confirmPassword: formData.confirmPassword
             };
             const data = await authService.register(payload);
-            handleSuccessAuth(data);
+            handleSuccessAuth(data, false); // isLogin = false
         } catch (err: any) {
             setError(err.response?.data?.message || err.message || "Registration failed.");
         } finally {
@@ -209,7 +221,7 @@ export default function AuthPanel() {
     };
 
     // ==========================================
-    // LOGIN SUBMIT
+    // LOGIN SUBMIT (FIXED: Bypasses OTP for password)
     // ==========================================
     const handleLoginSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -227,14 +239,13 @@ export default function AuthPanel() {
                     setIsLoading(false);
                     return setError("Please enter your password.");
                 }
-
-                await authService.loginWithPassword(formData.identifier, formData.password);
-
-                setLoginMethod("otp");
-                setOtpStep("verify");
+                // ورود با پسورد مستقیماً به داشبورد می‌رود
+                const data = await authService.loginWithPassword(formData.identifier, formData.password);
+                handleSuccessAuth(data, true);
 
             } else {
                 if (otpStep === "request") {
+                    // فقط برای One-Time Code درخواست OTP می‌دهد
                     await authService.requestOtp(formData.identifier);
                     setOtpStep("verify");
                 } else {
@@ -242,9 +253,8 @@ export default function AuthPanel() {
                         setIsLoading(false);
                         return setError("Invalid verification code.");
                     }
-
                     const data = await authService.verifyOtp(formData.identifier, formData.otp);
-                    handleSuccessAuth(data);
+                    handleSuccessAuth(data, true);
                 }
             }
         } catch (err: any) {

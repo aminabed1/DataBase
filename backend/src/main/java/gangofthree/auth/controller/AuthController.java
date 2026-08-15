@@ -55,4 +55,10 @@ public class AuthController {
         AuthResponse response = authService.resetPassword(request);
         return ApiResponse.success("reset password successful.", response);
     }
+
+    @PostMapping("/login/otp-request")
+    public ApiResponse<AuthResponse> requestLoginOtp(@Valid @RequestBody ForgotPasswordRequest request) {
+        AuthResponse response = authService.requestLoginOtp(request.getCredential());
+        return ApiResponse.success("OTP sent.", response);
+    }
 }
