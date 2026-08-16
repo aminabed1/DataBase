@@ -81,6 +81,9 @@ public class ReservationServiceImplementation implements ReservationService {
                 .expiredAt(reservation.getExpiredAt())
                 .status(reservation.getStatus())
                 .totalAmount(totalAmount)
+                .userName(user.getFirstName() + " " + user.getLastName())
+                .userEmail(user.getEmail())
+                .userPhone(user.getPhoneNumber())
                 .build();
 
         return ApiResponse.success("Reservation created successfully. You have 10 minutes to pay.", 200, response);
@@ -125,6 +128,9 @@ public class ReservationServiceImplementation implements ReservationService {
                 .hostTeam(hostTeam)
                 .guestTeam(guestTeam)
                 .venue(venue)
+                .userName(res.getUser().getFirstName() + " " + res.getUser().getLastName())
+                .userEmail(res.getUser().getEmail())
+                .userPhone(res.getUser().getPhoneNumber())
                 .seats(seatsData)
                 .build();
     }

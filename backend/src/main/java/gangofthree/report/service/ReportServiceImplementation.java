@@ -67,6 +67,8 @@ public class ReportServiceImplementation implements ReportService {
                 .createdAt(report.getCreatedAt())
                 .adminReply(report.getAdminReply())
                 .relatedPaymentId(report.getPayment() != null ? report.getPayment().getId() : null)
+                .userName(report.getUser() != null ? report.getUser().getFirstName() + " " + report.getUser().getLastName() : null)
+                .userEmail(report.getUser() != null ? report.getUser().getEmail() : null)
                 .build())
             .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt())) // مرتب‌سازی از جدید به قدیم
             .collect(java.util.stream.Collectors.toList());
@@ -87,6 +89,8 @@ public class ReportServiceImplementation implements ReportService {
                         .createdAt(report.getCreatedAt())
                         .adminReply(report.getAdminReply())
                         .relatedPaymentId(report.getPayment() != null ? report.getPayment().getId() : null)
+                        .userName(report.getUser() != null ? report.getUser().getFirstName() + " " + report.getUser().getLastName() : null)
+                        .userEmail(report.getUser() != null ? report.getUser().getEmail() : null)
                         .build())
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                 .toList();

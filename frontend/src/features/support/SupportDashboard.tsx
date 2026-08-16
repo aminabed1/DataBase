@@ -87,9 +87,9 @@ export default function SupportDashboard() {
                     const formatted: DashboardReservation[] = data.map((r: any) => ({
                         id: r.reservationId,
                         user: {
-                            name: `User #${r.reservationId}`,
-                            email: "registered@pitchside.com",
-                            phone: "09120000000"
+                            name: r.userName || `User #${r.reservationId}`,
+                            email: r.userEmail || "registered@pitchside.com",
+                            phone: r.userPhone || "09120000000"
                         },
                         match: `${r.hostTeam || 'Host'} vs ${r.guestTeam || 'Guest'}`,
                         venue: r.venue || "Azadi Stadium",
@@ -114,7 +114,7 @@ export default function SupportDashboard() {
                         id: i.id,
                         subject: i.subject,
                         description: i.description,
-                        user: { name: `Customer`, email: `user-${i.id}@pitchside.com` },
+                        user: { name: i.userName || `Customer`, email: i.userEmail || `user-${i.id}@pitchside.com` },
                         paymentId: i.relatedPaymentId || "-",
                         status: i.status,
                         createdAt: i.createdAt ? i.createdAt.replace("T", " ").substring(0, 16) : "-",
@@ -330,6 +330,7 @@ export default function SupportDashboard() {
                                             <td className="py-3.5 px-4">
                                                 <div className="font-semibold text-zinc-900">Order #{r.id}</div>
                                                 <div className="text-[11px] text-zinc-400 font-mono">{r.date}</div>
+                                                <div className="text-[10px] text-zinc-500 font-medium">{r.user.name} ({r.user.phone})</div>
                                             </td>
                                             <td className="py-3.5 px-4">
                                                 <div className="font-medium text-zinc-900">{r.match}</div>
@@ -406,6 +407,7 @@ export default function SupportDashboard() {
                                         </span>
                                         <span className="text-[11px] text-zinc-400 font-mono">{issue.createdAt}</span>
                                     </div>
+                                    <div className="text-[10px] text-zinc-500 mb-1">{issue.user.name} ({issue.user.email})</div>
                                     <h4 className="text-sm font-bold text-zinc-900 mb-1">{issue.subject}</h4>
                                     <p className="text-xs text-zinc-600 line-clamp-2">{issue.description}</p>
                                     <div className="mt-3 pt-2 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400">

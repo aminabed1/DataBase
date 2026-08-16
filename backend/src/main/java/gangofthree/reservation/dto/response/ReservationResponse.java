@@ -20,5 +20,8 @@ public class ReservationResponse {
     private String hostTeam;
     private String guestTeam;
     private String venue;
+    private String userName;
+    private String userEmail;
+    private String userPhone;
     private List<Map<String, Object>> seats;
 }

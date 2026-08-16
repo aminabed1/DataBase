@@ -14,4 +14,6 @@ public class IssueReportResponse {
     private LocalDateTime createdAt;
     private String adminReply;
     private Long relatedPaymentId;
+    private String userName;
+    private String userEmail;
 }
