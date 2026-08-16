@@ -1,9 +1,8 @@
 "use client";
 
 import { DashboardTab } from "../types";
-import { User, Wallet, Ticket, CreditCard, LifeBuoy, LogOut } from "lucide-react";
+import { User, Wallet, Ticket, CreditCard, LifeBuoy, LogOut,Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
-
 interface SidebarProps {
     activeTab: DashboardTab;
     setActiveTab: (tab: DashboardTab) => void;
@@ -22,6 +21,7 @@ export default function DashboardSidebar({ activeTab, setActiveTab, user, isLoad
         { id: 'profile', label: 'Profile Details', icon: <User size={20} /> },
         { id: 'wallet', label: 'My Wallet', icon: <Wallet size={20} /> },
         { id: 'tickets', label: 'My Tickets', icon: <Ticket size={20} /> },
+        { id: 'pending-orders', label: 'Pending Orders', icon: <Clock size={20} /> },
         { id: 'support', label: 'Support & Reports', icon: <LifeBuoy size={20} /> },
     ];
 

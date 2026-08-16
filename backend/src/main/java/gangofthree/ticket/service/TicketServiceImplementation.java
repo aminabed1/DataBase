@@ -164,6 +164,7 @@ public class TicketServiceImplementation implements TicketService {
                     .id(t.getId())
                     .ticketCode(t.getTicketCode())
                     .status(t.getStatus().name())
+                    .category(t.getReservationItem().getMatchSeat().getTicketCategory().getName())
                     .sport(match.getSport() != null ? match.getSport().getName() : "General")
                     .issuedAt(t.getIssuedAt() != null ? t.getIssuedAt().toString() : "")
                     .matchDate(match.getDatetime() != null ? match.getDatetime().toString() : "")

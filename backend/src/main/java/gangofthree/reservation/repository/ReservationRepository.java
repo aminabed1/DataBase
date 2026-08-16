@@ -19,6 +19,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByStatus(ReservationStatus status);
 
     @Modifying
-    @Query(value = "UPDATE reservations SET status = :status WHERE id = :id", nativeQuery = true)
+    @Query(value = "UPDATE reservations SET status = :status WHERE id = :id ", nativeQuery = true)
     void updateReservationStatusNative(@Param("id") Long id, @Param("status") String status);
+
+    @Query("SELECT r FROM Reservation r WHERE r.user.id = :userId AND r.status = :status ORDER BY r.id DESC")
+    List<Reservation> findByUserIdAndStatusOrderByIdDesc(@Param("userId") Long userId, @Param("status") ReservationStatus status);
 }

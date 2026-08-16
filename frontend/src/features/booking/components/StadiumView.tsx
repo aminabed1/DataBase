@@ -1,345 +1,323 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import apiClient from "@/services/client";
 import {
     CalendarDays, MapPin, Ticket, ShieldCheck, Armchair, Clock,
-    Crown, Star, Leaf, Users, Accessibility, Bird, Flame, ArrowLeft
+    Crown, Star, Leaf, Users, Accessibility, Bird, Flame, ArrowLeft, Loader2, X, Building2, CheckCircle2, AlertCircle,User
 } from "lucide-react";
 
-// ==========================================
-// Mock Data
-// ==========================================
-const MOCK_MATCH = {
-    id: 1,
-    teamHome: { name: "Arsenal", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/5/53/Arsenal_FC.svg/1200px-Arsenal_FC.svg.png" },
-    teamAway: { name: "Chelsea", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/c/cc/Chelsea_FC.svg/1200px-Chelsea_FC.svg.png" },
-    date: "2026-08-15",
-    time: "20:00",
-    stadium: "Emirates",
-    city: "London",
-    league: "Premier League",
-};
 
-// کلاً 10 صندلی برای هر سکو، با دسته‌بندی‌های مختلف که جمعشون 10 میشه
-const STADIUM_SECTIONS = [
-    {
-        id: "n-lower", name: "North Stand - Lower Tier", total: 10, available: 4, price: 250,
-        categories: [
-            { name: "VVIP", count: 4, amenities: "Parking, Food, Lounge" },
-            { name: "Premium", count: 6, amenities: "Parking" }
-        ],
-        path: "M 290 195 L 510 195 L 585 120 L 215 120 Z"
-    },
-    {
-        id: "s-lower", name: "South Stand - Lower Tier", total: 10, available: 0, price: 250,
-        categories: [
-            { name: "VIP", count: 5, amenities: "Parking, Food" },
-            { name: "Family", count: 5, amenities: "Kid Zone" }
-        ],
-        path: "M 290 325 L 510 325 L 585 400 L 215 400 Z"
-    },
-    {
-        id: "w-lower", name: "West Stand - Lower Tier", total: 10, available: 8, price: 150,
-        categories: [
-            { name: "Disabled", count: 2, amenities: "Wheelchair Access" },
-            { name: "Regular", count: 8, amenities: "Standard Seating" }
-        ],
-        path: "M 285 205 L 285 315 L 205 395 L 205 125 Z"
-    },
-    {
-        id: "e-lower", name: "East Stand - Lower Tier", total: 10, available: 2, price: 150,
-        categories: [
-            { name: "Premium", count: 5, amenities: "Parking" },
-            { name: "Early Bird", count: 5, amenities: "Discounted" }
-        ],
-        path: "M 515 205 L 515 315 L 595 395 L 595 125 Z"
-    },
-    {
-        id: "n-upper", name: "North Stand - Upper Tier", total: 10, available: 10, price: 80,
-        categories: [
-            // ظرفیت صندلی‌های دانشجویی به اکونومی اضافه شد تا 10 تا بشه
-            { name: "Economy", count: 10, amenities: "Basic Seating" }
-        ],
-        path: "M 205 105 L 595 105 L 685 15 Q 400 -25 115 15 Z"
-    },
-    {
-        id: "s-upper", name: "South Stand - Upper Tier", total: 10, available: 5, price: 80,
-        categories: [
-            { name: "Economy", count: 10, amenities: "Basic Seating" }
-        ],
-        path: "M 205 415 L 595 415 L 685 505 Q 400 545 115 505 Z"
-    },
-    {
-        id: "w-upper", name: "West Stand - Upper Tier", total: 10, available: 1, price: 60,
-        categories: [
-            { name: "Last Minute", count: 3, amenities: "Dynamic Pricing" },
-            { name: "Regular", count: 7, amenities: "Standard Seating" }
-        ],
-        path: "M 190 120 L 190 400 L 100 490 Q 60 260 100 30 Z"
-    },
-    {
-        id: "e-upper", name: "East Stand - Upper Tier", total: 10, available: 7, price: 60,
-        categories: [
-            { name: "Economy", count: 10, amenities: "Basic Seating" }
-        ],
-        path: "M 610 120 L 610 400 L 700 490 Q 740 260 700 30 Z"
-    },
+const BASE_STADIUM_SECTIONS = [
+    { id: "n-lower", name: "North Stand - Lower Tier", path: "M 290 195 L 510 195 L 585 120 L 215 120 Z", defaultCategory: "VVIP" },
+    { id: "s-lower", name: "South Stand - Lower Tier", path: "M 290 325 L 510 325 L 585 400 L 215 400 Z", defaultCategory: "VIP" },
+    { id: "w-lower", name: "West Stand - Lower Tier", path: "M 285 205 L 285 315 L 205 395 L 205 125 Z", defaultCategory: "Disabled" },
+    { id: "e-lower", name: "East Stand - Lower Tier", path: "M 515 205 L 515 315 L 595 395 L 595 125 Z", defaultCategory: "Premium" },
+    { id: "n-upper", name: "North Stand - Upper Tier", path: "M 205 105 L 595 105 L 685 15 Q 400 -25 115 15 Z", defaultCategory: "Economy" },
+    { id: "s-upper", name: "South Stand - Upper Tier", path: "M 205 415 L 595 415 L 685 505 Q 400 545 115 505 Z", defaultCategory: "Family" },
+    { id: "w-upper", name: "West Stand - Upper Tier", path: "M 190 120 L 190 400 L 100 490 Q 60 260 100 30 Z", defaultCategory: "Last Minute" },
+    { id: "e-upper", name: "East Stand - Upper Tier", path: "M 610 120 L 610 400 L 700 490 Q 740 260 700 30 Z", defaultCategory: "Early Bird" },
 ];
 
-// ==========================================
-// Category Styles Dictionary
-// ==========================================
 const getCategoryStyle = (categoryName: string) => {
-    switch (categoryName) {
-        case "VVIP":
-            return { icon: Crown, color: "text-amber-600", bgClass: "bg-amber-500", fontClass: "font-[cursive] italic text-xl tracking-wider font-bold" };
-        case "VIP":
-            return { icon: Crown, color: "text-amber-500", bgClass: "bg-amber-400", fontClass: "font-serif italic text-lg font-bold" };
-        case "Premium":
-            return { icon: Star, color: "text-indigo-600", bgClass: "bg-indigo-500", fontClass: "font-[cursive] italic text-lg font-bold" };
-        case "Economy":
-            return { icon: Leaf, color: "text-emerald-600", bgClass: "bg-emerald-500", fontClass: "font-sans font-bold text-base" };
-        case "Family":
-            return { icon: Users, color: "text-sky-500", bgClass: "bg-sky-400", fontClass: "font-sans font-bold text-base" };
-        case "Disabled":
-            return { icon: Accessibility, color: "text-blue-600", bgClass: "bg-blue-500", fontClass: "font-sans font-bold text-base" };
-        case "Early Bird":
-            return { icon: Bird, color: "text-teal-600", bgClass: "bg-teal-500", fontClass: "font-sans font-bold text-base" };
-        case "Last Minute":
-            return { icon: Flame, color: "text-red-500", bgClass: "bg-red-500", fontClass: "font-sans font-bold uppercase tracking-widest text-sm" };
-        default:
-            return { icon: ShieldCheck, color: "text-zinc-600", bgClass: "bg-zinc-500", fontClass: "font-sans font-bold text-base" };
+    switch (categoryName?.toUpperCase()) {
+        case "VVIP": return { icon: Crown, color: "text-amber-600", bgClass: "bg-amber-500", fontClass: "font-[cursive] italic tracking-wider" };
+        case "VIP": return { icon: Crown, color: "text-amber-500", bgClass: "bg-amber-400", fontClass: "font-serif italic" };
+        case "PREMIUM": return { icon: Star, color: "text-indigo-600", bgClass: "bg-indigo-500", fontClass: "font-[cursive] italic" };
+        case "ECONOMY": return { icon: Leaf, color: "text-emerald-600", bgClass: "bg-emerald-500", fontClass: "font-sans" };
+        case "FAMILY": return { icon: Users, color: "text-sky-500", bgClass: "bg-sky-400", fontClass: "font-sans" };
+        case "DISABLED": return { icon: Accessibility, color: "text-blue-600", bgClass: "bg-blue-500", fontClass: "font-sans" };
+        case "EARLY BIRD": return { icon: Bird, color: "text-teal-600", bgClass: "bg-teal-500", fontClass: "font-sans" };
+        case "LAST MINUTE": return { icon: Flame, color: "text-red-500", bgClass: "bg-red-500", fontClass: "font-sans uppercase tracking-widest text-sm" };
+        default: return { icon: ShieldCheck, color: "text-zinc-600", bgClass: "bg-zinc-500", fontClass: "font-sans" };
     }
 };
 
-// ==========================================
-// Seat Generator Logic
-// ==========================================
-type SeatStatus = "AVAILABLE" | "SOLD" | "LOCKED";
-interface Seat {
-    id: number;
-    row: number;
-    number: number;
-    category: string;
-    status: SeatStatus;
-    amenities: string;
-}
-
-const generateSeatsForSection = (section: typeof STADIUM_SECTIONS[0]) => {
-    let seats: Seat[] = [];
-    let seatCounter = 1;
-    let availableBudget = section.available;
-
-    const lockedCount = Math.floor((section.total - section.available) * 0.3);
-
-    section.categories.forEach(cat => {
-        for (let i = 0; i < cat.count; i++) {
-            let status: SeatStatus = "SOLD";
-
-            if (availableBudget > 0) {
-                status = "AVAILABLE";
-                availableBudget--;
-            } else if (seatCounter % 2 === 0 && lockedCount > 0) {
-                status = "LOCKED";
-            }
-
-            seats.push({
-                id: seatCounter,
-                row: Math.ceil(seatCounter / 5),
-                number: seatCounter,
-                category: cat.name,
-                status: status,
-                amenities: cat.amenities
-            });
-            seatCounter++;
-        }
-    });
-
-    return seats.sort(() => Math.random() - 0.5);
-};
-
-// ==========================================
-// Animation Variants
-// ==========================================
-const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
-    exit: { opacity: 0, transition: { duration: 0.15 } }
-};
-
-const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
-
-const breathAnimation = {
-    scale: [1, 1.08, 1],
-    opacity: [0.7, 1, 0.7],
-    transition: { repeat: Infinity, duration: 1.5, ease: "easeInOut" }
-};
+const breathAnimation = { scale: [1, 1.08, 1], opacity: [0.7, 1, 0.7], transition: { repeat: Infinity, duration: 1.5, ease: "easeInOut" } };
 
 export default function StadiumView() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const queryClient = useQueryClient();
+    const matchId = searchParams.get("matchId");
+
     const [hoveredSection, setHoveredSection] = useState<string | null>(null);
     const [selectedSection, setSelectedSection] = useState<string | null>(null);
-    const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
+    const [selectedSeats, setSelectedSeats] = useState<any[]>([]);
+    const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
-    const activeSectionData = STADIUM_SECTIONS.find(s => s.id === (selectedSection || hoveredSection));
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [currentReservationId, setCurrentReservationId] = useState<number | null>(null);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null);
+    const [actionType, setActionType] = useState<'RESERVE' | 'PAY'>('RESERVE');
+
+    // رفع باگ تداخل صندلی‌ها در مچ‌های مختلف (خالی کردن سبد خرید هنگام تغییر مچ)
+    useEffect(() => {
+        setSelectedSeats([]);
+        setSelectedSection(null);
+        setHoveredSection(null);
+    }, [matchId]);
+
+    const { data: matchDetails, isLoading, isError } = useQuery({
+        queryKey: ['match-details', matchId],
+        queryFn: async () => {
+            const res = await apiClient.get(`/tickets/${matchId}/details`);
+            return res.data.data;
+        },
+        enabled: !!matchId
+    });
+
+    const { data: realMatchSeats = [] } = useQuery({
+        queryKey: ['match-seats', matchId],
+        queryFn: async () => {
+            const res = await apiClient.get(`/matches/${matchId}/seats`);
+            return res.data.data;
+        },
+        enabled: !!matchId,
+        refetchInterval: 5000
+    });
+
+    const { data: paymentMethodsData } = useQuery({
+        queryKey: ['payment-methods'],
+        queryFn: async () => {
+            try {
+                const res = await apiClient.get("/payments/methods");
+                const list = res.data?.data || res.data;
+                return Array.isArray(list) ? list : [];
+            } catch { return []; }
+        }
+    });
+
+    const paymentMethods = Array.isArray(paymentMethodsData) ? paymentMethodsData : [];
+
+    const reserveMutation = useMutation({
+        mutationFn: async (seatIds: number[]) => {
+            const res = await apiClient.post(`/reservations`, { matchSeatIds: seatIds });
+            if (res.data && res.data.success === false) throw new Error(res.data.message || "Reservation failed.");
+            return res.data; 
+        },
+        onSuccess: (responseData) => {
+            const reservationId = responseData.data.reservationId;
+            if (actionType === 'PAY') {
+                setCurrentReservationId(reservationId);
+                setIsPaymentModalOpen(true); 
+            } else {
+                setToast({ message: "Seats locked successfully! You have 10 minutes to complete payment.", type: 'success' });
+                setSelectedSeats([]);
+                queryClient.invalidateQueries({ queryKey: ['match-seats', matchId] });
+            }
+        },
+        onError: (err: any) => setToast({ message: err.message || err.response?.data?.message || "Failed to reserve seats.", type: 'error' })
+    });
+
+    const payMutation = useMutation({
+        mutationFn: async () => {
+            const res = await apiClient.post(`/payments/checkout`, {
+                reservationId: currentReservationId, paymentMethodId: selectedPaymentMethod
+            });
+            if (res.data && res.data.success === false) throw new Error(res.data.message);
+            return res.data;
+        },
+        onSuccess: () => {
+            setToast({ message: "Payment successful! Tickets have been issued.", type: 'success' });
+            setTimeout(() => router.push('/dashboard'), 1500);
+        },
+        onError: (err: any) => setToast({ message: err.message || err.response?.data?.message || "Payment failed.", type: 'error' })
+    });
+
+    if (toast) setTimeout(() => setToast(null), 5000);
+
+    const toggleSeatSelection = (seat: any) => {
+        if (selectedSeats.find(s => s.id === seat.id)) setSelectedSeats(selectedSeats.filter(s => s.id !== seat.id));
+        else setSelectedSeats([...selectedSeats, seat]);
+    };
+
+    // رفع مشکل والیبال: توزیع داینامیک کتگوری‌ها به سکوها اگر کتگوری پیش‌فرض وجود نداشته باشد
+    const stadiumSections = useMemo(() => {
+        if (!matchDetails?.availableTickets || matchDetails.availableTickets.length === 0) 
+            return BASE_STADIUM_SECTIONS.map(s => ({ ...s, available: 0, price: 0, categories: [] }));
+
+        const categories = matchDetails.availableTickets;
+
+        return BASE_STADIUM_SECTIONS.map((section, index) => {
+            let catData = categories.find((c: any) => c.categoryName?.toUpperCase() === section.defaultCategory.toUpperCase());
+            if (!catData) catData = categories[index % categories.length]; // Fallback هوشمند برای والیبال
+
+            return {
+                ...section,
+                total: catData?.remainingCapacity || 0,
+                available: catData?.remainingCapacity || 0,
+                price: catData?.price || 0,
+                categories: catData ? [{
+                    name: catData.categoryName, count: catData.remainingCapacity,
+                    amenities: Array.isArray(catData.amenities) ? catData.amenities.join(', ') : (typeof catData.amenities === 'string' ? catData.amenities : "Standard")
+                }] : []
+            };
+        });
+    }, [matchDetails]);
+
+    const activeSectionData = stadiumSections.find(s => s.id === (selectedSection || hoveredSection));
 
     const sectionSeats = useMemo(() => {
-        if (!selectedSection) return [];
-        const section = STADIUM_SECTIONS.find(s => s.id === selectedSection);
-        return section ? generateSeatsForSection(section) : [];
-    }, [selectedSection]);
+        if (!selectedSection || !activeSectionData || realMatchSeats.length === 0) return [];
+        const mainCat = activeSectionData.categories[0]?.name;
+        const filteredSeats = realMatchSeats.filter((s: any) => s.category?.toUpperCase() === mainCat?.toUpperCase());
+        return filteredSeats.sort((a: any, b: any) => {
+            const rowA = parseInt(a.row) || 0; const rowB = parseInt(b.row) || 0;
+            if (rowA !== rowB) return rowA - rowB;
+            return (parseInt(a.number) || 0) - (parseInt(b.number) || 0);
+        });
+    }, [selectedSection, activeSectionData, realMatchSeats]);
 
-    const handleBackToStadium = () => {
-        setSelectedSection(null);
-        setSelectedSeat(null);
-    };
+    const totalPrice = selectedSeats.reduce((acc, s) => acc + s.price, 0);
+
+    if (isLoading) return <div className="h-screen flex items-center justify-center bg-[#E8E9E9]"><Loader2 className="animate-spin" size={48} /></div>;
+    if (isError || !matchDetails) return <div className="h-screen flex items-center justify-center bg-[#E8E9E9] flex-col gap-4"><h1 className="text-2xl font-bold">Match not found</h1><button onClick={() => router.push('/matches')} className="px-6 py-2 bg-black text-white rounded-full">Go Back</button></div>;
 
     return (
         <div className="h-screen overflow-hidden bg-[#E8E9E9] px-4 py-3 md:px-8 md:py-4 font-sans text-zinc-900 relative">
+            
+            <AnimatePresence>
+                {toast && (
+                    <motion.div initial={{opacity:0, y:-50}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-50}} 
+                        className={`fixed top-10 left-1/2 -translate-x-1/2 z-[999] px-6 py-3 rounded-full font-bold shadow-xl flex items-center gap-3 ${toast.type === 'success' ? 'bg-zinc-950 text-white' : 'bg-red-500 text-white'}`}
+                    >
+                        {toast.type === 'success' ? <CheckCircle2 size={18}/> : <AlertCircle size={18}/>}
+                        {toast.message}
+                        <button onClick={() => setToast(null)} className="ml-4 opacity-70 hover:opacity-100"><X size={16}/></button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-            {/* ========================================== */}
-            {/* BACK TO MATCHES BUTTON                     */}
-            {/* ========================================== */}
+            <AnimatePresence>
+                {isPaymentModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/40 p-4 backdrop-blur-sm">
+                        <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-md overflow-hidden rounded-[2rem] bg-white p-8 shadow-2xl">
+                            <button onClick={() => setIsPaymentModalOpen(false)} className="absolute right-6 top-6 text-gray-400 hover:text-black"><X size={24} /></button>
+                            <div className="mb-6 border-b border-gray-100 pb-4">
+                                <h3 className="text-2xl font-black text-zinc-950">Complete Payment</h3>
+                                <p className="mt-2 text-sm font-bold text-red-500 flex items-center gap-1"><Clock size={16}/> You have 10 minutes to pay.</p>
+                            </div>
+                            <div className="flex justify-between items-center mb-6 bg-gray-50 p-4 rounded-xl">
+                                <span className="font-bold text-gray-500">Total Amount:</span>
+                                <span className="text-2xl font-black text-black">${totalPrice}</span>
+                            </div>
+                            <div className="flex flex-col gap-3 mb-8 max-h-[200px] overflow-y-auto overscroll-contain pr-2 pointer-events-auto">
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Select Payment Gateway</label>
+                                {paymentMethods.length === 0 ? (
+                                    <div className="text-xs text-gray-400 font-medium py-2">Loading payment methods...</div>
+                                ) : (
+                                    paymentMethods.map((method: any) => (
+                                        <button key={method.id} onClick={() => setSelectedPaymentMethod(method.id)} className={`flex w-full items-center gap-3 rounded-2xl border-2 p-4 transition-all ${selectedPaymentMethod === method.id ? 'border-zinc-950 bg-zinc-50' : 'border-gray-100 bg-white hover:border-gray-200'}`}>
+                                            <Building2 size={20} className={selectedPaymentMethod === method.id ? "text-zinc-950" : "text-gray-400"} />
+                                            <span className="font-bold text-zinc-900">{method.description}</span>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                            <button disabled={!selectedPaymentMethod || payMutation.isPending} onClick={() => payMutation.mutate()} className="flex w-full items-center justify-center rounded-full bg-zinc-950 py-4 text-sm font-bold text-white transition-opacity disabled:opacity-50">
+                                {payMutation.isPending ? "Processing..." : `Pay $${totalPrice} Now`}
+                            </button>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+                
+            {/* دکمه پروفایل / داشبورد (سمت چپ) */}
             <button
+                type="button"
+                onClick={() => router.push('/dashboard')}
+                className="absolute top-4 left-4 md:top-8 md:left-8 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-white/60 backdrop-blur-md border border-zinc-200/50 text-zinc-600 hover:text-zinc-950 hover:bg-white hover:shadow-md transition-all"
+                title="Go to Dashboard"
+            >
+                <User size={18} />
+            </button>
+
+            {/* دکمه بازگشت به مسابقات (سمت راست) */}
+            <button 
+                type="button"
+                onClick={() => router.push('/matches')} 
                 className="absolute top-4 right-4 md:top-8 md:right-8 z-50 flex items-center gap-2 bg-white/60 backdrop-blur-md border border-zinc-200/50 px-5 py-2.5 rounded-full text-sm font-bold text-zinc-600 hover:text-zinc-950 hover:bg-white hover:shadow-md transition-all"
-                onClick={() => router.push('/matches')}
             >
                 <ArrowLeft size={16} /> Back to Matches
             </button>
 
             <div className="mx-auto h-full max-w-7xl flex flex-col-reverse lg:flex-row gap-6 lg:gap-8">
-
-                {/* ========================================== */}
-                {/* LEFT COLUMN: Info Panel                    */}
-                {/* ========================================== */}
-                <div className="w-full lg:w-[30%] flex flex-col gap-6 pr-2 min-h-0 overflow-y-auto pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="flex flex-col gap-3 border-l-4 border-zinc-900 pl-4 mt-4 shrink-0"
-                    >
-                        <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-zinc-950">
-                            {MOCK_MATCH.league}
-                        </h1>
+                <div className="w-full lg:w-[30%] flex flex-col gap-6 pr-2 min-h-0 overflow-y-auto pb-8 [&::-webkit-scrollbar]:hidden">
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col gap-3 border-l-4 border-zinc-900 pl-4 mt-4 shrink-0">
+                        <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter text-zinc-950">{matchDetails.sport} Match</h1>
                         <div className="flex flex-col gap-1.5">
-                            <div className="flex items-center gap-2 text-base font-semibold text-zinc-600">
-                                <CalendarDays size={18} className="text-zinc-900" />
-                                <span>{MOCK_MATCH.date}</span>
-                                <span className="text-zinc-300">|</span>
-                                <Clock size={18} className="text-zinc-900" />
-                                <span>{MOCK_MATCH.time} Local</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-base font-semibold text-zinc-600">
-                                <MapPin size={18} className="text-zinc-900" />
-                                <span>{MOCK_MATCH.stadium} Stadium, {MOCK_MATCH.city}</span>
-                            </div>
+                            <div className="flex items-center gap-2 text-base font-semibold text-zinc-600"><CalendarDays size={18} className="text-zinc-900" /><span>{new Date(matchDetails.datetime).toLocaleDateString()}</span><span className="text-zinc-300">|</span><Clock size={18} className="text-zinc-900" /><span>{new Date(matchDetails.datetime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span></div>
+                            <div className="flex items-center gap-2 text-base font-semibold text-zinc-600"><MapPin size={18} className="text-zinc-900" /><span>{matchDetails.venue}, {matchDetails.venueAddress}</span></div>
                         </div>
                     </motion.div>
 
-                    {/* Section Details */}
-                    <div className="mt-4 flex-1">
-                        <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-5 flex items-center gap-2">
-                            <Armchair size={16} /> Section Details
-                        </h2>
-
+                    <div className="mt-4 flex-1 flex flex-col min-h-0">
+                        <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-5 shrink-0 flex items-center gap-2"><Armchair size={16} /> Section Details</h2>
                         <AnimatePresence mode="wait">
                             {activeSectionData ? (
-                                <motion.div
-                                    key={activeSectionData.id}
-                                    variants={containerVariants}
-                                    initial="hidden"
-                                    animate="visible"
-                                    exit="exit"
-                                    className="flex flex-col gap-6"
-                                >
-                                    <motion.div variants={itemVariants}>
+                                <motion.div key={activeSectionData.id} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex flex-col flex-1 min-h-0 gap-6">
+                                    <div className="shrink-0">
                                         <h3 className="text-3xl font-black text-zinc-900 mb-1">{activeSectionData.name}</h3>
                                         <p className="text-base text-zinc-500 font-medium">Starting from: <span className="text-zinc-900 font-bold">${activeSectionData.price}</span></p>
-                                    </motion.div>
+                                    </div>
+                                    <div className="flex justify-between items-end pb-1 border-b border-zinc-300/50 shrink-0">
+                                        <span className="text-base text-zinc-500 font-medium">Available Seats</span>
+                                        <span className={`text-lg font-black ${activeSectionData.available === 0 ? 'text-red-500' : 'text-emerald-600'}`}>{activeSectionData.available === 0 ? 'Sold Out' : activeSectionData.available}</span>
+                                    </div>
 
-                                    <motion.div variants={itemVariants} className="flex flex-col gap-4">
-                                        <div className="flex justify-between items-end border-b border-zinc-300/50 pb-2">
-                                            <span className="text-base text-zinc-500 font-medium">Total Capacity</span>
-                                            <span className="text-lg font-black text-zinc-900">{activeSectionData.total} Seats</span>
-                                        </div>
-
-                                        <div className="flex justify-between items-end pb-1">
-                                            <span className="text-base text-zinc-500 font-medium">Available Seats</span>
-                                            <span className={`text-lg font-black ${activeSectionData.available === 0 ? 'text-red-500' : 'text-emerald-600'}`}>
-                                                {activeSectionData.available === 0 ? 'Sold Out' : activeSectionData.available}
-                                            </span>
-                                        </div>
-
-                                        <div className="h-1.5 w-full bg-zinc-300/60 rounded-full overflow-hidden">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${((activeSectionData.total - activeSectionData.available) / activeSectionData.total) * 100}%` }}
-                                                transition={{ duration: 0.8, ease: "circOut" }}
-                                                className={`h-full rounded-full ${activeSectionData.available === 0 ? 'bg-red-500' : 'bg-emerald-500'}`}
-                                            />
-                                        </div>
-                                    </motion.div>
-
-                                    <div className="min-h-[200px]">
+                                    <div className="flex-1 min-h-0">
                                         <AnimatePresence mode="wait">
-                                            {selectedSeat ? (
-                                                <motion.div
-                                                    key="selected-seat"
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -10 }}
-                                                    className="bg-white rounded-2xl p-5 border border-zinc-200 shadow-sm mt-2"
-                                                >
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Selected Seat</span>
-                                                        <div className="flex items-center gap-1.5 bg-zinc-100 px-2 py-1 rounded-md">
-                                                            <Armchair size={14} className="text-zinc-600" />
-                                                            <span className="text-sm font-black text-zinc-800">R{selectedSeat.row} - S{selectedSeat.number}</span>
+                                            {selectedSeats.length > 0 ? (
+                                                <motion.div key="selected-seats" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-white rounded-2xl p-5 border border-zinc-200 shadow-sm mt-2 flex flex-col h-[calc(100%-1rem)]">
+                                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100 shrink-0">
+                                                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Selected Seats ({selectedSeats.length})</span>
+                                                    </div>
+                                                    
+                                                    <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-2 mb-4 hide-scrollbar">
+                                                        {selectedSeats.map(seat => (
+                                                            <div key={seat.id} className="flex justify-between items-center text-sm bg-gray-50 p-3 rounded-xl border border-gray-100 shrink-0">
+                                                                <span className="font-bold text-gray-700 flex items-center gap-2"><Armchair size={14}/> R{seat.row} - S{seat.number}</span>
+                                                                <span className="font-black">${seat.price}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <div className="shrink-0 mt-auto border-t border-gray-100 pt-3">
+                                                        <div className="flex justify-between items-center text-lg font-black mb-4">
+                                                            <span>Total Price:</span>
+                                                            <span>${totalPrice}</span>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button 
+                                                                disabled={reserveMutation.isPending}
+                                                                onClick={() => { setActionType('RESERVE'); reserveMutation.mutate(selectedSeats.map(s => s.id)); }} 
+                                                                className="w-1/2 border-2 border-zinc-950 text-zinc-950 hover:bg-zinc-50 font-bold py-3.5 rounded-xl transition-colors disabled:opacity-50 text-sm"
+                                                            >
+                                                                {reserveMutation.isPending && actionType === 'RESERVE' ? "Locking..." : "Reserve Only"}
+                                                            </button>
+                                                            <button 
+                                                                disabled={reserveMutation.isPending}
+                                                                onClick={() => { setActionType('PAY'); reserveMutation.mutate(selectedSeats.map(s => s.id)); }} 
+                                                                className="w-1/2 bg-zinc-950 hover:bg-zinc-800 text-white font-bold py-3.5 rounded-xl transition-colors disabled:opacity-50 text-sm"
+                                                            >
+                                                                {reserveMutation.isPending && actionType === 'PAY' ? "Processing..." : "Reserve & Pay"}
+                                                            </button>
                                                         </div>
                                                     </div>
-
-                                                    <div className="flex items-center gap-3 mb-2">
-                                                        <div className={`w-3 h-3 rounded-full ${getCategoryStyle(selectedSeat.category).bgClass}`} />
-                                                        <span className={`text-lg ${getCategoryStyle(selectedSeat.category).fontClass} ${getCategoryStyle(selectedSeat.category).color}`}>
-                                                            {selectedSeat.category}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider pl-6">{selectedSeat.amenities}</p>
-
-                                                    <button className="w-full mt-6 bg-zinc-950 hover:bg-zinc-800 text-white font-bold py-3 rounded-xl transition-colors">
-                                                        Add to Cart - ${activeSectionData.price}
-                                                    </button>
                                                 </motion.div>
                                             ) : (
-                                                <motion.div
-                                                    key="categories"
-                                                    initial={{ opacity: 0, y: 10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    exit={{ opacity: 0, y: -10 }}
-                                                    className="pt-2 flex flex-col gap-5"
-                                                >
+                                                <motion.div key="categories" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="pt-2 flex flex-col gap-5">
                                                     <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Available Ticket Types</span>
-                                                    {activeSectionData.categories.map((cat, idx) => {
+                                                    {activeSectionData.categories.map((cat: any, idx: number) => {
                                                         const { icon: CatIcon, color, fontClass } = getCategoryStyle(cat.name);
-
                                                         return (
                                                             <div key={idx} className="flex items-center justify-between group">
-                                                                <div className="flex items-center gap-3">
-                                                                    <CatIcon size={22} className={color} />
-                                                                    <div className="flex flex-col leading-tight">
-                                                                        <span className={`${fontClass} ${color}`}>{cat.name}</span>
-                                                                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{cat.amenities}</span>
-                                                                    </div>
-                                                                </div>
-                                                                <span className="text-sm font-black text-zinc-700 bg-zinc-200/50 px-3 py-1 rounded-full">
-                                                                    {cat.count}
-                                                                </span>
+                                                                <div className="flex items-center gap-3"><CatIcon size={22} className={color} /><div className="flex flex-col leading-tight"><span className={`${fontClass} font-bold ${color}`}>{cat.name}</span><span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{cat.amenities}</span></div></div>
+                                                                <span className="text-sm font-black text-zinc-700 bg-zinc-200/50 px-3 py-1 rounded-full">{cat.count}</span>
                                                             </div>
                                                         );
                                                     })}
@@ -349,196 +327,84 @@ export default function StadiumView() {
                                     </div>
                                 </motion.div>
                             ) : (
-                                <motion.div
-                                    key="empty"
-                                    initial={{ opacity: 0, filter: "blur(4px)" }} animate={{ opacity: 1, filter: "blur(0px)" }} exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="flex flex-col gap-3 opacity-40 mt-4"
-                                >
-                                    <Ticket size={36} className="text-zinc-400" />
-                                    <p className="text-xl font-black text-zinc-900">Select a Block</p>
-                                    <p className="text-sm text-zinc-600 font-medium">Hover over the stadium map on the right<br/>to view live capacity.</p>
-                                </motion.div>
+                                <div className="flex flex-col gap-3 opacity-40 mt-4"><Ticket size={36} className="text-zinc-400" /><p className="text-xl font-black text-zinc-900">Select a Block</p><p className="text-sm text-zinc-600 font-medium">Hover over the stadium map to view capacity.</p></div>
                             )}
                         </AnimatePresence>
                     </div>
                 </div>
 
-                {/* ========================================== */}
-                {/* RIGHT COLUMN: Interactive Area             */}
-                {/* ========================================== */}
                 <div className="w-full lg:w-[70%] flex flex-col items-center justify-start gap-4 min-h-0 pt-4">
-
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center justify-center gap-4 w-full shrink-0"
-                    >
-                        <div className="flex flex-col items-center gap-2">
-                            <img src={MOCK_MATCH.teamHome.logo} alt="Home" className="h-12 w-12 md:h-16 md:w-16 object-contain drop-shadow-lg" />
-                            <span className="text-sm md:text-base font-black text-zinc-900 tracking-tight">{MOCK_MATCH.teamHome.name}</span>
-                        </div>
-
-                        <div className="flex flex-col items-center px-2">
-                            <span className="text-2xl md:text-3xl font-black italic text-zinc-300/80 tracking-tighter">VS</span>
-                        </div>
-
-                        <div className="flex flex-col items-center gap-2">
-                            <img src={MOCK_MATCH.teamAway.logo} alt="Away" className="h-12 w-12 md:h-16 md:w-16 object-contain drop-shadow-lg" />
-                            <span className="text-sm md:text-base font-black text-zinc-900 tracking-tight">{MOCK_MATCH.teamAway.name}</span>
-                        </div>
+                    <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-center gap-4 w-full shrink-0">
+                        <div className="flex flex-col items-center gap-2"><span className="text-sm md:text-xl font-black text-zinc-900 tracking-tight">{matchDetails.hostTeam}</span></div>
+                        <span className="text-2xl md:text-3xl font-black italic text-zinc-300/80 tracking-tighter">VS</span>
+                        <div className="flex flex-col items-center gap-2"><span className="text-sm md:text-xl font-black text-zinc-900 tracking-tight">{matchDetails.guestTeam}</span></div>
                     </motion.div>
 
-                    {/* Switch between Stadium Map and Seat Grid */}
                     <div className="w-full flex-1 min-h-0 flex items-center justify-center px-2 relative mt-4">
                         <AnimatePresence mode="wait">
-
                             {!selectedSection ? (
-                                /* ---------------- STADIUM MAP ---------------- */
-                                <motion.div
-                                    key="stadium"
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 1.05 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="w-full h-full flex items-center justify-center"
-                                >
-                                    <svg
-                                        viewBox="0 -20 800 560"
-                                        className="w-full h-full max-h-[65vh] object-contain"
-                                        style={{ filter: "drop-shadow(0 20px 20px rgb(0 0 0 / 0.1))" }}
-                                    >
-                                        <g className="pitch">
-                                            <rect x="300" y="210" width="200" height="100" rx="4" fill="#a7f3d0" stroke="#10b981" strokeWidth="2" opacity="0.5" />
-                                            <circle cx="400" cy="260" r="20" fill="none" stroke="#10b981" strokeWidth="2" opacity="0.5" />
-                                            <line x1="400" y1="210" x2="400" y2="310" stroke="#10b981" strokeWidth="2" opacity="0.5" />
-                                        </g>
-
-                                        {STADIUM_SECTIONS.map((section) => {
+                                <motion.div key="stadium" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="w-full h-full flex items-center justify-center">
+                                    <svg viewBox="0 -20 800 560" className="w-full h-full max-h-[65vh] object-contain" style={{ filter: "drop-shadow(0 20px 20px rgb(0 0 0 / 0.1))" }}>
+                                        <g className="pitch"><rect x="300" y="210" width="200" height="100" rx="4" fill="#a7f3d0" stroke="#10b981" strokeWidth="2" opacity="0.5" /><circle cx="400" cy="260" r="20" fill="none" stroke="#10b981" strokeWidth="2" opacity="0.5" /></g>
+                                        {stadiumSections.map((section) => {
                                             const isHovered = hoveredSection === section.id;
                                             const isSoldOut = section.available === 0;
-
-                                            let fillColor = "#d4d4d8";
-                                            let strokeColor = "#ffffff";
-
-                                            if (isSoldOut) {
-                                                fillColor = "#fca5a5";
-                                                strokeColor = "#fef2f2";
-                                            } else if (isHovered) {
-                                                fillColor = "#10b981";
-                                                strokeColor = "#047857";
-                                            }
-
+                                            let fillColor = isSoldOut ? "#fca5a5" : (isHovered ? "#10b981" : "#d4d4d8");
+                                            let strokeColor = isSoldOut ? "#fef2f2" : (isHovered ? "#047857" : "#ffffff");
                                             return (
-                                                <motion.path
-                                                    key={section.id}
-                                                    d={section.path}
-                                                    fill={fillColor}
-                                                    stroke={strokeColor}
-                                                    strokeWidth={isHovered ? "4" : "2"}
-                                                    strokeLinejoin="round"
-                                                    onMouseEnter={() => setHoveredSection(section.id)}
-                                                    onMouseLeave={() => setHoveredSection(null)}
-                                                    onClick={() => {
-                                                        if (!isSoldOut) {
-                                                            setSelectedSection(section.id);
-                                                            setHoveredSection(null);
-                                                        }
-                                                    }}
-                                                    className="transition-colors duration-300 cursor-none"
-                                                    whileHover={!isSoldOut ? { scale: 1.02 } : {}}
-                                                    style={{ transformOrigin: "center" }}
-                                                />
+                                                <motion.path key={section.id} d={section.path} fill={fillColor} stroke={strokeColor} strokeWidth={isHovered ? "4" : "2"} onMouseEnter={() => setHoveredSection(section.id)} onMouseLeave={() => setHoveredSection(null)} onClick={() => { if (!isSoldOut) { setSelectedSection(section.id); setHoveredSection(null); } }} className="transition-colors duration-300 cursor-pointer" whileHover={!isSoldOut ? { scale: 1.02 } : {}} style={{ transformOrigin: "center" }} />
                                             );
                                         })}
                                     </svg>
                                 </motion.div>
                             ) : (
-                                /* ---------------- SEAT GRID ---------------- */
-                                <motion.div
-                                    key="seatgrid"
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="w-full max-w-2xl bg-white rounded-3xl p-8 shadow-sm border border-zinc-100 flex flex-col relative"
-                                >
-                                    <button
-                                        onClick={handleBackToStadium}
-                                        className="absolute top-6 left-6 p-2 rounded-full hover:bg-zinc-100 transition-colors flex items-center gap-2 text-sm font-bold text-zinc-500"
-                                    >
-                                        <ArrowLeft size={18} /> Back to Map
-                                    </button>
-
-                                    <div className="text-center mb-10 mt-2">
-                                        <h3 className="text-2xl font-black text-zinc-900">Select Your Seat</h3>
-                                        <p className="text-zinc-500 text-sm font-medium mt-1">Row 1 (Bottom) to Row 2 (Top)</p>
-                                    </div>
-
-                                    {/* Pitch Indicator (To show orientation) */}
-                                    <div className="w-full h-8 bg-emerald-50 rounded-t-2xl border-t-4 border-emerald-400 flex items-center justify-center mb-8">
-                                        <span className="text-[10px] font-bold text-emerald-600 tracking-widest uppercase">Pitch Direction</span>
-                                    </div>
-
-                                    {/* 10 Seats Grid (5 columns, 2 rows) */}
+                                <motion.div key="seatgrid" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full max-w-2xl bg-white rounded-3xl p-8 shadow-sm border border-zinc-100 flex flex-col relative max-h-full overflow-y-auto hide-scrollbar">
+                                    <button onClick={() => {setSelectedSection(null); setSelectedSeats([]);}} className="absolute top-6 left-6 p-2 rounded-full hover:bg-zinc-100 flex items-center gap-2 text-sm font-bold text-zinc-500"><ArrowLeft size={18} /> Back</button>
+                                    <div className="text-center mb-10 mt-2"><h3 className="text-2xl font-black text-zinc-900">Select Your Seats</h3></div>
+                                    <div className="w-full h-8 bg-emerald-50 rounded-t-2xl border-t-4 border-emerald-400 flex items-center justify-center mb-8 shrink-0"><span className="text-[10px] font-bold text-emerald-600 tracking-widest uppercase">Pitch Direction</span></div>
+                                    
                                     <div className="grid grid-cols-5 gap-4 place-items-center mb-8 px-4">
-                                        {sectionSeats.map((seat) => {
-                                            const isSelected = selectedSeat?.id === seat.id;
+                                        {sectionSeats.map((seat: any) => {
+                                            const isSelected = selectedSeats.some(s => s.id === seat.id);
                                             const isAvailable = seat.status === "AVAILABLE";
-                                            const isSold = seat.status === "SOLD";
-                                            const isLocked = seat.status === "LOCKED";
+                                            const isLocked = seat.status === "RESERVED"; 
+                                            
                                             const bgClass = getCategoryStyle(seat.category).bgClass;
+                                            
+                                            let seatAppearance = "opacity-30 cursor-not-allowed bg-zinc-200"; 
+                                            if (isAvailable) seatAppearance = bgClass;
+                                            else if (isLocked) seatAppearance = "bg-indigo-500 cursor-not-allowed opacity-90"; 
 
                                             return (
                                                 <motion.button
-                                                    key={seat.id}
-                                                    disabled={!isAvailable}
-                                                    onClick={() => setSelectedSeat(seat)}
+                                                    key={seat.id} disabled={!isAvailable} onClick={() => toggleSeatSelection(seat)}
                                                     animate={isLocked ? breathAnimation : {}}
-                                                    whileHover={isAvailable ? { scale: 1.1, y: -2 } : {}}
+                                                    whileHover={isAvailable ? { scale: 1.1, y: -2 } : {}} 
                                                     whileTap={isAvailable ? { scale: 0.95 } : {}}
-                                                    className={`
-                                                        relative flex flex-col items-center justify-center w-14 h-16 rounded-t-xl rounded-b-md transition-all
-                                                        ${isSold ? "opacity-30 cursor-not-allowed bg-zinc-200" : bgClass}
-                                                        ${isSelected ? "ring-4 ring-offset-2 ring-zinc-900 shadow-lg" : "shadow-sm"}
-                                                        ${isLocked ? "cursor-wait" : ""}
-                                                    `}
+                                                    className={`relative flex flex-col items-center justify-center w-14 h-16 rounded-t-xl rounded-b-md transition-all ${seatAppearance} ${isSelected ? "ring-4 ring-offset-2 ring-zinc-900 shadow-lg" : "shadow-sm"}`}
                                                 >
-                                                    {/* صندلی داخلی */}
-                                                    <div className={`w-10 h-8 mt-auto mb-1 rounded-sm ${isSold ? 'bg-zinc-300' : 'bg-white/20'}`} />
-
-                                                    {isLocked && (
-                                                        <div className="absolute -top-2 -right-2 bg-zinc-900 text-white p-1 rounded-full shadow-md">
-                                                            <Clock size={10} />
-                                                        </div>
-                                                    )}
+                                                    <div className={`w-10 h-8 mt-auto mb-1 rounded-sm ${!isAvailable && !isLocked ? 'bg-zinc-300' : 'bg-white/20'}`} />
+                                                    {isLocked && <div className="absolute -top-2 -right-2 bg-zinc-900 text-white p-1 rounded-full shadow-md z-10"><Clock size={10} /></div>}
                                                 </motion.button>
                                             );
                                         })}
+                                        {sectionSeats.length === 0 && (
+                                            <div className="col-span-5 text-gray-400 text-sm font-medium py-10">No seats available in this section.</div>
+                                        )}
                                     </div>
 
-                                    {/* Legend */}
                                     <div className="flex items-center justify-center gap-6 pt-6 border-t border-zinc-100">
+                                        <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-sm bg-zinc-200 opacity-50" /><span className="text-xs font-bold text-zinc-500">Sold</span></div>
+                                        <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-sm bg-emerald-500" /><span className="text-xs font-bold text-zinc-500">Available</span></div>
                                         <div className="flex items-center gap-2">
-                                            <div className="w-4 h-4 rounded-sm bg-zinc-200 opacity-50" />
-                                            <span className="text-xs font-bold text-zinc-500">Sold</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-4 h-4 rounded-sm bg-emerald-500" />
-                                            <span className="text-xs font-bold text-zinc-500">Available</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <motion.div animate={breathAnimation} className="w-4 h-4 rounded-sm bg-indigo-500 relative flex items-center justify-center">
-                                                <Clock size={10} className="text-white absolute" />
-                                            </motion.div>
+                                            <motion.div animate={breathAnimation} className="w-4 h-4 rounded-sm bg-indigo-500 relative flex items-center justify-center"><Clock size={10} className="text-white absolute" /></motion.div>
                                             <span className="text-xs font-bold text-zinc-500">Locked (10m)</span>
                                         </div>
                                     </div>
-
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
-
                 </div>
             </div>
         </div>

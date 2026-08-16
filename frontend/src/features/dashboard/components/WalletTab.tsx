@@ -114,7 +114,9 @@ export default function WalletTab({ user }: { user?: any }) {
         const matchesType = filterType === "all" ? true : tx.type === filterType;
         return matchesSearch && matchesType;
     });
-
+    const topUpMethods = paymentMethods.filter((m: any) =>
+         !m.description.toLowerCase().includes("wallet") && !m.description.includes("کیف پول"));
+    
     const getStatusBadge = (status: string) => {
         switch (status) {
             case "completed":
@@ -165,9 +167,10 @@ export default function WalletTab({ user }: { user?: any }) {
                                     Choose a gateway to complete your ${amount} top-up.
                                 </p>
                             </div>
-
+                            
+                            
                             <div className="flex flex-col gap-3 mb-8 max-h-[300px] overflow-y-auto pr-2">
-                                {paymentMethods.map((method: any) => (
+                                {topUpMethods.map((method: any) => (
                                     <button
                                         key={method.id}
                                         type="button"

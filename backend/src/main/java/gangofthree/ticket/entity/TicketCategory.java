@@ -4,8 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import lombok.Getter;
+import lombok.Setter;
+
 
 @Entity
+@Getter
+@Setter
 @Table(name = "ticket_categories")
 public class TicketCategory {
 

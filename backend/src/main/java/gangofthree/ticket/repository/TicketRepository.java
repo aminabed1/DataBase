@@ -14,7 +14,7 @@ import java.util.List;
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
     
     @Query("""
-        SELECT t FROM Ticket t 
+        SELECT DISTINCT t FROM Ticket t 
         JOIN FETCH t.reservationItem ri 
         JOIN FETCH ri.reservation r 
         JOIN FETCH ri.matchSeat ms 
@@ -24,6 +24,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
         JOIN FETCH m.guestTeam 
         JOIN FETCH m.venue 
         WHERE r.user.id = :userId
+        ORDER BY t.id DESC
     """)
     List<Ticket> findAllUserTickets(@Param("userId") Long userId);
 

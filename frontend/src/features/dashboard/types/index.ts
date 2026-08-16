@@ -1,1 +1,1 @@
-export type DashboardTab = 'profile' | 'wallet' | 'tickets' | 'transactions' | 'support';
+export type DashboardTab = 'profile' | 'wallet' | 'tickets' | 'transactions' | 'support' | 'pending-orders';

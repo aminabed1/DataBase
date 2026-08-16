@@ -3,8 +3,13 @@ package gangofthree.entity;
 import gangofthree.match.entity.Venue;
 import jakarta.persistence.*;
 import org.hibernate.annotations.Check;
+import lombok.Getter;
+import lombok.Setter;
+
 
 @Entity
+@Getter
+@Setter
 @Table(name = "seats")
 @Check(name = "chk_seat_number", constraints = "position_number > 0")
 public class Seat {

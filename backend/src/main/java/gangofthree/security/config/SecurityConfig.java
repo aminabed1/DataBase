@@ -40,7 +40,9 @@ public class SecurityConfig {
                                 "/api/auth/verify-otp",
                                 "/api/tickets/search",
                                 "/api/locations/**",
-                                "/api/auth/**"
+                                "/api/auth/**",
+                                "/api/matches",
+                                "/api/matches/**"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

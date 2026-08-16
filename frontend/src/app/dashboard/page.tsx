@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useProfile } from "@/features/dashboard/hooks/useProfile";
 import { useRouter } from "next/navigation";
 import { Home } from "lucide-react";
+import PendingOrdersTab from "@/features/dashboard/components/PendingOrdersTab";
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<DashboardTab>('profile');
@@ -61,6 +62,7 @@ export default function DashboardPage() {
         return <TicketHistoryTab />;
       case 'support':
         return <SupportTab />;
+      case 'pending-orders': return <PendingOrdersTab />;
       default:
         return null;
     }

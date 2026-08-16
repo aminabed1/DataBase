@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, CalendarDays, Clock, SlidersHorizontal, Check, X, ArrowRight, Users, Coffee, Search, ChevronDown, Map, Ticket } from "lucide-react";
-import { MOCK_MATCHES, LEAGUES, SportType, Match } from "../services/match.service";
+import { useQuery } from "@tanstack/react-query";
+import {
+    MapPin, CalendarDays, Clock, SlidersHorizontal, X, ArrowRight,
+    Users, Coffee, Search, ChevronDown, Map, Ticket
+} from "lucide-react";
+import { matchService, SportType, Match } from "../services/match.service";
 
 // ==========================================
 // Custom Select Dropdown Component
@@ -14,13 +18,13 @@ interface SelectOption {
 }
 
 function CustomSelect({
-                          icon: Icon,
-                          placeholder,
-                          value,
-                          options,
-                          onChange,
-                          disabled = false
-                      }: {
+    icon: Icon,
+    placeholder,
+    value,
+    options,
+    onChange,
+    disabled = false
+}: {
     icon: React.ElementType;
     placeholder: string;
     value: string;
@@ -131,7 +135,6 @@ const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.src = FALLBACK_LOGO;
 };
 
-// Variants برای آکاردئون پنل فیلتر (بدون overflow)
 const filterPanelVariants = {
     collapsed: {
         height: 0,
@@ -164,10 +167,8 @@ export default function MatchesBrowser() {
     const [hoveredSport, setHoveredSport] = useState<SportType | null>(null);
     const [hoveredLeague, setHoveredLeague] = useState<string | null>(null);
 
-    // کنترل overflow برای پنل فیلتر
     const [panelClip, setPanelClip] = useState(true);
 
-    // State فیلترها
     const [filters, setFilters] = useState({
         query: "",
         city: "All",
@@ -186,11 +187,44 @@ export default function MatchesBrowser() {
     const theme = SPORT_THEME[selectedSport];
 
     // ============================================================
-    // ۱) هندلر رزرو + بستن با Esc
+    // واکشی داده‌ها از بک‌اند
     // ============================================================
+    // ============================================================
+    // واکشی داده‌ها از بک‌اند
+    // ============================================================
+    const { data: responseData, isLoading } = useQuery({
+        queryKey: ['available-matches'],
+        queryFn: matchService.getAvailableMatches
+    });
+    
+    const dbMatches: Match[] = responseData?.data || [];
+    
+    // موقتاً این لاگ را گذاشتم تا توی کنسول (F12) دیتای دریافتی رو ببینی
+    console.log("🔥 Matches from API:", dbMatches);
+
+    const uniqueCities = ["All", ...Array.from(new Set(dbMatches.map(m => m.location?.city)))].filter(Boolean);
+    const uniqueStadiums = ["All", ...Array.from(new Set(dbMatches.map(m => m.location?.stadium)))].filter(Boolean);
+
+    // ============================================================
+    // استخراج داینامیک تورنمنت‌ها (ایمن شده)
+    // ============================================================
+    const dynamicLeagues = ["All", ...Array.from(new Set(
+        dbMatches
+            .filter(m => {
+                const matchSport = m.sport ? String(m.sport).toLowerCase().trim() : "";
+                return matchSport === selectedSport.toLowerCase();
+            })
+            // اگر بک‌اند به جای league اسمش رو گذاشته tournament، اینجا هندل میشه
+            .map(m => m.league || (m as any).tournament) 
+    ))].filter(Boolean);
+
+    // ============================================================
+    // هندلر رزرو + بستن با Esc
+    // ============================================================
+    const useRouter = require("next/navigation").useRouter; 
+    const router = useRouter();
     const handleBook = (match: Match) => {
-        // TODO: router.push(`/booking/${match.id}?qty=${filters.ticketCount}`)
-        console.log("BOOK", match.id, filters.ticketCount);
+        router.push(`/booking?matchId=${match.id}`);
     };
 
     useEffect(() => {
@@ -203,9 +237,12 @@ export default function MatchesBrowser() {
     // ============================================================
     // فیلتر و مرتب‌سازی مسابقات
     // ============================================================
-    const filteredMatches = MOCK_MATCHES
+    const filteredMatches = dbMatches
         .filter(match => {
-            if (match.sport !== selectedSport) return false;
+            // رفع باگ ALL با کنترل حروف کوچک و اسپیس‌های اضافی
+            const matchSport = (match.sport || "").toLowerCase().trim();
+            if (matchSport !== selectedSport.toLowerCase()) return false;
+
             if (selectedLeague !== "All" && match.league !== selectedLeague) return false;
 
             if (filters.query.trim() !== "") {
@@ -246,7 +283,6 @@ export default function MatchesBrowser() {
                 if (!isNaN(max) && (match.details?.estimatedPrice.max ?? Infinity) > max) return false;
             }
 
-            // فیلتر availability (ساده برای نمونه)
             if (filters.availability === "Available") {
                 if ((match.details?.remainingSeats ?? 0) === 0) return false;
             } else if (filters.availability === "SoldOut") {
@@ -270,12 +306,10 @@ export default function MatchesBrowser() {
     const stadiumPath = "M0,300 L0,0 C400,220 800,220 1200,0 L1200,300 Z";
     const layoutTransition = { type: "spring", stiffness: 260, damping: 30 } as const;
 
-    // استایل مشترک برای اینپوت‌های متنی (بدون backdrop-blur)
     const textInputClass = "block w-full cursor-none rounded-2xl border-2 border-gray-100 bg-gray-50/50 p-4 pl-12 text-sm font-medium text-zinc-900 outline-none transition-all focus:border-zinc-950 focus:bg-white focus:shadow-xl hover:border-gray-200 hover:bg-white";
 
-    // تابع toggle برای مدیریت clip قبل از تغییر وضعیت
     const toggleFilters = () => {
-        setPanelClip(true); // قبل از هر انیمیشن clip را روشن می‌کنیم
+        setPanelClip(true);
         setIsFiltersOpen((v) => !v);
     };
 
@@ -300,7 +334,6 @@ export default function MatchesBrowser() {
                     </h1>
                 </div>
 
-                {/* باکس اصلی هدر */}
                 <motion.div
                     layout
                     transition={{ layout: layoutTransition }}
@@ -343,8 +376,9 @@ export default function MatchesBrowser() {
                             </button>
                         </div>
 
+                        {/* استفاده از لیستی داینامیک به جای هاردکد برای تورنمنت‌ها */}
                         <div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-gray-100/50" onMouseLeave={() => setHoveredLeague(null)}>
-                            {LEAGUES[selectedSport].map((league) => {
+                            {dynamicLeagues.map((league) => {
                                 const isActive = selectedLeague === league;
                                 return (
                                     <button
@@ -400,7 +434,7 @@ export default function MatchesBrowser() {
                                                 icon={MapPin}
                                                 placeholder="All Cities"
                                                 value={filters.city}
-                                                options={['All', 'Tehran', 'Isfahan', 'Tabriz'].map(v => ({ id: v, name: v }))}
+                                                options={uniqueCities.map(v => ({ id: v, name: v }))}
                                                 onChange={(val) => setF({ city: val })}
                                             />
                                         </div>
@@ -411,7 +445,7 @@ export default function MatchesBrowser() {
                                                 icon={Map}
                                                 placeholder="All Stadiums"
                                                 value={filters.stadium}
-                                                options={['All', 'Azadi Stadium', 'Naghsh-e Jahan'].map(v => ({ id: v, name: v }))}
+                                                options={uniqueStadiums.map(v => ({ id: v, name: v }))}
                                                 onChange={(val) => setF({ stadium: val })}
                                             />
                                         </div>
@@ -508,7 +542,16 @@ export default function MatchesBrowser() {
             {/* ACCORDION‑STYLE MATCH CARDS                */}
             {/* ========================================== */}
             <div className="mx-auto mt-10 flex w-full max-w-4xl flex-col gap-4 px-4 pb-40 min-h-[250vh]">
-                {filteredMatches.length === 0 ? (
+                {isLoading ? (
+                    <motion.div
+                        key="loading"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="py-20 text-center font-semibold text-zinc-500"
+                    >
+                        Loading matches from server...
+                    </motion.div>
+                ) : filteredMatches.length === 0 ? (
                     <motion.div
                         key="empty"
                         initial={{ opacity: 0, y: 8 }}
@@ -523,9 +566,14 @@ export default function MatchesBrowser() {
                     <AnimatePresence mode="popLayout" initial={false}>
                         {filteredMatches.map((match) => {
                             const isSelected = selectedMatch?.id === match.id;
-                            const capacity = match.details?.capacity ?? 0;
-                            const remaining = match.details?.remainingSeats ?? 0;
-                            const fillPercent = capacity > 0 ? Math.round(((capacity - remaining) / capacity) * 100) : 0;
+                            
+                            // دریافت ظرفیت و صندلی‌های باقیمانده از دیتابیس
+                            const capacity = match.details?.capacity || 0;
+                            const remaining = match.details?.remainingSeats || 0;
+                            
+                            // محاسبه صندلی‌های فروخته شده و درصد پر شدن استادیوم
+                            const filledSeats = Math.max(0, capacity - remaining);
+                            const fillPercent = capacity > 0 ? Math.round((filledSeats / capacity) * 100) : 0;
 
                             return (
                                 <motion.div
@@ -540,15 +588,13 @@ export default function MatchesBrowser() {
                                         y: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
                                         scale: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
                                     }}
-                                    // مورد ۱: z-index ثابت + ring با transition
-                                    // مورد ۳: حذف backdrop-blur و استفاده از bg-white
                                     className={`relative z-20 w-full overflow-hidden rounded-[2rem] border border-gray-100 bg-white
                                         ring-1 transition-[box-shadow,ring-color] duration-300
                                         ${isSelected ? "ring-gray-200 shadow-2xl" : "ring-transparent shadow-sm hover:shadow-xl group"}`}
                                 >
-                                    {/* هدر کارت: فقط باز می‌کند، بسته نمی‌کند + z-10 */}
+                                    {/* هدر کارت: تغییر متد onClick برای باز و بسته شدن (Toggle) */}
                                     <div
-                                        onClick={() => { if (!isSelected) setSelectedMatch(match); }}
+                                        onClick={() => setSelectedMatch(isSelected ? null : match)}
                                         className="relative z-10 flex cursor-none flex-col items-center justify-between gap-6 p-5 sm:flex-row sm:p-6"
                                     >
                                         <div className="flex flex-1 min-w-0 items-center justify-between gap-4 sm:justify-start sm:gap-8 w-full sm:w-auto">
@@ -583,7 +629,6 @@ export default function MatchesBrowser() {
                                             </div>
                                         </div>
 
-                                        {/* دکمه سمت راست: Close با آیکون X */}
                                         <div className="w-full shrink-0 sm:w-auto">
                                             <motion.button
                                                 type="button"
@@ -618,23 +663,32 @@ export default function MatchesBrowser() {
                                                 }}
                                                 className="overflow-hidden"
                                             >
-                                                {/* جزئیات کارت */}
                                                 <div className="relative z-10 flex flex-col gap-4 border-t border-gray-100 p-6 md:p-8">
                                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                         <div className="flex flex-col gap-1 rounded-2xl bg-gray-50 p-4 border border-gray-100">
-                                                            <div className="flex items-center gap-2 text-zinc-400 mb-1"><MapPin size={15}/> <span className="text-[10px] font-bold uppercase tracking-wider">Location</span></div>
+                                                            <div className="flex items-center gap-2 text-zinc-400 mb-1">
+                                                                <MapPin size={15} /> 
+                                                                <span className="text-[10px] font-bold uppercase tracking-wider">Location</span>
+                                                            </div>
                                                             <p className="text-sm font-bold text-zinc-900 truncate">{match.location.stadium}</p>
                                                             <p className="text-xs text-zinc-500 font-medium truncate">{match.location.city}, {match.location.province}</p>
                                                         </div>
                                                         <div className="flex flex-col gap-1 rounded-2xl bg-gray-50 p-4 border border-gray-100">
-                                                            <div className="flex items-center gap-2 text-zinc-400 mb-1"><Clock size={15}/> <span className="text-[10px] font-bold uppercase tracking-wider">Kickoff</span></div>
+                                                            <div className="flex items-center gap-2 text-zinc-400 mb-1">
+                                                                <Clock size={15} /> 
+                                                                <span className="text-[10px] font-bold uppercase tracking-wider">Kickoff</span>
+                                                            </div>
                                                             <p className="text-sm font-bold text-zinc-900">{match.date}</p>
                                                             <p className="text-xs text-zinc-500 font-medium">{match.time} Local Time</p>
                                                         </div>
                                                         <div className="flex flex-col gap-2 rounded-2xl bg-gray-50 p-4 border border-gray-100">
                                                             <div className="flex items-center justify-between">
-                                                                <div className="flex items-center gap-2 text-zinc-400"><Users size={15}/> <span className="text-[10px] font-bold uppercase tracking-wider">Capacity</span></div>
-                                                                <span className="text-[10px] font-bold text-zinc-400">{fillPercent}%</span>
+                                                                <div className="flex items-center gap-2 text-zinc-400">
+                                                                    <Users size={15} /> 
+                                                                    <span className="text-[10px] font-bold uppercase tracking-wider">Capacity</span>
+                                                                </div>
+                                                                {/* نمایش درصد فروخته شده */}
+                                                                <span className="text-[10px] font-bold text-zinc-400">{fillPercent}% Sold</span>
                                                             </div>
                                                             <div className="flex items-baseline justify-between gap-2">
                                                                 <p className="text-sm font-bold text-zinc-900">{capacity.toLocaleString()}</p>
@@ -652,7 +706,10 @@ export default function MatchesBrowser() {
                                                     </div>
 
                                                     <div className="flex flex-col gap-2">
-                                                        <div className="flex items-center gap-2 text-zinc-400"><Coffee size={15}/> <span className="text-[10px] font-bold uppercase tracking-wider">Stadium Amenities</span></div>
+                                                        <div className="flex items-center gap-2 text-zinc-400">
+                                                            <Coffee size={15} /> 
+                                                            <span className="text-[10px] font-bold uppercase tracking-wider">Stadium Amenities</span>
+                                                        </div>
                                                         <div className="flex flex-wrap gap-2">
                                                             {match.details?.amenities.map(amenity => (
                                                                 <span key={amenity} className="rounded-lg bg-gray-50 border border-gray-200 px-3 py-1.5 text-xs font-bold text-zinc-700">
@@ -662,7 +719,6 @@ export default function MatchesBrowser() {
                                                         </div>
                                                     </div>
 
-                                                    {/* دکمه Book Now واقعی */}
                                                     <motion.button
                                                         type="button"
                                                         onClick={(e) => { e.stopPropagation(); handleBook(match); }}
@@ -685,9 +741,6 @@ export default function MatchesBrowser() {
                 )}
             </div>
 
-            {/* ========================================== */}
-            {/* DYNAMIC STADIUM BOTTOM CURVE               */}
-            {/* ========================================== */}
             <div className="pointer-events-none fixed -bottom-20 left-0 w-full z-0 h-48 sm:h-64 md:h-80 overflow-visible flex items-end">
                 <svg
                     viewBox="0 0 1200 300"

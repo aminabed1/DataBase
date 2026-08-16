@@ -36,6 +36,10 @@ public class ReservationServiceImplementation implements ReservationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        if (request.getMatchSeatIds() == null || request.getMatchSeatIds().isEmpty()) {
+            return ApiResponse.failure("No seats selected.", 400, "INVALID_SEATS");
+        }
+
         List<MatchSeat> seats = matchSeatRepository.findAllById(request.getMatchSeatIds());
 
         if (seats.isEmpty() || seats.size() != request.getMatchSeatIds().size()) {
@@ -49,6 +53,7 @@ public class ReservationServiceImplementation implements ReservationService {
 
         BigDecimal totalAmount = BigDecimal.ZERO;
 
+        // ۱. ایجاد و ذخیره رکورد رزرو اصلی
         Reservation reservation = new Reservation();
         reservation.setUser(user);
         reservation.setReservedAt(LocalDateTime.now());
@@ -56,15 +61,16 @@ public class ReservationServiceImplementation implements ReservationService {
         reservation.setStatus(ReservationStatus.PENDING);
         reservation = reservationRepository.save(reservation);
 
+        // ۲. ثبت آیتم‌ها و قفل کردن مستقیم صندلی‌ها در دیتابیس
         for (MatchSeat seat : seats) {
-            seat.setStatus(MatchSeatStatus.RESERVED);
-            matchSeatRepository.save(seat);
-
             ReservationItem item = new ReservationItem();
             item.setReservation(reservation);
             item.setMatchSeat(seat);
             item.setPriceAtTime(seat.getPrice());
             reservationItemRepository.save(item);
+
+            // به‌روزرسانی مستقیم وضعیت صندلی به RESERVED برای جلوگیری از تداخل
+            matchSeatRepository.updateSeatStatusNative(seat.getId(), MatchSeatStatus.RESERVED.name());
 
             totalAmount = totalAmount.add(seat.getPrice());
         }
