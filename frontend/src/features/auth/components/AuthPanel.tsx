@@ -155,15 +155,21 @@ export default function AuthPanel() {
     // ==========================================
     const handleSuccessAuth = (responsePayload: any, isLogin: boolean) => {
         const token = responsePayload?.data?.token || responsePayload?.token || responsePayload?.data?.data?.token;
-        
+        const userRole = responsePayload?.data?.user?.role || responsePayload?.user?.role || responsePayload?.data?.role;
+
         if (token) {
             if (isLogin) {
-                // If logging in, save token and go to dashboard
                 localStorage.setItem("token", token);
-                router.push('/dashboard');
+                localStorage.setItem("role", userRole || "BUYER");
+
+                if (userRole === "SUPPORT") {
+                    router.push('/support');
+                } else {
+                    router.push('/dashboard');
+                }
             } else {
-                // If signing up, DO NOT log them in automatically. Send them to the login tab.
                 localStorage.removeItem("token");
+                localStorage.removeItem("role");
                 setMode("login");
                 setOtpStep("request");
                 setFormData(prev => ({ ...prev, password: "", confirmPassword: "" }));
@@ -171,7 +177,7 @@ export default function AuthPanel() {
             }
         } else {
             console.error("No token was found in the response payload.");
-            setError("Success, but a system error occurred. Please try again.");
+            setError("Success, but an authentication error occurred. Please try again.");
         }
     };
 

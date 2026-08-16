@@ -3,12 +3,12 @@ spring:
     name: GangOfThree
 
   elasticsearch:
-    uris: http://localhost:9200
+    uris: ${SPRING_ELASTICSEARCH_URIS:http://localhost:9200}
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: postgres
-    password: aminamin
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:aminamin}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -24,8 +24,8 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
 
   mail:
     host: smtp.gmail.com
@@ -46,6 +46,5 @@ jwt:
   reset-expiration: 15m
   register-expiration: 30m
 
-
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
