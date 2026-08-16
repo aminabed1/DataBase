@@ -272,7 +272,7 @@ const FeatureCard = memo(function FeatureCard({
                                                   extra,
                                                   className = "",
                                               }: {
-    icon: React.ElementType;
+    icon: React.ElementType<any>;
     title: string;
     desc: string;
     extra?: React.ReactNode;
