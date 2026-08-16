@@ -1,3 +1,4 @@
+// E:\Saeed\KNTU\Term 4\DataBase\project\DataBase\frontend\src\features\booking\components\StadiumView.tsx
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -7,9 +8,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/services/client";
 import {
     CalendarDays, MapPin, Ticket, ShieldCheck, Armchair, Clock,
-    Crown, Star, Leaf, Users, Accessibility, Bird, Flame, ArrowLeft, Loader2, X, Building2, CheckCircle2, AlertCircle,User
+    Crown, Star, Leaf, Users, Accessibility, Bird, Flame, ArrowLeft, Loader2, X, CheckCircle2, AlertCircle, User
 } from "lucide-react";
-
 
 const BASE_STADIUM_SECTIONS = [
     { id: "n-lower", name: "North Stand - Lower Tier", path: "M 290 195 L 510 195 L 585 120 L 215 120 Z", defaultCategory: "VVIP" },
@@ -49,12 +49,8 @@ export default function StadiumView() {
     const [selectedSeats, setSelectedSeats] = useState<any[]>([]);
     const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    const [currentReservationId, setCurrentReservationId] = useState<number | null>(null);
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null);
     const [actionType, setActionType] = useState<'RESERVE' | 'PAY'>('RESERVE');
 
-    // رفع باگ تداخل صندلی‌ها در مچ‌های مختلف (خالی کردن سبد خرید هنگام تغییر مچ)
     useEffect(() => {
         setSelectedSeats([]);
         setSelectedSection(null);
@@ -80,19 +76,6 @@ export default function StadiumView() {
         refetchInterval: 5000
     });
 
-    const { data: paymentMethodsData } = useQuery({
-        queryKey: ['payment-methods'],
-        queryFn: async () => {
-            try {
-                const res = await apiClient.get("/payments/methods");
-                const list = res.data?.data || res.data;
-                return Array.isArray(list) ? list : [];
-            } catch { return []; }
-        }
-    });
-
-    const paymentMethods = Array.isArray(paymentMethodsData) ? paymentMethodsData : [];
-
     const reserveMutation = useMutation({
         mutationFn: async (seatIds: number[]) => {
             const res = await apiClient.post(`/reservations`, { matchSeatIds: seatIds });
@@ -102,8 +85,11 @@ export default function StadiumView() {
         onSuccess: (responseData) => {
             const reservationId = responseData.data.reservationId;
             if (actionType === 'PAY') {
-                setCurrentReservationId(reservationId);
-                setIsPaymentModalOpen(true); 
+                sessionStorage.setItem("checkout_details", JSON.stringify({
+                    match: matchDetails,
+                    selectedSeats: selectedSeats
+                }));
+                router.push(`/booking/payment?reservationId=${reservationId}`);
             } else {
                 setToast({ message: "Seats locked successfully! You have 10 minutes to complete payment.", type: 'success' });
                 setSelectedSeats([]);
@@ -113,21 +99,6 @@ export default function StadiumView() {
         onError: (err: any) => setToast({ message: err.message || err.response?.data?.message || "Failed to reserve seats.", type: 'error' })
     });
 
-    const payMutation = useMutation({
-        mutationFn: async () => {
-            const res = await apiClient.post(`/payments/checkout`, {
-                reservationId: currentReservationId, paymentMethodId: selectedPaymentMethod
-            });
-            if (res.data && res.data.success === false) throw new Error(res.data.message);
-            return res.data;
-        },
-        onSuccess: () => {
-            setToast({ message: "Payment successful! Tickets have been issued.", type: 'success' });
-            setTimeout(() => router.push('/dashboard'), 1500);
-        },
-        onError: (err: any) => setToast({ message: err.message || err.response?.data?.message || "Payment failed.", type: 'error' })
-    });
-
     if (toast) setTimeout(() => setToast(null), 5000);
 
     const toggleSeatSelection = (seat: any) => {
@@ -135,41 +106,45 @@ export default function StadiumView() {
         else setSelectedSeats([...selectedSeats, seat]);
     };
 
-    // رفع مشکل والیبال: توزیع داینامیک کتگوری‌ها به سکوها اگر کتگوری پیش‌فرض وجود نداشته باشد
+    // اینجا منطق محاسبه ظرفیت و صندلی‌ها رو مستقیماً به realMatchSeats متصل کردیم تا با صفحه matches یکی بشه
     const stadiumSections = useMemo(() => {
-        if (!matchDetails?.availableTickets || matchDetails.availableTickets.length === 0) 
+        if (realMatchSeats.length === 0) 
             return BASE_STADIUM_SECTIONS.map(s => ({ ...s, available: 0, price: 0, categories: [] }));
 
-        const categories = matchDetails.availableTickets;
-
-        return BASE_STADIUM_SECTIONS.map((section, index) => {
-            let catData = categories.find((c: any) => c.categoryName?.toUpperCase() === section.defaultCategory.toUpperCase());
-            if (!catData) catData = categories[index % categories.length]; // Fallback هوشمند برای والیبال
+        return BASE_STADIUM_SECTIONS.map((section) => {
+            // صندلی‌های مربوط به این سکشن را فیلتر می‌کنیم
+            const seatsForSection = realMatchSeats.filter((s: any) => s.section === section.id);
+            const availableCount = seatsForSection.filter((s: any) => s.status === 'AVAILABLE').length;
+            const sampleSeat = seatsForSection.length > 0 ? seatsForSection[0] : null;
 
             return {
                 ...section,
-                total: catData?.remainingCapacity || 0,
-                available: catData?.remainingCapacity || 0,
-                price: catData?.price || 0,
-                categories: catData ? [{
-                    name: catData.categoryName, count: catData.remainingCapacity,
-                    amenities: Array.isArray(catData.amenities) ? catData.amenities.join(', ') : (typeof catData.amenities === 'string' ? catData.amenities : "Standard")
-                }] : []
+                total: seatsForSection.length || 10,
+                available: availableCount,
+                price: sampleSeat?.price || 0,
+                categories: [{
+                    name: sampleSeat?.category || section.defaultCategory, 
+                    count: availableCount, 
+                    amenities: "Standard"
+                }]
             };
         });
-    }, [matchDetails]);
+    }, [realMatchSeats]);
 
     const activeSectionData = stadiumSections.find(s => s.id === (selectedSection || hoveredSection));
 
     const sectionSeats = useMemo(() => {
         if (!selectedSection || !activeSectionData || realMatchSeats.length === 0) return [];
-        const mainCat = activeSectionData.categories[0]?.name;
-        const filteredSeats = realMatchSeats.filter((s: any) => s.category?.toUpperCase() === mainCat?.toUpperCase());
-        return filteredSeats.sort((a: any, b: any) => {
-            const rowA = parseInt(a.row) || 0; const rowB = parseInt(b.row) || 0;
+        const filteredSeats = realMatchSeats.filter((s: any) => s.section === selectedSection);
+        
+        const sorted = filteredSeats.sort((a: any, b: any) => {
+            const rowA = parseInt(String(a.row).replace(/\D/g, '')) || 0; 
+            const rowB = parseInt(String(b.row).replace(/\D/g, '')) || 0;
             if (rowA !== rowB) return rowA - rowB;
             return (parseInt(a.number) || 0) - (parseInt(b.number) || 0);
         });
+        
+        return sorted.slice(0, 10);
     }, [selectedSection, activeSectionData, realMatchSeats]);
 
     const totalPrice = selectedSeats.reduce((acc, s) => acc + s.price, 0);
@@ -191,42 +166,7 @@ export default function StadiumView() {
                     </motion.div>
                 )}
             </AnimatePresence>
-
-            <AnimatePresence>
-                {isPaymentModalOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/40 p-4 backdrop-blur-sm">
-                        <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="relative w-full max-w-md overflow-hidden rounded-[2rem] bg-white p-8 shadow-2xl">
-                            <button onClick={() => setIsPaymentModalOpen(false)} className="absolute right-6 top-6 text-gray-400 hover:text-black"><X size={24} /></button>
-                            <div className="mb-6 border-b border-gray-100 pb-4">
-                                <h3 className="text-2xl font-black text-zinc-950">Complete Payment</h3>
-                                <p className="mt-2 text-sm font-bold text-red-500 flex items-center gap-1"><Clock size={16}/> You have 10 minutes to pay.</p>
-                            </div>
-                            <div className="flex justify-between items-center mb-6 bg-gray-50 p-4 rounded-xl">
-                                <span className="font-bold text-gray-500">Total Amount:</span>
-                                <span className="text-2xl font-black text-black">${totalPrice}</span>
-                            </div>
-                            <div className="flex flex-col gap-3 mb-8 max-h-[200px] overflow-y-auto overscroll-contain pr-2 pointer-events-auto">
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Select Payment Gateway</label>
-                                {paymentMethods.length === 0 ? (
-                                    <div className="text-xs text-gray-400 font-medium py-2">Loading payment methods...</div>
-                                ) : (
-                                    paymentMethods.map((method: any) => (
-                                        <button key={method.id} onClick={() => setSelectedPaymentMethod(method.id)} className={`flex w-full items-center gap-3 rounded-2xl border-2 p-4 transition-all ${selectedPaymentMethod === method.id ? 'border-zinc-950 bg-zinc-50' : 'border-gray-100 bg-white hover:border-gray-200'}`}>
-                                            <Building2 size={20} className={selectedPaymentMethod === method.id ? "text-zinc-950" : "text-gray-400"} />
-                                            <span className="font-bold text-zinc-900">{method.description}</span>
-                                        </button>
-                                    ))
-                                )}
-                            </div>
-                            <button disabled={!selectedPaymentMethod || payMutation.isPending} onClick={() => payMutation.mutate()} className="flex w-full items-center justify-center rounded-full bg-zinc-950 py-4 text-sm font-bold text-white transition-opacity disabled:opacity-50">
-                                {payMutation.isPending ? "Processing..." : `Pay $${totalPrice} Now`}
-                            </button>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
                 
-            {/* دکمه پروفایل / داشبورد (سمت چپ) */}
             <button
                 type="button"
                 onClick={() => router.push('/dashboard')}
@@ -236,7 +176,6 @@ export default function StadiumView() {
                 <User size={18} />
             </button>
 
-            {/* دکمه بازگشت به مسابقات (سمت راست) */}
             <button 
                 type="button"
                 onClick={() => router.push('/matches')} 
@@ -280,7 +219,7 @@ export default function StadiumView() {
                                                     <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-2 mb-4 hide-scrollbar">
                                                         {selectedSeats.map(seat => (
                                                             <div key={seat.id} className="flex justify-between items-center text-sm bg-gray-50 p-3 rounded-xl border border-gray-100 shrink-0">
-                                                                <span className="font-bold text-gray-700 flex items-center gap-2"><Armchair size={14}/> R{seat.row} - S{seat.number}</span>
+                                                                <span className="font-bold text-gray-700 flex items-center gap-2"><Armchair size={14}/> {seat.row} - S{seat.number}</span>
                                                                 <span className="font-black">${seat.price}</span>
                                                             </div>
                                                         ))}
@@ -304,7 +243,7 @@ export default function StadiumView() {
                                                                 onClick={() => { setActionType('PAY'); reserveMutation.mutate(selectedSeats.map(s => s.id)); }} 
                                                                 className="w-1/2 bg-zinc-950 hover:bg-zinc-800 text-white font-bold py-3.5 rounded-xl transition-colors disabled:opacity-50 text-sm"
                                                             >
-                                                                {reserveMutation.isPending && actionType === 'PAY' ? "Processing..." : "Reserve & Pay"}
+                                                                {reserveMutation.isPending && actionType === 'PAY' ? "Redirecting..." : "Reserve & Pay"}
                                                             </button>
                                                         </div>
                                                     </div>

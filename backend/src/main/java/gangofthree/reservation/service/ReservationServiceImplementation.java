@@ -86,47 +86,60 @@ public class ReservationServiceImplementation implements ReservationService {
         return ApiResponse.success("Reservation created successfully. You have 10 minutes to pay.", 200, response);
     }
 
+    // یک متد کمکی (Helper) اضافه کردیم تا کدها تمیزتر باشند
+    private ReservationResponse mapToResponse(Reservation res) {
+        List<ReservationItem> items = reservationItemRepository.findByReservationId(res.getId());
+        BigDecimal totalAmount = items.stream()
+                .map(ReservationItem::getPriceAtTime)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                
+        String sport = "";
+        String hostTeam = "";
+        String guestTeam = "";
+        String venue = "";
+        List<java.util.Map<String, Object>> seatsData = java.util.Collections.emptyList();
+
+        if (!items.isEmpty()) {
+            var match = items.get(0).getMatchSeat().getMatch();
+            sport = match.getSport().getName();
+            hostTeam = match.getHostTeam().getName();
+            guestTeam = match.getGuestTeam().getName();
+            venue = match.getVenue().getName();
+            
+            seatsData = items.stream().map(item -> java.util.Map.<String, Object>of(
+                "id", item.getMatchSeat().getId(),
+                "price", item.getPriceAtTime(),
+                "category", item.getMatchSeat().getTicketCategory().getName(),
+                "row", item.getMatchSeat().getSeat().getPosition().getRowLabel(),
+                "number", item.getMatchSeat().getSeat().getPosition().getNumber()
+            )).toList();
+        }
+
+        return ReservationResponse.builder()
+                .reservationId(res.getId())
+                .reservedAt(res.getReservedAt())
+                .expiredAt(res.getExpiredAt())
+                .status(res.getStatus())
+                .totalAmount(totalAmount)
+                .sport(sport)
+                .hostTeam(hostTeam)
+                .guestTeam(guestTeam)
+                .venue(venue)
+                .seats(seatsData)
+                .build();
+    }
+
     @Override
     public ApiResponse<List<ReservationResponse>> getActiveReservations(Long userId) {
         List<Reservation> activeReservations = reservationRepository.findByUserIdAndStatus(userId, ReservationStatus.PENDING);
-        
-        List<ReservationResponse> responses = activeReservations.stream().map(res -> {
-            List<ReservationItem> items = reservationItemRepository.findByReservationId(res.getId());
-            BigDecimal totalAmount = items.stream()
-                    .map(ReservationItem::getPriceAtTime)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
-            return ReservationResponse.builder()
-                    .reservationId(res.getId())
-                    .reservedAt(res.getReservedAt())
-                    .expiredAt(res.getExpiredAt())
-                    .status(res.getStatus())
-                    .totalAmount(totalAmount)
-                    .build();
-        }).toList();
-
+        List<ReservationResponse> responses = activeReservations.stream().map(this::mapToResponse).toList();
         return ApiResponse.success("Active reservations retrieved.", 200, responses);
     }
 
     @Override
     public ApiResponse<List<ReservationResponse>> getReservationHistory(Long userId) {
         List<Reservation> history = reservationRepository.findByUserIdOrderByReservedAtDesc(userId);
-        
-        List<ReservationResponse> responses = history.stream().map(res -> {
-            List<ReservationItem> items = reservationItemRepository.findByReservationId(res.getId());
-            BigDecimal totalAmount = items.stream()
-                    .map(ReservationItem::getPriceAtTime)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
-            return ReservationResponse.builder()
-                    .reservationId(res.getId())
-                    .reservedAt(res.getReservedAt())
-                    .expiredAt(res.getExpiredAt())
-                    .status(res.getStatus())
-                    .totalAmount(totalAmount)
-                    .build();
-        }).toList();
-
+        List<ReservationResponse> responses = history.stream().map(this::mapToResponse).toList();
         return ApiResponse.success("Reservation history retrieved.", 200, responses);
     }
 }

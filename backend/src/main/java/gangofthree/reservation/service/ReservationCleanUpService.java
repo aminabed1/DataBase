@@ -42,7 +42,7 @@ public class ReservationCleanUpService {
                 
                 String ticketCode = "EXP-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
                 ticketRepository.insertTicketNative(
-                    now, "EXPIRED", gangofthree.ticket.entity.enums.TicketStatus.CANCELLED.name(), ticketCode, item.getId()
+                    now, "EXPIRED", gangofthree.ticket.entity.enums.TicketStatus.EXPIRED.name(), ticketCode, item.getId()
                 );
             }
             log.info("Expired reservation {} cancelled and seats unlocked.", reservation.getId());

@@ -18,4 +18,6 @@ public class TicketResponse {
     private String hostTeam;
     private String guestTeam;
     private BigDecimal price;
+    private Long reservationId;
+    private Boolean cancellationRequested;
 }

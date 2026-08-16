@@ -141,6 +141,7 @@ public class MatchServiceImplementation implements MatchService {
                 "price", seat.getPrice(),
                 "status", seat.getStatus().name(),
                 "category", seat.getTicketCategory().getName(),
+                "section", seat.getSeat().getPosition().getSection(), 
                 "row", seat.getSeat().getPosition().getRowLabel(),
                 "number", seat.getSeat().getPosition().getNumber()
             )

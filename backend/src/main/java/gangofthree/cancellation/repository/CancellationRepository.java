@@ -13,4 +13,8 @@ public interface CancellationRepository extends JpaRepository<Cancellation, Long
     Long insertCancellationNative(@Param("reason") String reason, @Param("status") String status
     , @Param("requestedAt") LocalDateTime requestedAt, @Param("processedAt") LocalDateTime processedAt
     , @Param("userId") Long userId, @Param("reservationId") Long reservationId);
+    
+    
+    @Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END FROM cancellations WHERE reservation_id = :reservationId AND status = 'REQUESTED'", nativeQuery = true)
+    boolean hasPendingCancellationNative(@Param("reservationId") Long reservationId);
 }

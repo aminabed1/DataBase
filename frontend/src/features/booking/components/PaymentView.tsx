@@ -1,8 +1,11 @@
+// E:\Saeed\KNTU\Term 4\DataBase\project\DataBase\frontend\src\features\booking\components\PaymentView.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import apiClient from "@/services/client";
 import {
     ArrowLeft, ShieldCheck, CreditCard, Wallet,
     CheckCircle2, Lock, Building2, ChevronDown,
@@ -10,9 +13,6 @@ import {
     Crown, Star, Leaf, Users, Accessibility, Bird, Flame, Tag, Check, AlertCircle
 } from "lucide-react";
 
-// ==========================================
-// Category Styles Dictionary
-// ==========================================
 const getCategoryStyle = (categoryName: string) => {
     switch (categoryName) {
         case "VVIP":
@@ -36,9 +36,6 @@ const getCategoryStyle = (categoryName: string) => {
     }
 };
 
-// ==========================================
-// Ticket Swap Animation Variants
-// ==========================================
 const ticketVariants = {
     enter: (dir: number) => ({
         opacity: 0,
@@ -63,54 +60,12 @@ const ticketVariants = {
     }),
 };
 
-// ==========================================
-// Mock Data
-// ==========================================
-const MOCK_CHECKOUT = {
-    match: {
-        tournament: "Champions Final",
-        homeTeam: { name: "Esteghlal", code: "EST" },
-        awayTeam: { name: "Persepolis", code: "PRS" },
-        venue: "Azadi Stadium, Tehran",
-        date: "2026-08-15",
-        time: "18:00",
-    },
-    selectedSeats: [
-        {
-            id: 101,
-            section: "East Stand - Lower Tier",
-            gate: "Gate 08 · E",
-            row: 1,
-            number: 3,
-            category: "Early Bird",
-            amenities: "Discounted Special Access",
-            price: 150,
-            code: "TCK-EST-PRS-R1-S3"
-        },
-        {
-            id: 102,
-            section: "North Stand - Lower Tier",
-            gate: "Gate 12 · B",
-            row: 2,
-            number: 4,
-            category: "VVIP",
-            amenities: "Parking, Food, Lounge Access",
-            price: 250,
-            code: "TCK-EST-PRS-R2-S4"
-        }
-    ],
-    wallet: { id: "wallet", name: "Wallet Balance", balance: 650.00, status: "ALLOWED" },
-    onSite: { id: "cash", name: "Pay at Stadium (Cash / POS)", status: "NOT_ALLOWED" },
-    onlineGateways: [
-        { id: "saman", name: "Saman Gateway", desc: "Online Banking & Debit Cards", status: "ALLOWED" },
-        { id: "pasargad", name: "Pasargad Gateway", desc: "Instant Secure Payment", status: "ALLOWED" },
-        { id: "zarinpal", name: "Zarinpal Gateway", desc: "Fast Checkout", status: "ALLOWED" },
-        { id: "melli_direct", name: "Melli Bank Direct", desc: "Corporate Gateway", status: "NOT_ALLOWED" },
-    ]
-};
-
 export default function PaymentView() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const reservationId = searchParams.get("reservationId");
+
+    const [checkoutData, setCheckoutData] = useState<any>(null);
     const [selectedMethod, setSelectedMethod] = useState<string>("wallet");
     const [isGatewaysOpen, setIsGatewaysOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -123,8 +78,48 @@ export default function PaymentView() {
     const [discountAmount, setDiscountAmount] = useState(0);
     const [couponError, setCouponError] = useState<string | null>(null);
     const [couponSuccess, setCouponSuccess] = useState(false);
+    const [paymentError, setPaymentError] = useState<string | null>(null);
 
     const [timeLeft, setTimeLeft] = useState(600);
+
+    useEffect(() => {
+        const data = sessionStorage.getItem("checkout_details");
+        if (data && reservationId) {
+            setCheckoutData(JSON.parse(data));
+        } else {
+            router.push("/booking");
+        }
+    }, [reservationId, router]);
+
+    const { data: rawPaymentMethodsData } = useQuery({
+        queryKey: ['payment-methods'],
+        queryFn: async () => {
+            const res = await apiClient.get("/payments/methods");
+            return res.data;
+        }
+    });
+
+    const { data: rawWalletData } = useQuery({
+        queryKey: ['my-wallet'],
+        queryFn: async () => {
+            const res = await apiClient.get("/wallets/me");
+            return res.data;
+        }
+    });
+
+    // استخراج ایمن لیست درگاه‌ها از کش یا پاسخ سرور
+    const paymentMethodsList = useMemo(() => {
+        if (!rawPaymentMethodsData) return [];
+        if (Array.isArray(rawPaymentMethodsData)) return rawPaymentMethodsData;
+        if (Array.isArray(rawPaymentMethodsData.data)) return rawPaymentMethodsData.data;
+        return [];
+    }, [rawPaymentMethodsData]);
+
+    const walletBalance = rawWalletData?.data?.credit ?? rawWalletData?.credit ?? 0;
+    const walletGateway = paymentMethodsList.find((g: any) => 
+        (g.description || "").toLowerCase().includes("wallet") || (g.description || "").includes("کیف پول")
+    );
+    const allowedGateways = paymentMethodsList.filter((g: any) => g.status === "ALLOWED" && g.id !== walletGateway?.id);
 
     useEffect(() => {
         if (timeLeft <= 0) {
@@ -137,18 +132,42 @@ export default function PaymentView() {
         return () => clearInterval(interval);
     }, [timeLeft, router]);
 
+    const payMutation = useMutation({
+        mutationFn: async (methodId: number) => {
+            const res = await apiClient.post(`/payments/checkout`, {
+                reservationId: Number(reservationId),
+                paymentMethodId: methodId
+            });
+            return res.data;
+        },
+        onSuccess: () => {
+            setIsProcessing(false);
+            setIsPaid(true);
+            sessionStorage.removeItem("checkout_details");
+        },
+        onError: (err: any) => {
+            setIsProcessing(false);
+            setPaymentError(err.response?.data?.message || err.message || "Payment failed.");
+        }
+    });
+
+    if (!checkoutData) {
+        return <div className="h-screen flex items-center justify-center font-bold text-emerald-700">Loading Checkout...</div>;
+    }
+
+    const matchDetails = checkoutData.match;
+    const selectedSeats = checkoutData.selectedSeats;
+
+    const subtotal = selectedSeats.reduce((sum: number, s: any) => sum + s.price, 0);
+    const totalAmount = Math.max(0, subtotal - discountAmount);
+
+    const currentTicket = selectedSeats[activeTicketIdx] || selectedSeats[0];
+    const currentCatStyle = getCategoryStyle(currentTicket?.category || "Standard");
+    const CatIcon = currentCatStyle.icon;
+
     const hours = Math.floor(timeLeft / 3600);
     const minutes = Math.floor((timeLeft % 3600) / 60);
     const seconds = timeLeft % 60;
-
-    const allowedGateways = MOCK_CHECKOUT.onlineGateways.filter(g => g.status === "ALLOWED");
-
-    const subtotal = MOCK_CHECKOUT.selectedSeats.reduce((sum, s) => sum + s.price, 0);
-    const totalAmount = Math.max(0, subtotal - discountAmount);
-
-    const currentTicket = MOCK_CHECKOUT.selectedSeats[activeTicketIdx];
-    const currentCatStyle = getCategoryStyle(currentTicket.category);
-    const CatIcon = currentCatStyle.icon;
 
     const goToTicket = (nextIdx: number) => {
         if (nextIdx === activeTicketIdx) return;
@@ -160,7 +179,7 @@ export default function PaymentView() {
         e.preventDefault();
         setCouponError(null);
 
-        const earlyBirdSeats = MOCK_CHECKOUT.selectedSeats.filter(s => s.category === "Early Bird");
+        const earlyBirdSeats = selectedSeats.filter((s: any) => s.category === "Early Bird");
 
         if (earlyBirdSeats.length === 0) {
             setCouponError("Discounts are exclusively available for Early Bird seats.");
@@ -177,11 +196,34 @@ export default function PaymentView() {
     };
 
     const handlePay = () => {
+        setPaymentError(null);
         setIsProcessing(true);
-        setTimeout(() => {
+        
+        // چک کردن انتخاب روش پرداخت
+        if (!selectedMethod) {
+            setPaymentError("Please select a payment method to proceed.");
             setIsProcessing(false);
-            setIsPaid(true);
-        }, 1800);
+            return;
+        }
+
+        // بررسی موجودی ولت پیش از ارسال به بک‌اند
+        if (selectedMethod === "wallet") {
+            if (walletBalance < totalAmount) {
+                setPaymentError("Insufficient wallet balance. Please top up your wallet or choose another payment method.");
+                setIsProcessing(false);
+                return;
+            }
+        }
+
+        const methodId = selectedMethod === "wallet" ? walletGateway?.id : Number(selectedMethod);
+        
+        if (!methodId) {
+            setPaymentError("Please select a valid payment method.");
+            setIsProcessing(false);
+            return;
+        }
+
+        payMutation.mutate(methodId);
     };
 
     return (
@@ -198,7 +240,7 @@ export default function PaymentView() {
             {/* Top Bar Navigation */}
             <div className="w-full max-w-7xl mx-auto flex items-center justify-between z-20 shrink-0">
                 <button
-                    onClick={() => router.push("/booking")}
+                    onClick={() => router.push(`/booking?matchId=${matchDetails.matchId || matchDetails.id}`)}
                     className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-xs font-medium text-zinc-600 hover:text-zinc-950 transition-all cursor-none shadow-sm border border-zinc-100"
                 >
                     <ArrowLeft size={15} /> Back to Seat Selection
@@ -221,36 +263,44 @@ export default function PaymentView() {
                             <h2 className="text-xl font-bold tracking-tight text-zinc-900 mt-0.5">Select Payment Method</h2>
                         </div>
 
+                        {paymentError && (
+                            <div className="mb-4 flex items-center gap-2 rounded-lg bg-red-50 p-3 text-xs font-semibold text-red-600 border border-red-100">
+                                <AlertCircle size={15} /> {paymentError}
+                            </div>
+                        )}
+
                         <div className="flex flex-col gap-2.5 relative">
 
                             {/* Wallet Card */}
-                            <div
-                                onClick={() => {
-                                    setSelectedMethod("wallet");
-                                    setIsGatewaysOpen(false);
-                                }}
-                                className={`
-                                    flex items-center justify-between p-3 rounded-xl transition-all cursor-none
-                                    ${selectedMethod === "wallet"
-                                    ? "bg-emerald-50/70 shadow-sm ring-1 ring-emerald-600/30"
-                                    : "bg-[#F3F3F1]/60 hover:bg-[#F3F3F1]"}
-                                `}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-2.5 rounded-lg ${selectedMethod === "wallet" ? "bg-emerald-700 text-white" : "bg-white text-zinc-700 shadow-sm"}`}>
-                                        <Wallet size={16} />
+                            {walletGateway && (
+                                <div
+                                    onClick={() => {
+                                        setSelectedMethod("wallet");
+                                        setIsGatewaysOpen(false);
+                                    }}
+                                    className={`
+                                        flex items-center justify-between p-3 rounded-xl transition-all cursor-none
+                                        ${selectedMethod === "wallet"
+                                        ? "bg-emerald-50/70 shadow-sm ring-1 ring-emerald-600/30"
+                                        : "bg-[#F3F3F1]/60 hover:bg-[#F3F3F1]"}
+                                    `}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2.5 rounded-lg ${selectedMethod === "wallet" ? "bg-emerald-700 text-white" : "bg-white text-zinc-700 shadow-sm"}`}>
+                                            <Wallet size={16} />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-xs font-semibold text-zinc-900">Wallet Balance</span>
+                                            <span className="text-[11px] text-emerald-700 font-medium">
+                                                Available: ${Number(walletBalance).toFixed(2)}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-semibold text-zinc-900">{MOCK_CHECKOUT.wallet.name}</span>
-                                        <span className="text-[11px] text-emerald-700 font-medium">
-                                            Available: ${MOCK_CHECKOUT.wallet.balance.toFixed(2)}
-                                        </span>
+                                    <div className={`w-4 h-4 rounded-full flex items-center justify-center ${selectedMethod === "wallet" ? "bg-emerald-700" : "border border-zinc-300"}`}>
+                                        {selectedMethod === "wallet" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                                     </div>
                                 </div>
-                                <div className={`w-4 h-4 rounded-full flex items-center justify-center ${selectedMethod === "wallet" ? "bg-emerald-700" : "border border-zinc-300"}`}>
-                                    {selectedMethod === "wallet" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                                </div>
-                            </div>
+                            )}
 
                             {/* Pay at Stadium (Disabled) */}
                             <div className="flex items-center justify-between p-3 rounded-xl bg-[#F3F3F1]/40 opacity-55 cursor-none">
@@ -260,7 +310,7 @@ export default function PaymentView() {
                                     </div>
                                     <div className="flex flex-col">
                                         <div className="flex items-center gap-1.5">
-                                            <span className="text-xs font-medium text-zinc-500 line-through">{MOCK_CHECKOUT.onSite.name}</span>
+                                            <span className="text-xs font-medium text-zinc-500 line-through">Pay at Stadium</span>
                                             <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium flex items-center gap-0.5">
                                                 <Ban size={8} /> Disabled
                                             </span>
@@ -289,8 +339,8 @@ export default function PaymentView() {
                                             <span className="text-xs font-semibold text-zinc-900">Online Gateways</span>
                                             <span className="text-[11px] text-zinc-500 font-normal">
                                                 {selectedMethod !== "wallet" && selectedMethod !== "cash"
-                                                    ? `Active: ${allowedGateways.find(g => g.id === selectedMethod)?.name}`
-                                                    : "Select Saman, Pasargad, Zarinpal..."}
+                                                    ? `Active: ${allowedGateways.find((g: any) => String(g.id) === selectedMethod)?.description || 'Selected'}`
+                                                    : "Select Gateway..."}
                                             </span>
                                         </div>
                                     </div>
@@ -308,13 +358,13 @@ export default function PaymentView() {
                                             transition={{ duration: 0.15 }}
                                             className="absolute top-full left-0 right-0 z-50 bg-white/95 backdrop-blur-xl rounded-xl p-1.5 shadow-xl flex flex-col gap-1 ring-1 ring-black/5"
                                         >
-                                            {allowedGateways.map((gateway) => {
-                                                const isGatewaySelected = selectedMethod === gateway.id;
+                                            {allowedGateways.map((gateway: any) => {
+                                                const isGatewaySelected = selectedMethod === String(gateway.id);
                                                 return (
                                                     <div
                                                         key={gateway.id}
                                                         onClick={() => {
-                                                            setSelectedMethod(gateway.id);
+                                                            setSelectedMethod(String(gateway.id));
                                                             setIsGatewaysOpen(false);
                                                         }}
                                                         className={`
@@ -327,8 +377,8 @@ export default function PaymentView() {
                                                         <div className="flex items-center gap-2.5">
                                                             <Building2 size={14} className={isGatewaySelected ? "text-emerald-700" : "text-zinc-400"} />
                                                             <div className="flex flex-col">
-                                                                <span className="text-xs font-medium">{gateway.name}</span>
-                                                                <span className="text-[10px] text-zinc-400">{gateway.desc}</span>
+                                                                <span className="text-xs font-medium">{gateway.description}</span>
+                                                                <span className="text-[10px] text-zinc-400">Direct Payment Gateway</span>
                                                             </div>
                                                         </div>
                                                         <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${isGatewaySelected ? "bg-emerald-700" : "border border-zinc-300"}`}>
@@ -382,7 +432,7 @@ export default function PaymentView() {
                         {/* Order Summary Breakdown */}
                         <div className="mt-3.5 flex flex-col gap-1.5 bg-[#F3F3F1]/40 rounded-xl p-3.5">
                             <div className="flex justify-between text-xs text-zinc-500">
-                                <span>Selected Seats ({MOCK_CHECKOUT.selectedSeats.length}x)</span>
+                                <span>Selected Seats ({selectedSeats.length}x)</span>
                                 <span className="font-semibold text-zinc-900">${subtotal}.00</span>
                             </div>
                             {discountAmount > 0 && (
@@ -437,11 +487,11 @@ export default function PaymentView() {
                 <div className="lg:col-span-7 flex flex-col items-center justify-center relative -translate-y-3 translate-x-4">
 
                     {/* Multi-ticket Switcher Controls */}
-                    {MOCK_CHECKOUT.selectedSeats.length > 1 && (
+                    {selectedSeats.length > 1 && (
                         <div className="w-full max-w-[530px] flex items-center justify-between mb-3 px-2">
                             <span className="text-xs font-medium text-zinc-600 flex items-center gap-1.5">
                                 <Armchair size={14} className="text-emerald-700" />
-                                Ticket {activeTicketIdx + 1} of {MOCK_CHECKOUT.selectedSeats.length}
+                                Ticket {activeTicketIdx + 1} of {selectedSeats.length}
                             </span>
                             <div className="flex items-center gap-1.5">
                                 <button
@@ -452,8 +502,8 @@ export default function PaymentView() {
                                     <ChevronLeft size={16} />
                                 </button>
                                 <button
-                                    onClick={() => goToTicket(Math.min(MOCK_CHECKOUT.selectedSeats.length - 1, activeTicketIdx + 1))}
-                                    disabled={activeTicketIdx === MOCK_CHECKOUT.selectedSeats.length - 1}
+                                    onClick={() => goToTicket(Math.min(selectedSeats.length - 1, activeTicketIdx + 1))}
+                                    disabled={activeTicketIdx === selectedSeats.length - 1}
                                     className="p-1.5 rounded-lg bg-white text-zinc-700 hover:bg-zinc-50 active:scale-95 disabled:opacity-30 disabled:cursor-none shadow-sm transition-all cursor-none"
                                 >
                                     <ChevronRight size={16} />
@@ -469,7 +519,7 @@ export default function PaymentView() {
                         style={{ perspective: 1400 }}
                     >
                         {/* Layer Stack Behind Card */}
-                        {MOCK_CHECKOUT.selectedSeats.length > 1 && (
+                        {selectedSeats.length > 1 && (
                             <div className="absolute inset-0 bg-white/70 rounded-[28px] translate-y-2.5 scale-[0.96] shadow-sm -z-10" />
                         )}
 
@@ -482,7 +532,7 @@ export default function PaymentView() {
                         {/* Ticket Card Body */}
                         <AnimatePresence mode="popLayout" custom={direction} initial={false}>
                             <motion.div
-                                key={currentTicket.id}
+                                key={currentTicket?.id || 0}
                                 custom={direction}
                                 variants={ticketVariants}
                                 initial="enter"
@@ -501,13 +551,13 @@ export default function PaymentView() {
                                 {/* Header Status */}
                                 <div className="flex justify-between items-center mt-1 mb-5">
                                     <span className="text-xs font-semibold bg-emerald-50 text-emerald-800 px-3 py-1 rounded-md">
-                                        {MOCK_CHECKOUT.match.tournament}
+                                        {matchDetails?.sport || "Sports"} Match
                                     </span>
 
                                     <div className="flex items-center gap-2 bg-zinc-50 px-3 py-1 rounded-xl shadow-sm border border-zinc-100">
                                         <CatIcon size={16} className={currentCatStyle.color} />
                                         <span className={`${currentCatStyle.fontClass} ${currentCatStyle.color}`}>
-                                            {currentTicket.category}
+                                            {currentTicket?.category || "Standard"}
                                         </span>
                                     </div>
                                 </div>
@@ -516,18 +566,18 @@ export default function PaymentView() {
                                 <div className="flex items-center justify-between my-6">
                                     <div className="flex flex-col items-center gap-2.5 w-[38%]">
                                         <div className="w-20 h-20 rounded-2xl bg-[#F3F3F1] flex items-center justify-center text-2xl font-bold text-zinc-900 shadow-inner">
-                                            {MOCK_CHECKOUT.match.homeTeam.code}
+                                            {(matchDetails?.hostTeam || "HOM").substring(0,3).toUpperCase()}
                                         </div>
-                                        <span className="font-semibold text-sm text-center text-zinc-900">{MOCK_CHECKOUT.match.homeTeam.name}</span>
+                                        <span className="font-semibold text-sm text-center text-zinc-900">{matchDetails?.hostTeam || "Home Team"}</span>
                                     </div>
 
                                     <div className="text-xl font-bold text-zinc-400">VS</div>
 
                                     <div className="flex flex-col items-center gap-2.5 w-[38%]">
                                         <div className="w-20 h-20 rounded-2xl bg-[#F3F3F1] flex items-center justify-center text-2xl font-bold text-zinc-900 shadow-inner">
-                                            {MOCK_CHECKOUT.match.awayTeam.code}
+                                            {(matchDetails?.guestTeam || "AWY").substring(0,3).toUpperCase()}
                                         </div>
-                                        <span className="font-semibold text-sm text-center text-zinc-900">{MOCK_CHECKOUT.match.awayTeam.name}</span>
+                                        <span className="font-semibold text-sm text-center text-zinc-900">{matchDetails?.guestTeam || "Away Team"}</span>
                                     </div>
                                 </div>
 
@@ -541,11 +591,11 @@ export default function PaymentView() {
                                 <div className="grid grid-cols-3 gap-4 pt-1">
                                     <div>
                                         <div className="text-[11px] text-zinc-400 font-medium mb-1">Venue</div>
-                                        <div className="text-sm font-semibold text-zinc-900 truncate">{MOCK_CHECKOUT.match.venue}</div>
+                                        <div className="text-sm font-semibold text-zinc-900 truncate">{matchDetails?.venue || "Stadium"}</div>
                                     </div>
                                     <div>
                                         <div className="text-[11px] text-zinc-400 font-medium mb-1">Seat / Sec</div>
-                                        <div className="text-sm font-semibold text-emerald-800">R{currentTicket.row} · S{currentTicket.number}</div>
+                                        <div className="text-sm font-semibold text-emerald-800">{currentTicket?.row || "R1"} · S{currentTicket?.number || "1"}</div>
                                     </div>
                                     <div>
                                         <div className="text-[11px] text-zinc-400 font-medium mb-1">Kickoff In</div>
@@ -605,7 +655,7 @@ export default function PaymentView() {
                             </div>
                             <h3 className="text-2xl font-bold text-zinc-900 mb-1">Tickets Confirmed!</h3>
                             <p className="text-xs text-zinc-500 mb-6 leading-relaxed">
-                                Successfully booked <strong>{MOCK_CHECKOUT.selectedSeats.length} seats</strong>. QR credentials have been generated in your account.
+                                Successfully booked <strong>{selectedSeats.length} seats</strong>. QR credentials have been generated in your account.
                             </p>
                             <button
                                 onClick={() => router.push("/matches")}

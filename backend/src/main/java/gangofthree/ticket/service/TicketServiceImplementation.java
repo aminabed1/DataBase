@@ -4,6 +4,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import gangofthree.cancellation.repository.CancellationRepository;
 import gangofthree.common.response.ApiResponse;
 import gangofthree.match.entity.Match;
 import gangofthree.match.repository.MatchRepository;
@@ -33,10 +34,8 @@ public class TicketServiceImplementation implements TicketService {
     private final ObjectMapper objectMapper;
     private final MatchSearchService matchSearchService;
     private final MatchRepository matchRepository;
+    private final CancellationRepository cancellationRepository;
 
-    /**
-     * Elastic search
-     */
     @Override
     public ApiResponse<List<TicketSearchResponse>> searchTickets(String query, String city, String sport) {
         String cacheKey = String.format("cache:tickets:search:%s:%s:%s",
@@ -92,18 +91,6 @@ public class TicketServiceImplementation implements TicketService {
 
     @Override
     public ApiResponse<TicketDetailResponse> getTicketDetails(Long matchId) {
-        String cacheKey = "cache:tickets:details:" + matchId;
-
-        try {
-            String cachedData = redisTemplate.opsForValue().get(cacheKey);
-            if (cachedData != null) {
-                TicketDetailResponse response = objectMapper.readValue(cachedData, TicketDetailResponse.class);
-                return ApiResponse.success("Ticket details retrieved from Redis cache.", 200, response);
-            }
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
-
         List<TicketDetailProjection> projections = ticketRepository.getTicketDetails(matchId);
 
         if (projections.isEmpty()) {
@@ -141,16 +128,6 @@ public class TicketServiceImplementation implements TicketService {
                 .availableTickets(availableTickets)
                 .build();
 
-        try {
-            redisTemplate.opsForValue().set(
-                    cacheKey,
-                    objectMapper.writeValueAsString(response),
-                    Duration.ofMinutes(10)
-            );
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
-
         return ApiResponse.success("Ticket details retrieved from Database.", 200, response);
     }
 
@@ -160,6 +137,11 @@ public class TicketServiceImplementation implements TicketService {
 
         List<TicketResponse> responses = tickets.stream().map(t -> {
             var match = t.getReservationItem().getMatchSeat().getMatch();
+
+            boolean isCancelReq = cancellationRepository.hasPendingCancellationNative(
+                    t.getReservationItem().getReservation().getId()
+            );
+
             return TicketResponse.builder()
                     .id(t.getId())
                     .ticketCode(t.getTicketCode())
@@ -172,6 +154,8 @@ public class TicketServiceImplementation implements TicketService {
                     .hostTeam(match.getHostTeam() != null ? match.getHostTeam().getName() : "")
                     .guestTeam(match.getGuestTeam() != null ? match.getGuestTeam().getName() : "")
                     .price(t.getReservationItem().getPriceAtTime())
+                    .reservationId(t.getReservationItem().getReservation().getId())
+                    .cancellationRequested(isCancelReq)
                     .build();
         }).collect(Collectors.toList());
 
