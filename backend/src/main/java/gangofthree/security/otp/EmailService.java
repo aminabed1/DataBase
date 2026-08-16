@@ -21,31 +21,24 @@ public class EmailService implements OtpSendService {
         String dateTime = LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-//         SimpleMailMessage message = new SimpleMailMessage();
+        SimpleMailMessage message = new SimpleMailMessage();
 
-//         message.setFrom("Gang-Of-Three-Team");
-//         message.setTo(credential);
-// //        message.setReplyTo("amin.m.abdollahi@gmail.com");
-//         message.setSubject("One-Time Verification Code | Gang Of Three Team");
-//         message.setSentDate(new Date());
+        message.setFrom("amin.m.abdollahi@gmail.com");
+        message.setTo(credential);
+        message.setSubject("One-Time Verification Code | Gang Of Three Team");
+        message.setSentDate(new Date());
 
-//         message.setText(
-//                 "Dear User,\n\n" +
-//                         "A verification request was received from you.\n\n" +
-//                         "Verification Code: " + otp + "\n" +
-//                         "Requested at: " + dateTime + "\n\n" +
-//                         "This code is valid for " + (expirationSeconds != null ? expirationSeconds + " seconds.\n" : "a limited time only.\n") +
-//                         "Please do not share it with anyone for security reasons.\n\n" +
-//                         "If you did not request this code, you can safely ignore this email.\n\n"
-//         );
+        message.setText(
+                "Dear User,\n\n" +
+                        "A verification request was received from you.\n\n" +
+                        "Verification Code: " + otp + "\n" +
+                        "Requested at: " + dateTime + "\n\n" +
+                        "This code is valid for " + (expirationSeconds != null ? expirationSeconds + " seconds.\n" : "a limited time only.\n") +
+                        "Please do not share it with anyone for security reasons.\n\n" +
+                        "If you did not request this code, you can safely ignore this email.\n\n"
+        );
 
-//         mailSender.send(message);
-
-        // چاپ کردن کد در ترمینال اینتلی‌جی (IntelliJ)
-        System.out.println("=====================================");
-        System.out.println("📧 MOCK EMAIL SENT TO: " + credential);
-        System.out.println("🔑 YOUR OTP CODE IS: " + otp);
-        System.out.println("=====================================");
+        mailSender.send(message);
 
         log.info("OTP email successfully sent to: {}", credential);
     }
