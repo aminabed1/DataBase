@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authService } from "@/features/auth/services/auth.service";
 import { locationService, type LocationItem } from "@/services/location.service";
-import { Mail, Lock, User, Smartphone, MapPin, Map, Key, ArrowRight, ShieldCheck, AlertCircle, Trophy, Ticket, ChevronDown } from "lucide-react";
+import { Mail, Lock, User, Smartphone, MapPin, Map, Key, ArrowRight, ShieldCheck, AlertCircle, Trophy, Ticket, ChevronDown ,type LucideIcon} from "lucide-react";
 
 // ==========================================
 // Custom Select Dropdown Component
@@ -18,7 +18,7 @@ function CustomSelect({
                           onChange,
                           disabled = false
                       }: {
-    icon: React.ElementType;
+    icon: LucideIcon;
     placeholder: string;
     value: string;
     options: LocationItem[];
