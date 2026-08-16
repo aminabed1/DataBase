@@ -27,19 +27,39 @@ function NavItem({
                      label,
                      hovered,
                      setHovered,
+                     disabled = false,
+                     onDisabledHoverText,
                  }: {
     href: string;
     label: string;
     hovered: string | null;
     setHovered: (v: string | null) => void;
+    disabled?: boolean;
+    onDisabledHoverText?: string;
 }) {
     const active = hovered === label;
+
+    if (disabled) {
+        return (
+            <div
+                onMouseEnter={() => setHovered(label)}
+                onMouseLeave={() => setHovered(null)}
+                title={onDisabledHoverText}
+                className="relative rounded-full px-4 py-1.5 text-sm outline-none cursor-not-allowed select-none"
+            >
+                <span className="relative block text-white/30 transition-colors duration-200">
+                    {label}
+                </span>
+            </div>
+        );
+    }
+
     return (
         <Link
             href={href}
             onMouseEnter={() => setHovered(label)}
             onFocus={() => setHovered(label)}
-            className="relative rounded-full px-4 py-1.5 text-sm outline-none"
+            className="relative rounded-full px-4 py-1.5 text-sm outline-none cursor-pointer"
         >
             <AnimatePresence>
                 {active && (
@@ -77,21 +97,33 @@ export default function Navbar() {
     const [hovered, setHovered] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userRole, setUserRole] = useState<string | null>(null);
     const pathname = usePathname();
 
     useEffect(() => {
         setMounted(true);
-        setIsLoggedIn(!!localStorage.getItem("token"));
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+        setIsLoggedIn(!!token);
+        setUserRole(role);
+
         const onScroll = () => setScrolled(window.scrollY > 24);
         onScroll();
         window.addEventListener("scroll", onScroll, { passive: true });
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/auth") || pathname?.startsWith("/matches")
-    || pathname?.startsWith("/booking")) {
+    if (
+        pathname?.startsWith("/dashboard") ||
+        pathname?.startsWith("/auth") ||
+        pathname?.startsWith("/matches") ||
+        pathname?.startsWith("/booking") ||
+        pathname?.startsWith("/support")
+    ) {
         return null;
     }
+
+    const isSupportUser = isLoggedIn && userRole === "SUPPORT";
 
     const groupPill = `rounded-full border transition-[background-color,border-color] duration-500 ${
         scrolled
@@ -117,11 +149,11 @@ export default function Navbar() {
                     }`}
                 />
 
-                {/* LEFT */}
+                {/* LEFT: Profile / Dashboard */}
                 <div className="flex items-center min-w-[120px]">
                     {mounted && (
                         <MotionLink
-                            href={isLoggedIn ? "/dashboard" : "#"}
+                            href={isLoggedIn ? (isSupportUser ? "/support" : "/dashboard") : "#"}
                             onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
                                 if (!isLoggedIn) e.preventDefault();
                             }}
@@ -130,9 +162,16 @@ export default function Navbar() {
                             variants={itemVariants}
                             custom={0.9}
                             layout
-                            className={`${groupPill} relative z-10 flex items-center gap-2 px-2 py-1.5 transition-colors ${isLoggedIn ? "cursor-pointer hover:bg-white/10" : "cursor-not-allowed"}`}
+                            className={`${groupPill} relative z-10 flex items-center gap-2 px-2 py-1.5 transition-colors ${
+                                isLoggedIn ? "cursor-pointer hover:bg-white/10" : "cursor-not-allowed"
+                            }`}
                         >
-                            <motion.div layout className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-white/30 to-white/10 text-xs font-bold ${isLoggedIn ? "text-white" : "text-white/50"}`}>
+                            <motion.div
+                                layout
+                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-white/30 to-white/10 text-xs font-bold ${
+                                    isLoggedIn ? "text-white" : "text-white/50"
+                                }`}
+                            >
                                 M
                             </motion.div>
                             <motion.div layout className="hidden sm:block overflow-hidden">
@@ -143,9 +182,15 @@ export default function Navbar() {
                                         animate={{ y: 0, opacity: 1 }}
                                         exit={{ y: -18, opacity: 0 }}
                                         transition={{ duration: 0.2 }}
-                                        className={`block pr-3 text-sm transition-colors whitespace-nowrap ${isLoggedIn ? "text-white/80 hover:text-white" : "text-white/40"}`}
+                                        className={`block pr-3 text-sm transition-colors whitespace-nowrap ${
+                                            isLoggedIn ? "text-white/80 hover:text-white" : "text-white/40"
+                                        }`}
                                     >
-                                        {!isLoggedIn && hoverProfile ? "please sign up/login first" : "Profile"}
+                                        {!isLoggedIn && hoverProfile
+                                            ? "please sign up/login first"
+                                            : isSupportUser
+                                                ? "Console"
+                                                : "Profile"}
                                     </motion.span>
                                 </AnimatePresence>
                             </motion.div>
@@ -168,10 +213,16 @@ export default function Navbar() {
                             <span className="pointer-events-none absolute -inset-2 -z-0 rounded-full bg-white/10 opacity-0 blur-lg transition-opacity duration-300 group-hover:opacity-100" />
                         </Link>
 
-                        <NavItem href="/#support" label="Support" hovered={hovered} setHovered={setHovered} />
+                        <NavItem
+                            href="/support"
+                            label="Support"
+                            hovered={hovered}
+                            setHovered={setHovered}
+                            disabled={!isSupportUser}
+                            onDisabledHoverText="Access restricted to Support team"
+                        />
                     </motion.div>
                 </div>
-
 
                 {/* RIGHT */}
                 <div className="flex items-center justify-end min-w-[120px]">
