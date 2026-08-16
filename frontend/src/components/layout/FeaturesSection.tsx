@@ -10,6 +10,7 @@ import {
     RefreshCw,
     ShieldCheck,
     Headphones,
+    LucideIcon
 } from "lucide-react";
 
 /* ---------------- Constants ---------------- */
