@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence ,type Variants} from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import {
     MapPin, CalendarDays, Clock, SlidersHorizontal, X, ArrowRight,
-    Users, Coffee, Search, ChevronDown, Map, Ticket
+    Users, Coffee, Search, ChevronDown, Map, Ticket,type LucideIcon
 } from "lucide-react";
 import { matchService, SportType, Match } from "../services/match.service";
 
@@ -25,7 +25,7 @@ function CustomSelect({
     onChange,
     disabled = false
 }: {
-    icon: React.ElementType;
+    icon: LucideIcon;
     placeholder: string;
     value: string;
     options: SelectOption[];
@@ -134,28 +134,35 @@ const handleLogoError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     e.currentTarget.onerror = null;
     e.currentTarget.src = FALLBACK_LOGO;
 };
+const easeCubic = [0.4, 0, 0.2, 1] as const;
 
-const filterPanelVariants = {
+const filterPanelVariants: Variants = {
     collapsed: {
         height: 0,
         opacity: 0,
-        transition: { height: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.25 } },
+        transition: { 
+            height: { duration: 0.4, ease: easeCubic }, 
+            opacity: { duration: 0.25 } 
+        },
     },
     expanded: {
         height: "auto",
         opacity: 1,
-        transition: { height: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }, opacity: { duration: 0.25 } },
+        transition: { 
+            height: { duration: 0.4, ease: easeCubic }, 
+            opacity: { duration: 0.25 } 
+        },
     },
 };
 
-const filterListVariants = {
+const filterListVariants: Variants = {
     collapsed: { transition: { staggerChildren: 0.04, staggerDirection: -1 } },
     expanded: { transition: { staggerChildren: 0.05, delayChildren: 0.08 } },
 };
 
-const filterItemVariants = {
-    collapsed: { opacity: 0, y: -8, transition: { duration: 0.18, ease: [0.4, 0, 1, 1] } },
-    expanded: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] } },
+const filterItemVariants: Variants = {
+    collapsed: { opacity: 0, y: -8, transition: { duration: 0.18, ease: easeCubic } },
+    expanded: { opacity: 1, y: 0, transition: { duration: 0.3, ease: easeCubic } },
 };
 
 export default function MatchesBrowser() {
@@ -585,8 +592,8 @@ export default function MatchesBrowser() {
                                     transition={{
                                         layout: layoutTransition,
                                         opacity: { duration: 0.22 },
-                                        y: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
-                                        scale: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
+                                        y: { duration: 0.28, ease: easeCubic },
+                                        scale: { duration: 0.28, ease: easeCubic },
                                     }}
                                     className={`relative z-20 w-full overflow-hidden rounded-[2rem] border border-gray-100 bg-white
                                         ring-1 transition-[box-shadow,ring-color] duration-300
@@ -658,7 +665,7 @@ export default function MatchesBrowser() {
                                                 animate={{ height: "auto", opacity: 1 }}
                                                 exit={{ height: 0, opacity: 0 }}
                                                 transition={{
-                                                    height: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
+                                                    height: { duration: 0.4, ease: easeCubic },
                                                     opacity: { duration: 0.3 },
                                                 }}
                                                 className="overflow-hidden"

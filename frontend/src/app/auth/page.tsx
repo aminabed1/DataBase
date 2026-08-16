@@ -2,18 +2,14 @@
 import AuthPanel from "@/features/auth/components/AuthPanel";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { Suspense } from "react";
 
 export default function AuthPage() {
     return (
         <main className="sport-theme relative flex h-screen w-screen items-center justify-center overflow-hidden bg-[rgb(211,212,212)] antialiased">
-
-            {/* ===== بلاب‌های متحرک پس‌زمینه ===== */}
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                {/* بلاب بالا چپ - متصل به متغیر A */}
                 <div className="absolute -left-32 -top-32 h-[34rem] w-[34rem] rounded-full blur-3xl will-change-transform [animation:blob-float_22s_ease-in-out_infinite] bg-[var(--theme-blob-a)]" />
-                {/* بلاب پایین راست - متصل به متغیر B */}
                 <div className="absolute -bottom-40 -right-24 h-[30rem] w-[30rem] rounded-full blur-3xl will-change-transform [animation:blob-float-alt_26s_ease-in-out_infinite] bg-[var(--theme-blob-b)]" />
-                {/* سفید نرم — وسط، برای عمق */}
                 <div className="absolute left-1/2 top-1/3 h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-white/40 blur-3xl will-change-transform [animation:blob-float_30s_ease-in-out_infinite_-8s]" />
             </div>
 
@@ -36,7 +32,9 @@ export default function AuthPage() {
             </div>
 
             <div className="relative z-10 h-[90vh] max-h-[850px] w-full max-w-6xl px-4 md:px-8">
-                <AuthPanel />
+                <Suspense fallback={<div className="flex h-full items-center justify-center font-bold text-gray-500">Loading auth...</div>}>
+                    <AuthPanel />
+                </Suspense>
             </div>
         </main>
     );

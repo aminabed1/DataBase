@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "../services/user.service";
 import { locationService, type LocationItem } from "@/services/location.service";
-import { User, Mail, Smartphone, MapPin, Shield, CheckCircle2, Map, ChevronDown, MapPinned, Lock, Key, X, AlertCircle } from "lucide-react";
+import { User, Mail, Smartphone, MapPin, Shield, CheckCircle2, Map, ChevronDown, MapPinned, Lock, Key, X, AlertCircle ,type LucideIcon} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ==========================================
@@ -18,7 +18,7 @@ function CustomSelect({
     onChange,
     disabled = false
 }: {
-    icon: React.ElementType;
+    icon: LucideIcon;
     placeholder: string;
     value: string;
     options: LocationItem[];

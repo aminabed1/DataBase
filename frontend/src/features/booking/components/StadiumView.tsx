@@ -36,8 +36,15 @@ const getCategoryStyle = (categoryName: string) => {
     }
 };
 
-const breathAnimation = { scale: [1, 1.08, 1], opacity: [0.7, 1, 0.7], transition: { repeat: Infinity, duration: 1.5, ease: "easeInOut" } };
-
+const breathAnimation = { 
+    scale: [1, 1.08, 1], 
+    opacity: [0.7, 1, 0.7], 
+    transition: { 
+        repeat: Infinity, 
+        duration: 1.5, 
+        ease: "easeInOut" as const 
+    } 
+};
 export default function StadiumView() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -316,12 +323,14 @@ export default function StadiumView() {
 
                                             return (
                                                 <motion.button
-                                                    key={seat.id} disabled={!isAvailable} onClick={() => toggleSeatSelection(seat)}
-                                                    animate={isLocked ? breathAnimation : {}}
-                                                    whileHover={isAvailable ? { scale: 1.1, y: -2 } : {}} 
-                                                    whileTap={isAvailable ? { scale: 0.95 } : {}}
-                                                    className={`relative flex flex-col items-center justify-center w-14 h-16 rounded-t-xl rounded-b-md transition-all ${seatAppearance} ${isSelected ? "ring-4 ring-offset-2 ring-zinc-900 shadow-lg" : "shadow-sm"}`}
-                                                >
+                                                key={seat.id} 
+                                                disabled={!isAvailable} 
+                                                onClick={() => toggleSeatSelection(seat)}
+                                                animate={isLocked ? breathAnimation : undefined}
+                                                whileHover={isAvailable ? { scale: 1.1, y: -2 } : {}} 
+                                                whileTap={isAvailable ? { scale: 0.95 } : {}}
+                                                className={`relative flex flex-col items-center justify-center w-14 h-16 rounded-t-xl rounded-b-md transition-all ${seatAppearance} ${isSelected ? "ring-4 ring-offset-2 ring-zinc-900 shadow-lg" : "shadow-sm"}`}
+                                            >
                                                     <div className={`w-10 h-8 mt-auto mb-1 rounded-sm ${!isAvailable && !isLocked ? 'bg-zinc-300' : 'bg-white/20'}`} />
                                                     {isLocked && <div className="absolute -top-2 -right-2 bg-zinc-900 text-white p-1 rounded-full shadow-md z-10"><Clock size={10} /></div>}
                                                 </motion.button>
