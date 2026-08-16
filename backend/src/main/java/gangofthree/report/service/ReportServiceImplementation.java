@@ -73,4 +73,38 @@ public class ReportServiceImplementation implements ReportService {
 
         return ApiResponse.success("User reports retrieved.", 200, responses);
     }
+
+    @Override
+    public ApiResponse<List<IssueReportResponse>> getAllReports() {
+        List<IssueReport> reports = issueReportRepository.findAll();
+
+        List<IssueReportResponse> responses = reports.stream()
+                .map(report -> IssueReportResponse.builder()
+                        .id(report.getId())
+                        .subject(report.getSubject())
+                        .description(report.getDescription())
+                        .status(report.getStatus().name())
+                        .createdAt(report.getCreatedAt())
+                        .adminReply(report.getAdminReply())
+                        .relatedPaymentId(report.getPayment() != null ? report.getPayment().getId() : null)
+                        .build())
+                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                .toList();
+
+        return ApiResponse.success("All reports retrieved for support.", 200, responses);
+    }
+
+    @Override
+    public ApiResponse<String> resolveReport(Long reportId, String adminReply) {
+        IssueReport report = issueReportRepository.findById(reportId)
+                .orElseThrow(() -> new RuntimeException("Report not found"));
+
+        report.setStatus(IssueReportStatus.RESOLVED);
+        report.setAdminReply(adminReply);
+        report.setResolvedAt(LocalDateTime.now());
+        report.setUpdatedAt(LocalDateTime.now());
+
+        issueReportRepository.save(report);
+        return ApiResponse.success("Report resolved successfully.", 200, "RESOLVED");
+    }
 }

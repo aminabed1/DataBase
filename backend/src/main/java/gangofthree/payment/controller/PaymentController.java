@@ -27,4 +27,14 @@ public class PaymentController {
     public ApiResponse<java.util.List<gangofthree.payment.entity.PaymentMethod>> getPaymentMethods() {
         return paymentService.getAllowedPaymentMethods();
     }
+
+    @GetMapping("/methods/all")
+    public ApiResponse<java.util.List<gangofthree.payment.entity.PaymentMethod>> getAllPaymentMethods() {
+        return paymentService.getAllPaymentMethods();
+    }
+
+    @PatchMapping("/methods/{id}/toggle")
+    public ApiResponse<String> togglePaymentMethodStatus(@PathVariable Long id) {
+        return paymentService.toggleMethodStatus(id);
+    }
 }

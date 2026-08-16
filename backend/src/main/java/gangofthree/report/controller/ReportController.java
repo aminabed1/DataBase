@@ -28,4 +28,17 @@ public class ReportController {
         Long userId = (Long) authentication.getPrincipal();
         return reportService.getUserReports(userId);
     }
+
+    @GetMapping("/all")
+    public ApiResponse<List<IssueReportResponse>> getAllReports() {
+        return reportService.getAllReports();
+    }
+
+    @PutMapping("/{id}/resolve")
+    public ApiResponse<String> resolveReport(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body) {
+        String reply = body.getOrDefault("reply", "Issue resolved by support.");
+        return reportService.resolveReport(id, reply);
+    }
 }

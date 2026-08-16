@@ -28,4 +28,10 @@ public class CancellationController {
         Long userId = (Long) authentication.getPrincipal();
         return cancellationService.cancelTicketAndRefund(userId, reservationId, reason);
     }
+
+    @GetMapping("/audit")
+    public ApiResponse<java.util.List<java.util.Map<String, Object>>> getCancelledUsersAudit(
+            @RequestParam(defaultValue = "sup1@test.com") String identifier) {
+        return cancellationService.getCancelledUsersAudit(identifier);
+    }
 }

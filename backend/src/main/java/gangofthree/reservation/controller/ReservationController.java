@@ -37,4 +37,16 @@ public class ReservationController {
         Long userId = (Long) authentication.getPrincipal();
         return reservationService.getReservationHistory(userId);
     }
+
+    @GetMapping("/all")
+    public ApiResponse<List<ReservationResponse>> getAllReservations() {
+        return reservationService.getAllReservations();
+    }
+
+    @PatchMapping("/{id}/status")
+    public ApiResponse<String> updateReservationStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return reservationService.updateReservationStatus(id, status);
+    }
 }

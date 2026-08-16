@@ -10,7 +10,7 @@ import {
     RefreshCw,
     ShieldCheck,
     Headphones,
-    LucideIcon
+    type LucideIcon
 } from "lucide-react";
 
 /* ---------------- Constants ---------------- */
@@ -272,7 +272,7 @@ const FeatureCard = memo(function FeatureCard({
                                                   extra,
                                                   className = "",
                                               }: {
-    icon: React.ElementType<any>;
+    icon: LucideIcon;
     title: string;
     desc: string;
     extra?: React.ReactNode;

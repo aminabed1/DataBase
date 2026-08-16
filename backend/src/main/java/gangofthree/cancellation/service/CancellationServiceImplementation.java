@@ -94,4 +94,22 @@ public class CancellationServiceImplementation implements CancellationService {
         if (hoursUntilMatch > 24) return 30; 
         return 50; 
     }
+
+    @Override
+    public ApiResponse<List<java.util.Map<String, Object>>> getCancelledUsersAudit(String supportIdentifier) {
+        List<Object[]> rawList = cancellationRepository.findUsersWithCancellationsRaw();
+
+        List<java.util.Map<String, Object>> result = rawList.stream().map(row -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("userId", row[0]);
+            map.put("name", row[1]);
+            map.put("email", row[2]);
+            map.put("phone", row[3]);
+            map.put("cancellationsCount", row[4]);
+            map.put("reason", row[5] != null ? row[5] : "User Request");
+            return map;
+        }).toList();
+
+        return ApiResponse.success("Cancellation procedure executed successfully.", 200, result);
+    }
 }

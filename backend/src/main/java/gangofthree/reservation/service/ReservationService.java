@@ -10,4 +10,7 @@ public interface ReservationService {
     ApiResponse<ReservationResponse> createReservation(Long userId, ReserveTicketRequest request);
     ApiResponse<List<ReservationResponse>> getActiveReservations(Long userId);
     ApiResponse<List<ReservationResponse>> getReservationHistory(Long userId);
+
+    ApiResponse<List<ReservationResponse>> getAllReservations();
+    ApiResponse<String> updateReservationStatus(Long reservationId, String status);
 }

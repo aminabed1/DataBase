@@ -147,4 +147,26 @@ public class PaymentServiceImplementation implements PaymentService {
                 .collect(java.util.stream.Collectors.toList());
         return ApiResponse.success("Payment methods retrieved successfully.", 200, methods);
     }
+
+    @Override
+    public ApiResponse<List<PaymentMethod>> getAllPaymentMethods() {
+        List<PaymentMethod> methods = paymentMethodRepository.findAll();
+        return ApiResponse.success("All payment methods retrieved.", 200, methods);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> toggleMethodStatus(Long methodId) {
+        PaymentMethod method = paymentMethodRepository.findById(methodId)
+                .orElseThrow(() -> new RuntimeException("Payment method not found"));
+
+        if (method.getStatus() == gangofthree.payment.entity.enums.PaymentMethodStatus.ALLOWED) {
+            method.setStatus(gangofthree.payment.entity.enums.PaymentMethodStatus.NOT_ALLOWED);
+        } else {
+            method.setStatus(gangofthree.payment.entity.enums.PaymentMethodStatus.ALLOWED);
+        }
+
+        paymentMethodRepository.save(method);
+        return ApiResponse.success("Payment method status updated.", 200, method.getStatus().name());
+    }
 }

@@ -142,4 +142,35 @@ public class ReservationServiceImplementation implements ReservationService {
         List<ReservationResponse> responses = history.stream().map(this::mapToResponse).toList();
         return ApiResponse.success("Reservation history retrieved.", 200, responses);
     }
+
+    @Override
+    public ApiResponse<List<ReservationResponse>> getAllReservations() {
+        List<Reservation> allReservations = reservationRepository.findAll();
+        List<ReservationResponse> responses = allReservations.stream()
+                .sorted((a, b) -> b.getReservedAt().compareTo(a.getReservedAt()))
+                .map(this::mapToResponse)
+                .toList();
+        return ApiResponse.success("All reservations retrieved.", 200, responses);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> updateReservationStatus(Long reservationId, String status) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        ReservationStatus newStatus = ReservationStatus.valueOf(status.toUpperCase());
+        reservation.setStatus(newStatus);
+        reservationRepository.save(reservation);
+
+        // اگر لغو شد صندلی‌ها آزاد شوند
+        if (newStatus == ReservationStatus.CANCELLED) {
+            List<ReservationItem> items = reservationItemRepository.findByReservationId(reservationId);
+            for (ReservationItem item : items) {
+                matchSeatRepository.updateSeatStatusNative(item.getMatchSeat().getId(), MatchSeatStatus.AVAILABLE.name());
+            }
+        }
+
+        return ApiResponse.success("Reservation status updated to " + newStatus, 200, newStatus.name());
+    }
 }
