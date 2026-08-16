@@ -103,9 +103,12 @@ export default function Navbar() {
     useEffect(() => {
         setMounted(true);
         const token = localStorage.getItem("token");
-        const role = localStorage.getItem("role");
+        
+        const rawRole = localStorage.getItem("role") || "";
+        const cleanRole = rawRole.replace(/['"]/g, "").toUpperCase(); 
+        
         setIsLoggedIn(!!token);
-        setUserRole(role);
+        setUserRole(cleanRole);
 
         const onScroll = () => setScrolled(window.scrollY > 24);
         onScroll();
@@ -123,7 +126,7 @@ export default function Navbar() {
         return null;
     }
 
-    const isSupportUser = isLoggedIn && userRole === "SUPPORT";
+    const isSupportUser = isLoggedIn && (userRole === "SUPPORT" || userRole === "ROLE_SUPPORT");
 
     const groupPill = `rounded-full border transition-[background-color,border-color] duration-500 ${
         scrolled

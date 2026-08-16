@@ -45,6 +45,7 @@ public class SecurityConfig {
                                 "/api/matches/**"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/support/**").hasRole("SUPPORT")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
@@ -57,7 +58,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000")); 
+        // پورت 3001 هم برای اطمینان اضافه شد
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Email-Change-Token", "X-Phone-Change-Token"));
         configuration.setAllowCredentials(true);

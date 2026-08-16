@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supportService } from "@/services/support.service"; // مسیر سرویس را در صورت نیاز اصلاح کنید
 import {
     ShieldCheck, Ticket, AlertCircle, MessageSquare,
     CheckCircle2, XCircle, Search, RefreshCw, LogOut,
@@ -55,29 +57,6 @@ const INITIAL_RESERVATIONS = [
     }
 ];
 
-const INITIAL_ISSUES = [
-    {
-        id: 1,
-        subject: "Payment Deducted Issue",
-        description: "Money was deducted from my account but the ticket status is still marked as Pending.",
-        user: { name: "Zahra Karami", email: "zahra@test.com" },
-        paymentId: 4,
-        status: "OPEN",
-        createdAt: "2026-07-23 13:05",
-        reply: ""
-    },
-    {
-        id: 2,
-        subject: "Damaged Seat Number R2-S1",
-        description: "The seat was broken and safety support was needed during the match.",
-        user: { name: "Ali Rezaei", email: "ali@test.com" },
-        paymentId: 1,
-        status: "RESOLVED",
-        createdAt: "2026-07-20 18:00",
-        reply: "Maintenance team notified and seat repaired."
-    }
-];
-
 const INITIAL_METHODS = [
     { id: 1, name: "Melli Gateway", status: "ALLOWED" },
     { id: 2, name: "Saman Gateway", status: "ALLOWED" },
@@ -91,11 +70,26 @@ const INITIAL_METHODS = [
 
 export default function SupportDashboard() {
     const router = useRouter();
+    const queryClient = useQueryClient();
+
+    // ==========================================
+    // 1. امنیت فرانت‌اند: قفل کردن صفحه فقط برای پشتیبان‌ها
+    // ==========================================
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    useEffect(() => {
+        const rawRole = localStorage.getItem("role") || "";
+        const cleanRole = rawRole.replace(/['"]/g, "").toUpperCase();
+
+        if (cleanRole !== "SUPPORT" && cleanRole !== "ROLE_SUPPORT") {
+            router.push("/");
+        } else {
+            setIsAuthorized(true);
+        }
+    }, [router]);
     const [activeTab, setActiveTab] = useState<"reservations" | "issues" | "methods" | "analytics">("reservations");
 
     // Local State
     const [reservations, setReservations] = useState(INITIAL_RESERVATIONS);
-    const [issues, setIssues] = useState(INITIAL_ISSUES);
     const [methods, setMethods] = useState(INITIAL_METHODS);
 
     // Filter & Search
@@ -107,6 +101,29 @@ export default function SupportDashboard() {
     const [supportIdentifier, setSupportIdentifier] = useState("sup1@test.com");
     const [procResults, setProcResults] = useState<any[]>([]);
     const [procExecuted, setProcExecuted] = useState(false);
+
+    // ==========================================
+    // 2. واکشی (Fetch) ریپورت‌ها از بک‌اند
+    // ==========================================
+    const { data: issuesResponse, isLoading: isLoadingIssues } = useQuery({
+        queryKey: ['support-issues'],
+        queryFn: supportService.getAllIssues,
+        enabled: isAuthorized // فقط در صورتی درخواست بزن که یوزر ادمین باشد
+    });
+    
+    const issues = issuesResponse?.data || [];
+
+    // ==========================================
+    // 3. ارسال پاسخ (Reply) به بک‌اند
+    // ==========================================
+    const replyMutation = useMutation({
+        mutationFn: (data: { id: number, reply: string }) => supportService.replyToIssue(data.id, data.reply),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['support-issues'] });
+            setSelectedIssue(null);
+            setReplyText("");
+        }
+    });
 
     // Handle Reservation Actions
     const handleUpdateReservation = (id: number, newStatus: "CONFIRMED" | "CANCELLED") => {
@@ -124,24 +141,20 @@ export default function SupportDashboard() {
     // Reply to Issue
     const handleReplyIssue = (issueId: number) => {
         if (!replyText.trim()) return;
-        setIssues(prev => prev.map(i => i.id === issueId ? {
-            ...i,
-            status: "RESOLVED",
-            reply: replyText
-        } : i));
-        setSelectedIssue(null);
-        setReplyText("");
+        replyMutation.mutate({ id: issueId, reply: replyText });
     };
 
     // Run Stored Procedure Simulation
     const handleRunStoredProcedure = (e: React.FormEvent) => {
         e.preventDefault();
         setProcExecuted(true);
-        // کاربران با حداقل یک رزرو کنسل‌شده
         setProcResults([
             { userId: 4, name: "Zahra Karami", phone: "09124444444", email: "zahra@test.com", cancellationsCount: 1, reason: "Schedule change" }
         ]);
     };
+
+    // اگر در حال چک کردن نقش کاربر است، صفحه سفید نشان بده تا ریدایرکت انجام شود
+    if (!isAuthorized) return <div className="min-h-screen bg-[#F8F9FA]" />;
 
     return (
         <div className="min-h-screen bg-[#F8F9FA] text-[#15151A] font-sans flex flex-col selection:bg-emerald-500 selection:text-white">
@@ -200,7 +213,7 @@ export default function SupportDashboard() {
                     <div className="bg-white p-4 rounded-2xl border border-zinc-200/70 shadow-sm flex items-center justify-between">
                         <div>
                             <span className="text-[11px] font-medium text-zinc-400">Open Complaints</span>
-                            <h3 className="text-2xl font-bold text-red-600">{issues.filter(i => i.status === "OPEN").length}</h3>
+                            <h3 className="text-2xl font-bold text-red-600">{issues.filter((i: any) => i.status === "OPEN").length}</h3>
                         </div>
                         <div className="p-3 bg-red-50 rounded-xl text-red-600"><AlertCircle size={20} /></div>
                     </div>
@@ -226,7 +239,7 @@ export default function SupportDashboard() {
                         onClick={() => setActiveTab("issues")}
                         className={`pb-3 relative transition-all ${activeTab === "issues" ? "text-emerald-800" : "text-zinc-500 hover:text-zinc-800"}`}
                     >
-                        User Issue Reports ({issues.filter(i => i.status === "OPEN").length})
+                        User Issue Reports ({issues.filter((i: any) => i.status === "OPEN").length})
                         {activeTab === "issues" && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-700" />}
                     </button>
                     <button
@@ -336,37 +349,45 @@ export default function SupportDashboard() {
                 )}
 
                 {/* ========================================== */}
-                {/* TAB 2: ISSUES & COMPLAINTS MANAGEMENT      */}
+                {/* TAB 2: ISSUES & COMPLAINTS (Connected to API) */}
                 {/* ========================================== */}
                 {activeTab === "issues" && (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         <div className="lg:col-span-6 flex flex-col gap-3">
-                            {issues.map((issue) => (
-                                <div
-                                    key={issue.id}
-                                    onClick={() => { setSelectedIssue(issue); setReplyText(issue.reply || ""); }}
-                                    className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white ${
-                                        selectedIssue?.id === issue.id
-                                            ? "border-emerald-700 shadow-md ring-1 ring-emerald-700"
-                                            : "border-zinc-200/80 hover:border-zinc-300"
-                                    }`}
-                                >
-                                    <div className="flex items-center justify-between mb-1.5">
-                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                                            issue.status === 'OPEN' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
-                                        }`}>
-                                            {issue.status}
-                                        </span>
-                                        <span className="text-[11px] text-zinc-400 font-mono">{issue.createdAt}</span>
+                            {isLoadingIssues ? (
+                                <div className="p-10 text-center text-zinc-500 text-sm font-bold">Loading issues from database...</div>
+                            ) : issues.length === 0 ? (
+                                <div className="p-10 text-center text-zinc-500 text-sm font-bold">No active issues found.</div>
+                            ) : (
+                                issues.map((issue: any) => (
+                                    <div
+                                        key={issue.id}
+                                        onClick={() => { setSelectedIssue(issue); setReplyText(issue.reply || ""); }}
+                                        className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white ${
+                                            selectedIssue?.id === issue.id
+                                                ? "border-emerald-700 shadow-md ring-1 ring-emerald-700"
+                                                : "border-zinc-200/80 hover:border-zinc-300"
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between mb-1.5">
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                                                issue.status === 'OPEN' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+                                            }`}>
+                                                {issue.status}
+                                            </span>
+                                            <span className="text-[11px] text-zinc-400 font-mono">
+                                                {issue.created_at ? new Date(issue.created_at).toLocaleString() : ""}
+                                            </span>
+                                        </div>
+                                        <h4 className="text-sm font-bold text-zinc-900 mb-1">{issue.subject}</h4>
+                                        <p className="text-xs text-zinc-600 line-clamp-2">{issue.description}</p>
+                                        <div className="mt-3 pt-2 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400">
+                                            <span>From: {issue.user_name} ({issue.user_email})</span>
+                                            <span>Res ID: #{issue.reservation_id || "N/A"}</span>
+                                        </div>
                                     </div>
-                                    <h4 className="text-sm font-bold text-zinc-900 mb-1">{issue.subject}</h4>
-                                    <p className="text-xs text-zinc-600 line-clamp-2">{issue.description}</p>
-                                    <div className="mt-3 pt-2 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400">
-                                        <span>From: {issue.user.name} ({issue.user.email})</span>
-                                        <span>Payment ID: #{issue.paymentId}</span>
-                                    </div>
-                                </div>
-                            ))}
+                                ))
+                            )}
                         </div>
 
                         {/* Issue Response Box */}
@@ -388,19 +409,23 @@ export default function SupportDashboard() {
                                             <label className="text-xs font-bold text-zinc-700">Official Support Resolution</label>
                                             <textarea
                                                 rows={4}
-                                                placeholder="Type formal response to customer..."
+                                                disabled={selectedIssue.status === "RESOLVED"}
+                                                placeholder={selectedIssue.status === "RESOLVED" ? "This case is closed." : "Type formal response to customer..."}
                                                 value={replyText}
                                                 onChange={(e) => setReplyText(e.target.value)}
-                                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-xs text-zinc-900 outline-none focus:bg-white focus:border-emerald-700"
+                                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-xs text-zinc-900 outline-none focus:bg-white focus:border-emerald-700 disabled:opacity-50"
                                             />
                                         </div>
 
-                                        <button
-                                            onClick={() => handleReplyIssue(selectedIssue.id)}
-                                            className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
-                                        >
-                                            <Send size={14} /> Send Resolution & Mark Resolved
-                                        </button>
+                                        {selectedIssue.status === "OPEN" && (
+                                            <button
+                                                onClick={() => handleReplyIssue(selectedIssue.id)}
+                                                disabled={replyMutation.isPending}
+                                                className="w-full bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 text-white font-medium py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
+                                            >
+                                                <Send size={14} /> {replyMutation.isPending ? "Sending..." : "Send Resolution & Mark Resolved"}
+                                            </button>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="h-64 flex flex-col items-center justify-center text-zinc-400 gap-2">
