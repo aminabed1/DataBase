@@ -1,4 +1,4 @@
-// src/features/matches/services/match.service.ts
+// E:\Saeed\KNTU\Term 4\DataBase\project\DataBase\frontend\src\features\matches\services\match.service.ts
 import apiClient from "@/services/client";
 
 export type SportType = "football" | "basketball" | "volleyball";
@@ -21,9 +21,18 @@ export interface Match {
 }
 
 export const matchService = {
-    // اتصال مستقیم به بک‌اند
     getAvailableMatches: async () => {
         const response = await apiClient.get("/matches");
+        return response.data;
+    },
+    // متد جدید برای جستجوی مستقیم در الستیک‌سرچ
+    searchTicketsES: async (query: string, city: string, sport: string) => {
+        const params = new URLSearchParams();
+        if (query && query.trim() !== "") params.append("query", query);
+        if (city && city !== "All") params.append("city", city);
+        if (sport && sport !== "All") params.append("sport", sport);
+        
+        const response = await apiClient.get(`/tickets/search?${params.toString()}`);
         return response.data;
     }
 };
