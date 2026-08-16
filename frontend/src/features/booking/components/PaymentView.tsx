@@ -74,10 +74,6 @@ export default function PaymentView() {
     const [activeTicketIdx, setActiveTicketIdx] = useState(0);
     const [direction, setDirection] = useState(0);
 
-    const [couponCode, setCouponCode] = useState("");
-    const [discountAmount, setDiscountAmount] = useState(0);
-    const [couponError, setCouponError] = useState<string | null>(null);
-    const [couponSuccess, setCouponSuccess] = useState(false);
     const [paymentError, setPaymentError] = useState<string | null>(null);
 
     const [timeLeft, setTimeLeft] = useState(600);
@@ -159,7 +155,7 @@ export default function PaymentView() {
     const selectedSeats = checkoutData.selectedSeats;
 
     const subtotal = selectedSeats.reduce((sum: number, s: any) => sum + s.price, 0);
-    const totalAmount = Math.max(0, subtotal - discountAmount);
+    const totalAmount = subtotal;
 
     const currentTicket = selectedSeats[activeTicketIdx] || selectedSeats[0];
     const currentCatStyle = getCategoryStyle(currentTicket?.category || "Standard");
@@ -175,25 +171,6 @@ export default function PaymentView() {
         setActiveTicketIdx(nextIdx);
     };
 
-    const handleApplyCoupon = (e: React.FormEvent) => {
-        e.preventDefault();
-        setCouponError(null);
-
-        const earlyBirdSeats = selectedSeats.filter((s: any) => s.category === "Early Bird");
-
-        if (earlyBirdSeats.length === 0) {
-            setCouponError("Discounts are exclusively available for Early Bird seats.");
-            return;
-        }
-
-        if (couponCode.trim().toUpperCase() === "EARLY20" || couponCode.trim().toUpperCase() === "PITCHSIDE") {
-            const calculatedDiscount = earlyBirdSeats.length * 20;
-            setDiscountAmount(calculatedDiscount);
-            setCouponSuccess(true);
-        } else {
-            setCouponError("Invalid discount code. Try 'EARLY20'");
-        }
-    };
 
     const handlePay = () => {
         setPaymentError(null);
@@ -394,40 +371,6 @@ export default function PaymentView() {
 
                         </div>
 
-                        {/* Early Bird Promo Box */}
-                        <div className="mt-3.5">
-                            <form onSubmit={handleApplyCoupon} className="flex gap-2">
-                                <div className="relative flex-1">
-                                    <Tag size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Early Bird Promo (e.g. EARLY20)"
-                                        value={couponCode}
-                                        onChange={(e) => setCouponCode(e.target.value)}
-                                        disabled={couponSuccess}
-                                        className="w-full bg-[#F3F3F1]/70 rounded-xl pl-8 pr-3 py-2 text-xs font-medium text-zinc-900 placeholder:text-zinc-400 uppercase outline-none focus:ring-1 focus:ring-emerald-700 transition-all disabled:opacity-60 cursor-none"
-                                    />
-                                </div>
-                                <button
-                                    type="submit"
-                                    disabled={couponSuccess || !couponCode}
-                                    className="bg-zinc-900 hover:bg-black text-white text-xs font-medium px-4 py-2 rounded-xl transition-all disabled:opacity-40 cursor-none"
-                                >
-                                    {couponSuccess ? <Check size={13} /> : "Apply"}
-                                </button>
-                            </form>
-
-                            {couponError && (
-                                <p className="text-[11px] text-red-500 font-medium flex items-center gap-1 mt-1.5 pl-1">
-                                    <AlertCircle size={11} /> {couponError}
-                                </p>
-                            )}
-                            {couponSuccess && (
-                                <p className="text-[11px] text-emerald-700 font-medium flex items-center gap-1 mt-1.5 pl-1">
-                                    <CheckCircle2 size={11} /> Promo code applied (-${discountAmount}.00)
-                                </p>
-                            )}
-                        </div>
 
                         {/* Order Summary Breakdown */}
                         <div className="mt-3.5 flex flex-col gap-1.5 bg-[#F3F3F1]/40 rounded-xl p-3.5">
@@ -435,12 +378,6 @@ export default function PaymentView() {
                                 <span>Selected Seats ({selectedSeats.length}x)</span>
                                 <span className="font-semibold text-zinc-900">${subtotal}.00</span>
                             </div>
-                            {discountAmount > 0 && (
-                                <div className="flex justify-between text-xs text-emerald-700 font-medium">
-                                    <span>Early Bird Discount</span>
-                                    <span>-${discountAmount}.00</span>
-                                </div>
-                            )}
                             <div className="flex justify-between text-xs text-zinc-500">
                                 <span>Platform Fee</span>
                                 <span className="font-medium text-emerald-700">Free</span>

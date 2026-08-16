@@ -340,14 +340,6 @@ export default function WalletTab({ user }: { user?: any }) {
                             <h2 className="text-xl font-bold text-black select-none cursor-none">Transaction History</h2>
                             <p className="mt-1 text-sm text-gray-500 select-none cursor-none">View and download your past financial activities.</p>
                         </div>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="flex cursor-none items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-5 py-2.5 text-sm font-bold text-black transition-colors hover:bg-gray-50"
-                        >
-                            <Download size={16} />
-                            Download PDF
-                        </motion.button>
                     </div>
 
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

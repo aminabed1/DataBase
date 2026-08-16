@@ -6,9 +6,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gangofthree.cancellation.repository.CancellationRepository;
 import gangofthree.common.response.ApiResponse;
-import gangofthree.match.entity.Match;
 import gangofthree.match.repository.MatchRepository;
 import gangofthree.match.service.MatchSearchService;
+import gangofthree.search.document.MatchSearchDocument;
 import gangofthree.ticket.dto.TicketDetailResponse;
 import gangofthree.ticket.dto.response.TicketSearchResponse;
 import gangofthree.ticket.dto.response.TicketCategoryInfo;
@@ -39,95 +39,53 @@ public class TicketServiceImplementation implements TicketService {
     @Override
     public ApiResponse<List<TicketSearchResponse>> searchTickets(String query, String city, String sport) {
         String cacheKey = String.format("cache:tickets:search:%s:%s:%s",
-                query != null ? query : "all",
-                city != null ? city : "all",
-                sport != null ? sport : "all");
-
+                query != null ? query : "all", city != null ? city : "all", sport != null ? sport : "all");
         try {
             String cachedData = redisTemplate.opsForValue().get(cacheKey);
             if (cachedData != null) {
-                List<TicketSearchResponse> responses = objectMapper.readValue(
-                        cachedData,
-                        new TypeReference<List<TicketSearchResponse>>() {}
-                );
-                return ApiResponse.success("Tickets retrieved from Redis cache.", 200, responses);
+                return ApiResponse.success("Tickets retrieved from Redis cache.", 200, objectMapper.readValue(cachedData, new TypeReference<List<TicketSearchResponse>>() {}));
             }
-        } catch (Exception e) {
-            log.error("Redis read failed: {}", e.getMessage());
-        }
+        } catch (Exception e) { log.error("Redis read failed: {}", e.getMessage()); }
 
-        List<Long> matchIds = matchSearchService.searchMatchIds(query, sport, city);
-
-        if (matchIds.isEmpty()) {
+        // گرفتن مستقیم اطلاعات کامل از الاستیک‌سرچ
+        List<MatchSearchDocument> esMatches = matchSearchService.searchMatches(query, sport, city);
+        
+        if (esMatches.isEmpty()) {
             return ApiResponse.success("No tickets found.", 200, List.of());
         }
 
-        List<Match> matches = matchRepository.findAllById(matchIds);
+        // تبدیل داکیومنت‌های الاستیک‌سرچ به ریسپانس بدون نیاز به دیتابیس SQL
+        List<TicketSearchResponse> responses = esMatches.stream().map(matchDoc -> TicketSearchResponse.builder()
+                .matchId(matchDoc.getId())
+                .sport(matchDoc.getSport())
+                .hostTeam(matchDoc.getHostTeam())
+                .guestTeam(matchDoc.getGuestTeam())
+                .venue(matchDoc.getVenue())
+                .city(matchDoc.getCity())
+                .datetime(matchDoc.getDatetime())
+                .build()).toList();
 
-        List<TicketSearchResponse> responses = matches.stream()
-                .map(match -> TicketSearchResponse.builder()
-                        .matchId(match.getId())
-                        .sport(match.getSport().getName())
-                        .hostTeam(match.getHostTeam().getName())
-                        .guestTeam(match.getGuestTeam().getName())
-                        .venue(match.getVenue().getName())
-                        .city(match.getVenue().getCity().getName())
-                        .datetime(match.getDatetime())
-                        .build())
-                .toList();
-
-        try {
-            redisTemplate.opsForValue().set(
-                    cacheKey,
-                    objectMapper.writeValueAsString(responses),
-                    Duration.ofMinutes(15)
-            );
-        } catch (Exception e) {
-            log.error("Redis write failed: {}", e.getMessage());
-        }
-
+        try { redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(responses), Duration.ofMinutes(15)); } 
+        catch (Exception e) { log.error("Redis write failed: {}", e.getMessage()); }
+        
         return ApiResponse.success("Tickets retrieved from Elasticsearch.", 200, responses);
     }
 
     @Override
     public ApiResponse<TicketDetailResponse> getTicketDetails(Long matchId) {
         List<TicketDetailProjection> projections = ticketRepository.getTicketDetails(matchId);
-
-        if (projections.isEmpty()) {
-            return ApiResponse.failure("No tickets available for this match.", 404, "TICKETS_NOT_FOUND");
-        }
-
+        if (projections.isEmpty()) return ApiResponse.failure("No tickets available for this match.", 404, "TICKETS_NOT_FOUND");
         TicketDetailProjection baseInfo = projections.get(0);
-
         List<TicketCategoryInfo> availableTickets = projections.stream().map(p -> {
             JsonNode amenitiesJson = null;
-            try {
-                if (p.getAmenities() != null) {
-                    amenitiesJson = objectMapper.readTree(p.getAmenities());
-                }
-            } catch (Exception e) {
-                log.error(e.getMessage());
-            }
-
-            return TicketCategoryInfo.builder()
-                    .categoryName(p.getCategoryName())
-                    .amenities(amenitiesJson)
-                    .price(p.getPrice())
-                    .remainingCapacity(p.getRemainingCapacity())
-                    .build();
+            try { if (p.getAmenities() != null) amenitiesJson = objectMapper.readTree(p.getAmenities()); } catch (Exception e) {}
+            return TicketCategoryInfo.builder().categoryName(p.getCategoryName()).amenities(amenitiesJson).price(p.getPrice()).remainingCapacity(p.getRemainingCapacity()).build();
         }).toList();
 
         TicketDetailResponse response = TicketDetailResponse.builder()
-                .matchId(baseInfo.getMatchId())
-                .sport(baseInfo.getSport())
-                .hostTeam(baseInfo.getHostTeam())
-                .guestTeam(baseInfo.getGuestTeam())
-                .venue(baseInfo.getVenue())
-                .venueAddress(baseInfo.getVenueAddress())
-                .datetime(baseInfo.getDatetime())
-                .availableTickets(availableTickets)
-                .build();
-
+                .matchId(baseInfo.getMatchId()).sport(baseInfo.getSport()).hostTeam(baseInfo.getHostTeam())
+                .guestTeam(baseInfo.getGuestTeam()).venue(baseInfo.getVenue()).venueAddress(baseInfo.getVenueAddress())
+                .datetime(baseInfo.getDatetime()).availableTickets(availableTickets).build();
         return ApiResponse.success("Ticket details retrieved from Database.", 200, response);
     }
 
@@ -137,10 +95,7 @@ public class TicketServiceImplementation implements TicketService {
 
         List<TicketResponse> responses = tickets.stream().map(t -> {
             var match = t.getReservationItem().getMatchSeat().getMatch();
-
-            boolean isCancelReq = cancellationRepository.hasPendingCancellationNative(
-                    t.getReservationItem().getReservation().getId()
-            );
+            boolean isCancelReq = cancellationRepository.hasPendingCancellationNative(t.getReservationItem().getReservation().getId());
 
             return TicketResponse.builder()
                     .id(t.getId())
@@ -160,15 +115,5 @@ public class TicketServiceImplementation implements TicketService {
         }).collect(Collectors.toList());
 
         return ApiResponse.success("Tickets retrieved successfully", 200, responses);
-    }
-
-    public List<Match> searchMatches(String query, String sport, String city) {
-        List<Long> matchIds = matchSearchService.searchMatchIds(query, sport, city);
-
-        if (matchIds.isEmpty()) {
-            return List.of();
-        }
-
-        return matchRepository.findAllById(matchIds);
     }
 }

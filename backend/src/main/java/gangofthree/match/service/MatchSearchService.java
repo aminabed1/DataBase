@@ -17,7 +17,7 @@ public class MatchSearchService {
 
     private final ElasticsearchOperations elasticsearchOperations;
 
-    public List<Long> searchMatchIds(String query, String sport, String city) {
+    public List<MatchSearchDocument> searchMatches(String query, String sport, String city) {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
 
         if (query != null && !query.isBlank()) {
@@ -44,7 +44,6 @@ public class MatchSearchService {
 
         return hits.getSearchHits().stream()
                 .map(SearchHit::getContent)
-                .map(MatchSearchDocument::getId)
                 .toList();
     }
 }

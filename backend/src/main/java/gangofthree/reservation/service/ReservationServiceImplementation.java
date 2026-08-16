@@ -53,15 +53,13 @@ public class ReservationServiceImplementation implements ReservationService {
 
         BigDecimal totalAmount = BigDecimal.ZERO;
 
-        // ۱. ایجاد و ذخیره رکورد رزرو اصلی
         Reservation reservation = new Reservation();
         reservation.setUser(user);
         reservation.setReservedAt(LocalDateTime.now());
         reservation.setExpiredAt(LocalDateTime.now().plusMinutes(10));
         reservation.setStatus(ReservationStatus.PENDING);
         reservation = reservationRepository.save(reservation);
-
-        // ۲. ثبت آیتم‌ها و قفل کردن مستقیم صندلی‌ها در دیتابیس
+        //lock seats
         for (MatchSeat seat : seats) {
             ReservationItem item = new ReservationItem();
             item.setReservation(reservation);
@@ -69,7 +67,6 @@ public class ReservationServiceImplementation implements ReservationService {
             item.setPriceAtTime(seat.getPrice());
             reservationItemRepository.save(item);
 
-            // به‌روزرسانی مستقیم وضعیت صندلی به RESERVED برای جلوگیری از تداخل
             matchSeatRepository.updateSeatStatusNative(seat.getId(), MatchSeatStatus.RESERVED.name());
 
             totalAmount = totalAmount.add(seat.getPrice());
@@ -86,7 +83,6 @@ public class ReservationServiceImplementation implements ReservationService {
         return ApiResponse.success("Reservation created successfully. You have 10 minutes to pay.", 200, response);
     }
 
-    // یک متد کمکی (Helper) اضافه کردیم تا کدها تمیزتر باشند
     private ReservationResponse mapToResponse(Reservation res) {
         List<ReservationItem> items = reservationItemRepository.findByReservationId(res.getId());
         BigDecimal totalAmount = items.stream()
