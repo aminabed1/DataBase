@@ -1,4 +1,5 @@
 package gangofthree.auth.service;
+
 import gangofthree.user.entity.Wallet;
 import gangofthree.auth.dto.request.forgotpassword.ForgotPasswordOtpRequest;
 import gangofthree.auth.dto.request.forgotpassword.ForgotPasswordRequest;
@@ -25,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import gangofthree.user.repository.WalletRepository;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -38,6 +40,7 @@ public class AuthServiceImplementation implements AuthService {
     private final EmailService emailService;
     private final JwtService jwtService;
     private final WalletRepository walletRepository;
+
     @Override
     public AuthResponse login(LoginRequest loginRequest) {
         CredentialType credentialType = CredentialDetector.detect(loginRequest.getCredential());
@@ -47,10 +50,8 @@ public class AuthServiceImplementation implements AuthService {
             case INVALID -> throw new InvalidCredentialException("Invalid credential.");
         };
 
-        User user = optionalUser.orElseThrow(() -> new InvalidCredentialException(
-                "Invalid credential or password."));
+        User user = optionalUser.orElseThrow(() -> new InvalidCredentialException("Invalid credential or password."));
 
-        // بررسی و اعمال محدودیت روش ورود (Login Method Check)
         if (user.getLoginMethod() != null) {
             if (credentialType == CredentialType.EMAIL && user.getLoginMethod() == LoginMethod.PHONE) {
                 throw new InvalidCredentialException("Your preferred login method is set to Phone Number.");
@@ -64,13 +65,15 @@ public class AuthServiceImplementation implements AuthService {
             throw new InvalidCredentialException("Invalid credential or password.");
         }
 
-       String jwtToken = jwtService.generateAccessToken(user);
+        String jwtToken = jwtService.generateAccessToken(user);
 
         return AuthResponse.builder()
-                .message("login successful.")
+                .message("Login successful.")
                 .token(jwtToken)
+                .role(user.getRole() != null ? user.getRole().toString() : "BUYER")
                 .build();
     }
+
     @Override
     public AuthResponse requestLoginOtp(String credential) {
         CredentialType credentialType = CredentialDetector.detect(credential);
@@ -121,14 +124,14 @@ public class AuthServiceImplementation implements AuthService {
             case INVALID -> throw new InvalidCredentialException("Invalid credential.");
         };
 
-        User user = optionalUser.orElseThrow(() -> new InvalidCredentialException(
-                "Invalid credential."));
+        User user = optionalUser.orElseThrow(() -> new InvalidCredentialException("Invalid credential."));
 
         String jwtToken = jwtService.generateAccessToken(user);
 
         return AuthResponse.builder()
-                .message("login successful")
+                .message("Login successful.")
                 .token(jwtToken)
+                .role(user.getRole() != null ? user.getRole().toString() : "BUYER")
                 .build();
     }
 
@@ -157,7 +160,7 @@ public class AuthServiceImplementation implements AuthService {
                 .phoneNumber(registerRequest.getPhoneNumber())
                 .email(registerRequest.getEmail())
                 .isActive(true)
-                .loginMethod(LoginMethod.EMAIL) // Default login method
+                .loginMethod(LoginMethod.EMAIL) 
                 .passwordHash(hashedPassword)
                 .role(registerRequest.getRole())
                 .build();
@@ -168,11 +171,13 @@ public class AuthServiceImplementation implements AuthService {
         wallet.setUser(user);
         wallet.setCredit(java.math.BigDecimal.ZERO);
         walletRepository.save(wallet);
+        
         String jwtToken = jwtService.generateRegisterToken(user);
 
         return AuthResponse.builder()
-                .message("register successful.")
+                .message("Registration successful.")
                 .token(jwtToken)
+                .role(user.getRole() != null ? user.getRole().toString() : "BUYER")
                 .build();
     }
 
@@ -187,8 +192,7 @@ public class AuthServiceImplementation implements AuthService {
             case INVALID -> throw new InvalidCredentialException("Invalid credential.");
         };
 
-        User user = optionalUser.orElseThrow(() ->
-                new InvalidCredentialException("User not found."));
+        User user = optionalUser.orElseThrow(() -> new InvalidCredentialException("User not found."));
 
         String otp = otpService.generateOtp();
         otpService.saveOtp(credential, otp, OtpPurpose.RESET_PASSWORD);
@@ -238,7 +242,6 @@ public class AuthServiceImplementation implements AuthService {
         }
 
         Long userId = Long.valueOf(jwtService.extractUserId(request.getResetToken()));
-
         User user = userRepository.findById(userId).orElseThrow(() -> new InvalidCredentialException("Invalid reset token."));
 
         if (!jwtService.isPasswordResetTokenValid(request.getResetToken(), user)) {
@@ -246,7 +249,6 @@ public class AuthServiceImplementation implements AuthService {
         }
 
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-
         userRepository.save(user);
 
         return AuthResponse.builder()

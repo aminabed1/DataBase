@@ -5,11 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authService } from "@/features/auth/services/auth.service";
 import { locationService, type LocationItem } from "@/services/location.service";
-import { Mail, Lock, User, Smartphone, MapPin, Map, Key, ArrowRight, ShieldCheck, AlertCircle, Trophy, Ticket, ChevronDown ,type LucideIcon} from "lucide-react";
+import { Mail, Lock, User, Smartphone, MapPin, Map, Key, ArrowRight, ShieldCheck, AlertCircle, Trophy, Ticket, ChevronDown, type LucideIcon } from "lucide-react";
 
-// ==========================================
-// Custom Select Dropdown Component
-// ==========================================
 function CustomSelect({
                           icon: Icon,
                           placeholder,
@@ -123,7 +120,6 @@ export default function AuthPanel() {
 
     useEffect(() => {
         localStorage.removeItem("token");
-        
         locationService.getProvinces().then(setProvinces);
     }, []);
 
@@ -150,19 +146,18 @@ export default function AuthPanel() {
         setError(null);
     };
 
-    // ==========================================
-    // EXTRACT TOKEN AND REDIRECT (FIXED)
-    // ==========================================
     const handleSuccessAuth = (responsePayload: any, isLogin: boolean) => {
         const token = responsePayload?.data?.token || responsePayload?.token || responsePayload?.data?.data?.token;
-        const userRole = responsePayload?.data?.user?.role || responsePayload?.user?.role || responsePayload?.data?.role;
+        
+        // نقش کاربر با اولویت فیلدهای مختلف بررسی می‌شود
+        const userRole = responsePayload?.data?.role || responsePayload?.role || responsePayload?.data?.user?.role || responsePayload?.user?.role;
 
         if (token) {
             if (isLogin) {
                 localStorage.setItem("token", token);
                 localStorage.setItem("role", userRole || "BUYER");
 
-                if (userRole === "SUPPORT") {
+                if (userRole === "SUPPORT" || userRole === "ROLE_SUPPORT") {
                     router.push('/support');
                 } else {
                     router.push('/dashboard');
@@ -181,9 +176,6 @@ export default function AuthPanel() {
         }
     };
 
-    // ==========================================
-    // SIGNUP SUBMIT
-    // ==========================================
     const handleSignupSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -218,7 +210,7 @@ export default function AuthPanel() {
                 confirmPassword: formData.confirmPassword
             };
             const data = await authService.register(payload);
-            handleSuccessAuth(data, false); // isLogin = false
+            handleSuccessAuth(data, false); 
         } catch (err: any) {
             setError(err.response?.data?.message || err.message || "Registration failed.");
         } finally {
@@ -226,9 +218,6 @@ export default function AuthPanel() {
         }
     };
 
-    // ==========================================
-    // LOGIN SUBMIT (FIXED: Bypasses OTP for password)
-    // ==========================================
     const handleLoginSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -245,13 +234,11 @@ export default function AuthPanel() {
                     setIsLoading(false);
                     return setError("Please enter your password.");
                 }
-                // ورود با پسورد مستقیماً به داشبورد می‌رود
                 const data = await authService.loginWithPassword(formData.identifier, formData.password);
                 handleSuccessAuth(data, true);
 
             } else {
                 if (otpStep === "request") {
-                    // فقط برای One-Time Code درخواست OTP می‌دهد
                     await authService.requestOtp(formData.identifier);
                     setOtpStep("verify");
                 } else {
@@ -281,9 +268,6 @@ export default function AuthPanel() {
         >
             <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[2.5rem] border border-gray-100 bg-white shadow-2xl md:flex-row">
 
-                {/* ========================================== */}
-                {/* DESKTOP SLIDING OVERLAY (The Curved Panel) */}
-                {/* ========================================== */}
                 <motion.div
                     initial={false}
                     animate={{
@@ -342,9 +326,6 @@ export default function AuthPanel() {
                     </AnimatePresence>
                 </motion.div>
 
-                {/* ========================================== */}
-                {/* MOBILE TAB TOGGLE (Hidden on Desktop)      */}
-                {/* ========================================== */}
                 <div className="relative z-20 flex px-6 pt-6 md:hidden">
                     <div className="flex w-full rounded-2xl border border-gray-100 bg-gray-50/80 p-1 shadow-sm backdrop-blur-md">
                         <button
@@ -366,12 +347,8 @@ export default function AuthPanel() {
                     </div>
                 </div>
 
-                {/* ========================================== */}
-                {/* FORMS CONTAINER                            */}
-                {/* ========================================== */}
                 <div className="relative flex h-full w-full flex-col md:flex-row">
-
-                    {/* LEFT SIDE: LOGIN FORM */}
+                    {/* LOGIN FORM */}
                     <div className={`flex h-full w-full flex-col justify-center overflow-y-auto px-6 py-8 md:w-1/2 md:px-12 lg:px-20 hide-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${mode === 'login' ? 'block' : 'hidden md:flex'}`}>
                         <div className="m-auto w-full max-w-sm">
                             <form onSubmit={handleLoginSubmit} noValidate className="flex flex-col gap-5">
@@ -451,7 +428,7 @@ export default function AuthPanel() {
                         </div>
                     </div>
 
-                    {/* RIGHT SIDE: SIGNUP FORM */}
+                    {/* SIGNUP FORM */}
                     <div className={`flex h-full w-full flex-col justify-center overflow-y-auto px-6 py-8 md:w-1/2 md:px-12 lg:px-20 hide-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${mode === 'signup' ? 'block' : 'hidden md:flex'}`}>
                         <div className="m-auto w-full max-w-sm pb-8">
                             <form onSubmit={handleSignupSubmit} noValidate className="flex flex-col gap-4">
@@ -460,7 +437,6 @@ export default function AuthPanel() {
                                     <p className="mt-2 cursor-none select-none text-sm text-zinc-500">Join PitchSide to book your tickets.</p>
                                 </div>
 
-                                {/* First Name & Last Name (Side by Side) */}
                                 <div className="flex gap-3">
                                     <div className="relative group w-full">
                                         <User size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
@@ -471,7 +447,6 @@ export default function AuthPanel() {
                                     </div>
                                 </div>
 
-                                {/* Box: Email and Phone */}
                                 <div className="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-gray-50/50 p-3 pt-2">
                                     <div className="flex items-center justify-between px-2 pb-1">
                                         <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 select-none">Contact Details</span>
@@ -487,26 +462,11 @@ export default function AuthPanel() {
                                     </div>
                                 </div>
 
-                                {/* Province & City Dropdowns */}
                                 <div className="flex gap-3">
-                                    <CustomSelect
-                                        icon={Map}
-                                        placeholder="Province"
-                                        value={formData.province_id}
-                                        options={provinces}
-                                        onChange={(val) => { setFormData({ ...formData, province_id: val, city_id: "" }); setError(null); }}
-                                    />
-                                    <CustomSelect
-                                        icon={MapPin}
-                                        placeholder="City"
-                                        value={formData.city_id}
-                                        options={cities}
-                                        disabled={!formData.province_id}
-                                        onChange={(val) => { setFormData({ ...formData, city_id: val }); setError(null); }}
-                                    />
+                                    <CustomSelect icon={Map} placeholder="Province" value={formData.province_id} options={provinces} onChange={(val) => { setFormData({ ...formData, province_id: val, city_id: "" }); setError(null); }} />
+                                    <CustomSelect icon={MapPin} placeholder="City" value={formData.city_id} options={cities} disabled={!formData.province_id} onChange={(val) => { setFormData({ ...formData, city_id: val }); setError(null); }} />
                                 </div>
 
-                                {/* Password & Confirm Password */}
                                 <div className="flex gap-3">
                                     <div className="relative group w-full">
                                         <Lock size={18} className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-zinc-950" />
